@@ -8,6 +8,8 @@ export class PathwayDetail {
   constructor(container) {
     this.container = container;
     this.currentPathway = null;
+    this.selectedReaction = null;
+    this.selectedMolecule = null;
   }
   
   render(pathway) {
@@ -18,10 +20,27 @@ export class PathwayDetail {
     
     this.currentPathway = pathway;
     
+    // Extract selected reaction and molecule from pathway data if provided
+    const selectedReaction = pathway.selectedReaction || this.selectedReaction;
+    const selectedMolecule = pathway.selectedMolecule || this.selectedMolecule;
+    const selectedType = pathway.selectedType;
+    
+    // Update internal state
+    if (selectedReaction) {
+      this.selectedReaction = selectedReaction;
+    }
+    if (selectedMolecule) {
+      this.selectedMolecule = selectedMolecule;
+    }
+    
+    // Determine which reaction step to highlight
+    const highlightedStep = selectedReaction ? (selectedReaction.step || null) : null;
+    
     const html = `
       <div class="pathway-detail">
         <div class="detail-header">
           <h2>${pathway.summary.name}</h2>
+          ${highlightedStep ? `<div class="pathway-selection-indicator">Currently viewing: ${selectedType === 'molecule' ? 'Molecule' : 'Reaction'} from Step ${highlightedStep}</div>` : ''}
         </div>
         
         <div class="detail-section">
@@ -53,13 +72,17 @@ export class PathwayDetail {
           <div class="pathway-reactions">
             <p><strong>Total Steps:</strong> ${pathway.reactions.length}</p>
             <div class="reaction-list">
-              ${pathway.reactions.map((reaction, index) => `
-                <div class="reaction-item">
+              ${pathway.reactions.map((reaction, index) => {
+                const isSelected = highlightedStep && (reaction.step === highlightedStep || (reaction.step === null && index + 1 === highlightedStep));
+                return `
+                <div class="reaction-item ${isSelected ? 'reaction-item-selected' : ''}">
                   <div class="reaction-step">Step ${reaction.step || index + 1}</div>
                   <div class="reaction-name">${reaction.name}</div>
                   <div class="reaction-enzyme">${reaction.enzyme.name}</div>
+                  ${isSelected && selectedType === 'molecule' ? `<div class="reaction-selection-note">Selected molecule: ${selectedMolecule?.name || reaction.substrate.name}</div>` : ''}
                 </div>
-              `).join('')}
+              `;
+              }).join('')}
             </div>
           </div>
         </div>

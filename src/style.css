@@ -399,6 +399,44 @@ body {
   border-color: #667eea;
 }
 
+.reaction-item-selected {
+  background: #fff5f5 !important;
+  border: 2px solid #ff6b6b !important;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
+}
+
+.reaction-item-selected .reaction-step {
+  color: #ff6b6b;
+  font-weight: 700;
+}
+
+.reaction-item-selected .reaction-name {
+  color: #c92a2a;
+  font-weight: 600;
+}
+
+.reaction-selection-note {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #667eea;
+  font-style: italic;
+  border-left: 3px solid #667eea;
+}
+
+.pathway-selection-indicator {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: #e7f3ff;
+  border-radius: 6px;
+  border-left: 4px solid #667eea;
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+}
+
 .reaction-step {
   font-weight: 600;
   color: #667eea;

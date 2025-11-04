@@ -953,18 +953,11 @@ export class MetabolismViewer {
         const reaction6 = this.reactions[5]; // Step 6 (0-indexed: step 1 = index 0, step 6 = index 5)
         const reaction4 = this.reactions[3]; // Step 4 (0-indexed: step 4 = index 3)
         
-        // Reset all highlights first
-        this.reactionGroups.selectAll('.reaction-circle')
-          .attr('stroke-width', 2)
-          .attr('stroke', '#2c5f7c')
-          .attr('fill', '#5fa8d3');
+        // Use selectReaction to properly handle selection and pathway updates
+        // This will highlight reaction 6 and its previous reaction (step 5)
+        this.selectReaction(reaction6);
         
-        this.reactionGroups.selectAll('.molecule-image-bg')
-          .attr('stroke', '#dee2e6')
-          .attr('stroke-width', 2)
-          .attr('fill', 'white');
-        
-        // Highlight node 4 (substrate source)
+        // Additionally highlight node 4 (substrate source) since this arrow connects step 4 to step 6
         const reaction4Group = this.reactionGroups.filter(d => d === reaction4);
         reaction4Group.select('.reaction-circle')
           .attr('stroke-width', 4)
@@ -974,29 +967,6 @@ export class MetabolismViewer {
           .attr('stroke', '#ff6b6b')
           .attr('stroke-width', 4)
           .attr('fill', '#fff5f5');
-        
-        // Highlight node 6 (target)
-        const reaction6Group = this.reactionGroups.filter(d => d === reaction6);
-        reaction6Group.select('.reaction-circle')
-          .attr('stroke-width', 4)
-          .attr('stroke', '#ff6b6b')
-          .attr('fill', '#ff8787');
-        reaction6Group.select('.molecule-image-bg')
-          .attr('stroke', '#ff6b6b')
-          .attr('stroke-width', 4)
-          .attr('fill', '#fff5f5');
-        
-        // Update selection state
-        this.selectedReaction = reaction6;
-        this.selectedMolecule = null;
-        this.selectedNode = null;
-        this.selectedPathway = null;
-        
-        // Dispatch reaction selected event
-        const detailEvent = new CustomEvent('reaction-selected', {
-          detail: reaction6
-        });
-        this.container.dispatchEvent(detailEvent);
       });
     
     const step4To6 = this.g.append('line')
@@ -1564,6 +1534,20 @@ export class MetabolismViewer {
     this.container.dispatchEvent(clearEvent);
   }
   
+  getPathwayForReaction(reaction) {
+    // Find which pathway this reaction belongs to
+    const reactionIndex = this.reactions.indexOf(reaction);
+    if (reactionIndex === -1) return null;
+    
+    // Find the pathway that contains this reaction
+    for (const pathway of this.pathways) {
+      if (reactionIndex >= pathway.startIndex && reactionIndex < pathway.endIndex) {
+        return pathway;
+      }
+    }
+    return null;
+  }
+  
   selectReaction(reaction) {
     this.selectedReaction = reaction;
     this.selectedMolecule = null;
@@ -1586,6 +1570,21 @@ export class MetabolismViewer {
       detail: reaction
     });
     this.container.dispatchEvent(detailEvent);
+    
+    // Also update pathway detail panel with the pathway this reaction belongs to
+    const pathway = this.getPathwayForReaction(reaction);
+    if (pathway) {
+      const pathwayEvent = new CustomEvent('pathway-updated', {
+        detail: {
+          summary: pathway.summary,
+          reactions: pathway.reactions,
+          pathway: pathway,
+          selectedReaction: reaction, // Include the selected reaction
+          selectedType: 'reaction' // Indicate this is a reaction selection
+        }
+      });
+      this.container.dispatchEvent(pathwayEvent);
+    }
   }
   
   applyReactionHighlight(reaction) {
@@ -1660,6 +1659,22 @@ export class MetabolismViewer {
       detail: molecule
     });
     this.container.dispatchEvent(detailEvent);
+    
+    // Also update pathway detail panel with the pathway this reaction node belongs to
+    const pathway = this.getPathwayForReaction(reactionNode);
+    if (pathway) {
+      const pathwayEvent = new CustomEvent('pathway-updated', {
+        detail: {
+          summary: pathway.summary,
+          reactions: pathway.reactions,
+          pathway: pathway,
+          selectedReaction: reactionNode, // Include the selected reaction node
+          selectedMolecule: molecule, // Include the selected molecule
+          selectedType: 'molecule' // Indicate this is a molecule/node selection
+        }
+      });
+      this.container.dispatchEvent(pathwayEvent);
+    }
   }
   
   applyMoleculeHighlight(molecule, reactionNode) {

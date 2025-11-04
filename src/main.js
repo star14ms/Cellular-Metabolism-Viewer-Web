@@ -121,6 +121,9 @@ if (!app) {
       // Listen for pathway selection
       viewerContainer.addEventListener('pathway-selected', (event) => {
         pathwayView.render(event.detail)
+        // Clear molecule and reaction views when pathway is selected
+        moleculeView.render(null)
+        reactionView.render(null)
         // Switch to pathway tab
         tabs.forEach(t => t.classList.remove('active'))
         tabs[2].classList.add('active')
@@ -134,6 +137,8 @@ if (!app) {
       // Listen for reaction selection (from arrows)
       viewerContainer.addEventListener('reaction-selected', (event) => {
         reactionView.render(event.detail)
+        // Clear molecule view when reaction is selected
+        moleculeView.render(null)
         // Switch to reaction tab
         tabs.forEach(t => t.classList.remove('active'))
         tabs[1].classList.add('active')
@@ -149,6 +154,14 @@ if (!app) {
         tabs[0].classList.add('active')
         views.forEach(v => v.classList.remove('active'))
         moleculeContainer.classList.add('active')
+      })
+      
+      // Listen for pathway updates (when node or arrow is selected)
+      // This updates the pathway detail panel without switching tabs
+      viewerContainer.addEventListener('pathway-updated', (event) => {
+        pathwayView.render(event.detail)
+        // Don't switch tabs - keep the current tab active
+        // The pathway detail panel will be updated in the background
       })
       
       // Listen for clear selection (when clicking background)
