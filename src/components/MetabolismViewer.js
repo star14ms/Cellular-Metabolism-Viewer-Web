@@ -192,14 +192,19 @@ export class MetabolismViewer {
       .scaleExtent([0.1, 5])
       .on('zoom', (event) => this.handleZoom(event));
     
-    // Filter zoom events: allow all except wheel without modifier keys
+    // Filter zoom events: allow drag, touch, and wheel with Ctrl/Cmd
+    // Block double-click and prevent clicks from triggering zoom
     this.zoom.filter(function(event) {
-      // Allow zoom on drag, touch, and wheel with Ctrl/Cmd
+      // Block double-click zoom
+      if (event.type === 'dblclick') {
+        return false;
+      }
       // Block wheel without modifiers (we'll handle that as pan)
       if (event.type === 'wheel') {
         return event.ctrlKey || event.metaKey;
       }
-      return true; // Allow all other event types
+      // Allow all other events (mousedown, mousemove, touch) for dragging/panning
+      return true;
     });
     
     this.svg.call(this.zoom);
@@ -285,11 +290,12 @@ export class MetabolismViewer {
         const newWidth = containerRect.width || window.innerWidth;
         const newHeight = containerRect.height || window.innerHeight;
         
+        // Store old dimensions before updating
+        const oldWidth = this.options.width;
+        const oldHeight = this.options.height;
+
         if (newWidth > 0 && newHeight > 0 && 
-            (newWidth !== this.options.width || newHeight !== this.options.height)) {
-          const oldWidth = this.options.width;
-          const oldHeight = this.options.height;
-          
+          (newWidth !== oldWidth || newHeight !== oldHeight)) {
           this.options.width = newWidth;
           this.options.height = newHeight;
           
@@ -299,26 +305,9 @@ export class MetabolismViewer {
               .attr('width', newWidth)
               .attr('height', newHeight);
             
-            // Update zoom transform to account for size change
-            // This ensures the view stays centered and properly scaled
-            if (this.zoom && this.g) {
-              const currentTransform = d3.zoomTransform(this.g.node());
-              const scaleX = newWidth / oldWidth;
-              const scaleY = newHeight / oldHeight;
-              
-              // Adjust transform to maintain relative position
-              const newTransform = currentTransform
-                .scale(currentTransform.k)
-                .translate(
-                  currentTransform.x * scaleX,
-                  currentTransform.y * scaleY
-                );
-              
-              // Apply the updated transform
-              this.g.transition()
-                .duration(0)
-                .call(this.zoom.transform, newTransform);
-            }
+            // Keep the same zoom transform - no need to adjust it
+            // The zoom transform is relative to the SVG, so it will work correctly
+            // with the new dimensions without any adjustment
           }
           
           // Update help button position relative to theme toggle button
@@ -355,7 +344,14 @@ export class MetabolismViewer {
       }, 100); // 100ms debounce
     };
     
+    // Listen to window resize events
     window.addEventListener('resize', this.handleResize);
+    
+    // Also listen to visualViewport changes (better for DevTools detection)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', this.handleResize);
+      window.visualViewport.addEventListener('scroll', this.handleResize);
+    }
     
     // Also watch for container size changes (e.g., when detail panel appears/disappears)
     // Use ResizeObserver if available, otherwise fall back to periodic checks
@@ -364,6 +360,15 @@ export class MetabolismViewer {
         this.handleResize();
       });
       this.resizeObserver.observe(this.container);
+      
+      // Also observe the parent element and document body for better DevTools detection
+      const parentElement = this.container.parentElement;
+      if (parentElement) {
+        this.resizeObserver.observe(parentElement);
+      }
+      if (document.body) {
+        this.resizeObserver.observe(document.body);
+      }
     }
     
     // Trigger initial resize check to ensure correct dimensions
@@ -371,6 +376,17 @@ export class MetabolismViewer {
     setTimeout(() => {
       this.handleResize();
     }, 100);
+    
+    // Also add a periodic check as a fallback (especially useful for DevTools)
+    this.resizeCheckInterval = setInterval(() => {
+      const containerRect = this.container.getBoundingClientRect();
+      const currentWidth = containerRect.width || window.innerWidth;
+      const currentHeight = containerRect.height || window.innerHeight;
+      
+      if (currentWidth !== this.options.width || currentHeight !== this.options.height) {
+        this.handleResize();
+      }
+    }, 500); // Check every 500ms as fallback
   }
   
   destroy() {
@@ -378,10 +394,20 @@ export class MetabolismViewer {
     if (this.handleResize) {
       window.removeEventListener('resize', this.handleResize);
     }
+    // Clean up visualViewport listeners
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', this.handleResize);
+      window.visualViewport.removeEventListener('scroll', this.handleResize);
+    }
     // Clean up ResizeObserver
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
+    }
+    // Clean up periodic resize check interval
+    if (this.resizeCheckInterval) {
+      clearInterval(this.resizeCheckInterval);
+      this.resizeCheckInterval = null;
     }
   }
   
