@@ -14,12 +14,14 @@ if (!app) {
 } else {
   app.innerHTML = `
     <div class="app-container">
-      <div class="main-content">
-        <div class="viewer-panel">
-          <div id="metabolism-viewer" class="metabolism-viewer"></div>
-        </div>
-        
-        <div class="detail-panel">
+        <div class="main-content">
+          <div class="viewer-panel">
+            <div id="metabolism-viewer" class="metabolism-viewer"></div>
+          </div>
+          
+          <div class="panel-resizer" id="panel-resizer"></div>
+          
+          <div class="detail-panel">
           <div class="detail-tabs">
             <button class="detail-tab active" data-tab="molecule">Molecule (Node)</button>
             <button class="detail-tab" data-tab="reaction">Reaction (Arrow)</button>
@@ -47,9 +49,14 @@ if (!app) {
     // Expand viewer panel to take full width
     const viewerPanel = document.querySelector('.viewer-panel')
     if (viewerPanel) {
-      viewerPanel.style.flex = '1 1 100%'
-      viewerPanel.style.width = '100%'
-      viewerPanel.style.borderRight = 'none'
+      viewerPanel.style.flex = '1 1 0%'
+      viewerPanel.style.width = ''
+      viewerPanel.style.maxWidth = ''
+    }
+    // Hide resizer when panel is hidden
+    const panelResizer = document.querySelector('.panel-resizer')
+    if (panelResizer) {
+      panelResizer.style.display = 'none'
     }
   }
 
@@ -119,6 +126,9 @@ if (!app) {
         tabs[2].classList.add('active')
         views.forEach(v => v.classList.remove('active'))
         pathwayContainer.classList.add('active')
+        
+        // Show detail panel first, then zoom will happen after container resizes
+        // (zoom is handled in selectPathway with a delay)
       })
 
       // Listen for reaction selection (from arrows)
@@ -159,9 +169,14 @@ if (!app) {
           // Expand viewer panel to take full width
           const viewerPanel = document.querySelector('.viewer-panel')
           if (viewerPanel) {
-            viewerPanel.style.flex = '1 1 100%'
-            viewerPanel.style.width = '100%'
-            viewerPanel.style.borderRight = 'none' // Remove border when detail panel is hidden
+            viewerPanel.style.flex = '1 1 0%'
+            viewerPanel.style.width = ''
+            viewerPanel.style.maxWidth = ''
+          }
+          // Hide resizer
+          const panelResizer = document.getElementById('panel-resizer')
+          if (panelResizer) {
+            panelResizer.style.display = 'none'
           }
           // Trigger resize on viewer after a brief delay to allow layout to settle
           setTimeout(() => {
@@ -176,18 +191,27 @@ if (!app) {
       const showDetailPanel = () => {
         if (detailPanel) {
           detailPanel.style.display = 'flex'
-          detailPanel.style.width = ''
-          detailPanel.style.minWidth = ''
-          detailPanel.style.flex = ''
           detailPanel.style.visibility = ''
           detailPanel.style.opacity = ''
-          // Restore viewer panel to normal size (will shrink to accommodate detail panel)
+          // Use flex basis to set width - this ensures it takes space from the layout
+          detailPanel.style.flex = '0 0 25%'
+          detailPanel.style.width = ''
+          detailPanel.style.minWidth = '200px'
+          
+          // Ensure viewer panel uses flex to shrink and make room
           const viewerPanel = document.querySelector('.viewer-panel')
           if (viewerPanel) {
-            viewerPanel.style.flex = '1'
+            viewerPanel.style.flex = '1 1 0%' // Takes remaining space, can shrink
             viewerPanel.style.width = ''
-            viewerPanel.style.borderRight = '1px solid #e9ecef' // Restore border
+            viewerPanel.style.maxWidth = ''
           }
+          
+          // Show resizer
+          const panelResizer = document.getElementById('panel-resizer')
+          if (panelResizer) {
+            panelResizer.style.display = 'block'
+          }
+          
           // Trigger resize on viewer after a brief delay to allow layout to settle
           setTimeout(() => {
             if (viewer && viewer.handleResize) {
@@ -201,6 +225,73 @@ if (!app) {
       viewerContainer.addEventListener('molecule-selected', showDetailPanel)
       viewerContainer.addEventListener('reaction-selected', showDetailPanel)
       viewerContainer.addEventListener('pathway-selected', showDetailPanel)
+      
+      // Setup panel resizer
+      const panelResizer = document.getElementById('panel-resizer')
+      const viewerPanel = document.querySelector('.viewer-panel')
+      if (panelResizer && detailPanel && viewerPanel) {
+        let isResizing = false
+        let startX = 0
+        let startWidth = 0
+        
+        const startResize = (e) => {
+          if (!detailPanel || detailPanel.style.display === 'none') {
+            return // Don't allow resizing when panel is hidden
+          }
+          isResizing = true
+          startX = e.clientX
+          startWidth = detailPanel.getBoundingClientRect().width
+          panelResizer.classList.add('active')
+          document.body.style.cursor = 'col-resize'
+          document.body.style.userSelect = 'none'
+          e.preventDefault()
+        }
+        
+        const doResize = (e) => {
+          if (!isResizing) return
+          
+          const deltaX = e.clientX - startX
+          const mainContent = document.querySelector('.main-content')
+          const mainContentWidth = mainContent.getBoundingClientRect().width
+          
+          // Calculate new width as percentage of main content width
+          // Reverse the direction: dragging right (positive deltaX) should decrease panel width
+          // Dragging left (negative deltaX) should increase panel width
+          const newWidthPx = startWidth - deltaX
+          const newWidthPercent = (newWidthPx / mainContentWidth) * 100
+          
+          // Clamp between min and max
+          const minPercent = (200 / mainContentWidth) * 100 // 200px minimum
+          const maxPercent = 50 // 50% maximum
+          const clampedPercent = Math.max(minPercent, Math.min(maxPercent, newWidthPercent))
+          
+          // Update detail panel width using flex-basis
+          detailPanel.style.flex = `0 0 ${clampedPercent}%`
+          detailPanel.style.width = ''
+          
+          // Update viewer panel to take remaining space
+          viewerPanel.style.flex = '1 1 0%'
+          
+          // Trigger viewer resize after a brief delay
+          setTimeout(() => {
+            if (viewer && viewer.handleResize) {
+              viewer.handleResize()
+            }
+          }, 10)
+        }
+        
+        const stopResize = () => {
+          if (!isResizing) return
+          isResizing = false
+          panelResizer.classList.remove('active')
+          document.body.style.cursor = ''
+          document.body.style.userSelect = ''
+        }
+        
+        panelResizer.addEventListener('mousedown', startResize)
+        document.addEventListener('mousemove', doResize)
+        document.addEventListener('mouseup', stopResize)
+      }
 
     } catch (error) {
       console.error('Error initializing viewer:', error)

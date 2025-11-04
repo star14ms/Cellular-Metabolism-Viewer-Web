@@ -222,10 +222,24 @@ export class MetabolismViewer {
           }
           
           // Update help button position (it's in overlay, positioned relative to viewport)
+          // The button should be positioned relative to the current container width (which shrinks when detail panel appears)
           if (this.overlay) {
             const helpButton = this.overlay.select('.help-button');
             if (!helpButton.empty()) {
-              helpButton.attr('transform', `translate(${newWidth - 60}, 50)`);
+              // Position button at right edge of current container (not full viewport)
+              const buttonX = newWidth - 60; // 60px from right edge of current container
+              helpButton.attr('transform', `translate(${buttonX}, 50)`);
+              
+              // Also update tooltip position to avoid going off right edge
+              const tooltipGroup = helpButton.select('.help-tooltip');
+              if (!tooltipGroup.empty()) {
+                const tooltipWidth = 450;
+                const tooltipX = -tooltipWidth / 2;
+                const maxRight = newWidth - 20;
+                const tooltipRightEdge = buttonX + tooltipX + tooltipWidth;
+                const adjustedX = tooltipRightEdge > maxRight ? tooltipX - (tooltipRightEdge - maxRight) : tooltipX;
+                tooltipGroup.attr('transform', `translate(${adjustedX}, 25)`);
+              }
             }
           }
         }
@@ -260,6 +274,11 @@ export class MetabolismViewer {
     // Use the same logic as zoomToAllReactions but without transition
     if (this.reactions.length === 0) return;
     
+    // Get current container dimensions (accounts for detail panel if visible)
+    const containerRect = this.container.getBoundingClientRect();
+    const containerWidth = containerRect.width || this.options.width;
+    const containerHeight = containerRect.height || this.options.height;
+    
     // Calculate bounding box for all reactions
     const positions = this.reactions.map(r => r.position);
     const minX = Math.min(...positions.map(p => p.x));
@@ -274,14 +293,14 @@ export class MetabolismViewer {
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
     
-    // Calculate scale to fit all reactions in view
-    const scaleX = this.options.width / width;
-    const scaleY = this.options.height / height;
+    // Calculate scale to fit all reactions in view using current container size
+    const scaleX = containerWidth / width;
+    const scaleY = containerHeight / height;
     const scale = Math.min(scaleX, scaleY, 1) * 0.95; // Use 95% of available space, max zoom 1x (fit to view)
     
-    // Calculate translation to center all reactions
-    const translateX = this.options.width / 2 - centerX * scale;
-    const translateY = this.options.height / 2 - centerY * scale;
+    // Calculate translation to center all reactions using current container size
+    const translateX = containerWidth / 2 - centerX * scale;
+    const translateY = containerHeight / 2 - centerY * scale;
     
     // Apply zoom transform (without transition for initial view)
     const transform = d3.zoomIdentity
@@ -569,23 +588,49 @@ export class MetabolismViewer {
     this.selectedMolecule = null;
     this.selectedNode = null;
     
-    // Zoom and pan to show the pathway group
-    this.zoomToPathway(pathway);
-    
-    // Dispatch custom event for pathway detail view
+    // Dispatch custom event for pathway detail view (this will show the detail panel)
     const detailEvent = new CustomEvent('pathway-selected', {
       detail: {
         summary: pathway.summary,
-        reactions: pathway.reactions
+        reactions: pathway.reactions,
+        pathway: pathway // Include pathway object for zoom callback
       }
     });
     this.container.dispatchEvent(detailEvent);
+    
+    // Zoom and pan to show the pathway group AFTER detail panel appears and container resizes
+    // Use requestAnimationFrame and setTimeout to ensure layout has settled
+    // First, force a resize check to update container dimensions
+    if (this.handleResize) {
+      this.handleResize();
+    }
+    
+    // Then wait for layout to settle before zooming
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          // Force another resize check before zooming to ensure dimensions are current
+          if (this.handleResize) {
+            this.handleResize();
+          }
+          // Small delay to ensure resize handler has updated dimensions
+          setTimeout(() => {
+            this.zoomToPathway(pathway);
+          }, 50);
+        }, 100); // Delay to allow detail panel to appear and container to resize
+      });
+    });
   }
   
   zoomToPathway(pathway) {
     const pathwayReactions = this.reactions.slice(pathway.startIndex, pathway.endIndex);
     
     if (pathwayReactions.length === 0) return;
+    
+    // Get current container dimensions (accounts for detail panel if visible)
+    const containerRect = this.container.getBoundingClientRect();
+    const containerWidth = containerRect.width || this.options.width;
+    const containerHeight = containerRect.height || this.options.height;
     
     // Calculate bounding box for the pathway
     const positions = pathwayReactions.map(r => r.position);
@@ -601,14 +646,14 @@ export class MetabolismViewer {
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
     
-    // Calculate scale to fit pathway in view
-    const scaleX = this.options.width / width;
-    const scaleY = this.options.height / height;
+    // Calculate scale to fit pathway in view using current container size
+    const scaleX = containerWidth / width;
+    const scaleY = containerHeight / height;
     const scale = Math.min(scaleX, scaleY, 2) * 0.9; // Use 90% of available space, max zoom 2x
     
-    // Calculate translation to center the pathway
-    const translateX = this.options.width / 2 - centerX * scale;
-    const translateY = this.options.height / 2 - centerY * scale;
+    // Calculate translation to center the pathway using current container size
+    const translateX = containerWidth / 2 - centerX * scale;
+    const translateY = containerHeight / 2 - centerY * scale;
     
     // Apply zoom transform
     const transform = d3.zoomIdentity
@@ -628,6 +673,11 @@ export class MetabolismViewer {
   zoomToAllReactions() {
     if (this.reactions.length === 0) return;
     
+    // Get current container dimensions (accounts for detail panel if visible)
+    const containerRect = this.container.getBoundingClientRect();
+    const containerWidth = containerRect.width || this.options.width;
+    const containerHeight = containerRect.height || this.options.height;
+    
     // Calculate bounding box for all reactions
     const positions = this.reactions.map(r => r.position);
     const minX = Math.min(...positions.map(p => p.x));
@@ -642,14 +692,14 @@ export class MetabolismViewer {
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
     
-    // Calculate scale to fit all reactions in view
-    const scaleX = this.options.width / width;
-    const scaleY = this.options.height / height;
+    // Calculate scale to fit all reactions in view using current container size
+    const scaleX = containerWidth / width;
+    const scaleY = containerHeight / height;
     const scale = Math.min(scaleX, scaleY, 1) * 0.95; // Use 95% of available space, max zoom 1x (fit to view)
     
-    // Calculate translation to center all reactions
-    const translateX = this.options.width / 2 - centerX * scale;
-    const translateY = this.options.height / 2 - centerY * scale;
+    // Calculate translation to center all reactions using current container size
+    const translateX = containerWidth / 2 - centerX * scale;
+    const translateY = containerHeight / 2 - centerY * scale;
     
     // Apply zoom transform
     const transform = d3.zoomIdentity
@@ -727,74 +777,106 @@ export class MetabolismViewer {
         return true;
       });
     
+    // Helper function to calculate arrow coordinates
+    const getArrowCoords = (d) => {
+      const dx = d.next.position.x - d.current.position.x;
+      const dy = d.next.position.y - d.current.position.y;
+      const angle = Math.atan2(dy, dx);
+      
+      let x1 = d.current.position.x + 30 * Math.cos(angle);
+      let y1 = d.current.position.y + 30 * Math.sin(angle);
+      if (dy > 0) {
+        y1 = Math.min(y1, d.current.position.y + 35);
+      }
+      
+      let x2 = d.next.position.x - 30 * Math.cos(angle);
+      let y2 = d.next.position.y - 30 * Math.sin(angle);
+      if (dy < 0) {
+        y2 = Math.max(y2, d.next.position.y - 35);
+      }
+      
+      return { x1, y1, x2, y2 };
+    };
+    
+    // Create visible arrows first (narrower, visible)
     const connections = this.g.selectAll('.connection')
       .data(connectionsData)
       .enter()
       .append('line')
       .attr('class', 'connection')
-      .attr('x1', (d) => {
-        // Calculate angle between nodes
-        const dx = d.next.position.x - d.current.position.x;
-        const dy = d.next.position.y - d.current.position.y;
-        const angle = Math.atan2(dy, dx);
-        // Start from edge of circle in the direction of the next node
-        // Use 30px radius (circle radius)
-        return d.current.position.x + 30 * Math.cos(angle);
-      })
-      .attr('y1', (d) => {
-        const dx = d.next.position.x - d.current.position.x;
-        const dy = d.next.position.y - d.current.position.y;
-        const angle = Math.atan2(dy, dx);
-        // Calculate base position at circle edge
-        let baseY = d.current.position.y + 30 * Math.sin(angle);
-        // For downward arrows (dy > 0), ensure minimum distance from labels
-        // Labels start at y+42 (circle bottom at y+30, plus 12px gap)
-        // Limit arrow end to y+35 (5px above label start) for downward arrows
-        if (dy > 0) {
-          baseY = Math.min(baseY, d.current.position.y + 35);
-        }
-        return baseY;
-      })
-      .attr('x2', (d) => {
-        // Calculate angle between nodes
-        const dx = d.next.position.x - d.current.position.x;
-        const dy = d.next.position.y - d.current.position.y;
-        const angle = Math.atan2(dy, dx);
-        // End at edge of circle in the direction from previous node
-        return d.next.position.x - 30 * Math.cos(angle);
-      })
-      .attr('y2', (d) => {
-        const dx = d.next.position.x - d.current.position.x;
-        const dy = d.next.position.y - d.current.position.y;
-        const angle = Math.atan2(dy, dx);
-        // Calculate base position at circle edge
-        let baseY = d.next.position.y - 30 * Math.sin(angle);
-        // For upward arrows (dy < 0), ensure minimum distance from labels
-        // Limit arrow start to y-35 (5px above label start) for upward arrows
-        if (dy < 0) {
-          baseY = Math.max(baseY, d.next.position.y - 35);
-        }
-        return baseY;
-      })
+      .attr('x1', (d) => getArrowCoords(d).x1)
+      .attr('y1', (d) => getArrowCoords(d).y1)
+      .attr('x2', (d) => getArrowCoords(d).x2)
+      .attr('y2', (d) => getArrowCoords(d).y2)
       .attr('stroke', '#2c5f7c')
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7)
       .attr('marker-end', 'url(#arrowhead)')
+      .style('pointer-events', 'none'); // Let hit area handle events
+    
+    // Create invisible hit areas (wider, transparent) - must be after visible arrows
+    const hitAreas = this.g.selectAll('.connection-hit')
+      .data(connectionsData)
+      .enter()
+      .append('line')
+      .attr('class', 'connection-hit')
+      .attr('x1', (d) => getArrowCoords(d).x1)
+      .attr('y1', (d) => getArrowCoords(d).y1)
+      .attr('x2', (d) => getArrowCoords(d).x2)
+      .attr('y2', (d) => getArrowCoords(d).y2)
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 20) // Wide invisible hit area
+      .attr('stroke-opacity', 0)
       .style('cursor', 'pointer')
-      .on('mouseenter', function() {
-        d3.select(this).attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', function() {
-        d3.select(this).attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
+      .style('pointer-events', 'all')
+      .on('mouseenter', function(event, d) {
+        // Find and highlight the corresponding visible arrow by matching data
+        const visibleArrow = this.g.selectAll('.connection').filter((_, arrowData) => 
+          arrowData && arrowData.current === d.current && arrowData.next === d.next
+        );
+        if (!visibleArrow.empty()) {
+          visibleArrow.attr('stroke-width', 6).attr('stroke-opacity', 1);
+        }
+      }.bind(this))
+      .on('mouseleave', function(event, d) {
+        const visibleArrow = this.g.selectAll('.connection').filter((_, arrowData) => 
+          arrowData && arrowData.current === d.current && arrowData.next === d.next
+        );
+        if (!visibleArrow.empty()) {
+          visibleArrow.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
+        }
+      }.bind(this))
       .on('click', (event, d) => {
         event.stopPropagation();
-        // Select the target reaction (the one the arrow points to)
         this.selectReaction(d.next);
       });
     
     // Special connections for glycolysis step 4 (Aldolase) which produces two products
     // Connection from step 4 to step 5 (vertical - dihydroxyacetone phosphate path)
+    // Create hit area first
+    const step4To5Hit = this.g.append('line')
+      .attr('class', 'connection-hit connection-hit-special')
+      .attr('data-connection-type', 'step4-to-5')
+      .attr('x1', 550)
+      .attr('y1', 100 + 30)
+      .attr('x2', 550)
+      .attr('y2', 250 - 30)
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 20)
+      .attr('stroke-opacity', 0)
+      .style('cursor', 'pointer')
+      .style('pointer-events', 'all')
+      .on('mouseenter', () => {
+        step4To5.attr('stroke-width', 6).attr('stroke-opacity', 1);
+      })
+      .on('mouseleave', () => {
+        step4To5.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
+      })
+      .on('click', (event) => {
+        event.stopPropagation();
+        this.selectReaction(this.reactions[4]); // Step 5
+      });
+    
     const step4To5 = this.g.append('line')
       .attr('class', 'connection connection-special')
       .attr('data-connection-type', 'step4-to-5')
@@ -806,19 +888,32 @@ export class MetabolismViewer {
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7)
       .attr('marker-end', 'url(#arrowhead)')
+      .style('pointer-events', 'none'); // Let hit area handle events
+    
+    // Connection from step 5 to step 6 (diagonal - converted glyceraldehyde-3-phosphate)
+    const step5To6Hit = this.g.append('line')
+      .attr('class', 'connection-hit connection-hit-special')
+      .attr('data-connection-type', 'step5-to-6')
+      .attr('x1', 550 + 30)
+      .attr('y1', 250)
+      .attr('x2', 700 - 30)
+      .attr('y2', 100)
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 20)
+      .attr('stroke-opacity', 0)
       .style('cursor', 'pointer')
-      .on('mouseenter', function() {
-        d3.select(this).attr('stroke-width', 6).attr('stroke-opacity', 1);
+      .style('pointer-events', 'all')
+      .on('mouseenter', () => {
+        step5To6.attr('stroke-width', 6).attr('stroke-opacity', 1);
       })
-      .on('mouseleave', function() {
-        d3.select(this).attr('stroke-width', 4).attr('stroke-opacity', 0.7);
+      .on('mouseleave', () => {
+        step5To6.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
       })
       .on('click', (event) => {
         event.stopPropagation();
-        this.selectReaction(this.reactions[4]); // Step 5
+        this.selectReaction(this.reactions[5]); // Step 6
       });
     
-    // Connection from step 5 to step 6 (diagonal - converted glyceraldehyde-3-phosphate)
     const step5To6 = this.g.append('line')
       .attr('class', 'connection connection-special')
       .attr('data-connection-type', 'step5-to-6')
@@ -830,38 +925,27 @@ export class MetabolismViewer {
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7)
       .attr('marker-end', 'url(#arrowhead)')
-      .style('cursor', 'pointer')
-      .on('mouseenter', function() {
-        d3.select(this).attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', function() {
-        d3.select(this).attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
-        this.selectReaction(this.reactions[5]); // Step 6
-      });
+      .style('pointer-events', 'none'); // Let hit area handle events
     
     // Connection from step 4 to step 6 (diagonal - direct glyceraldehyde-3-phosphate path)
     // This represents the glyceraldehyde-3-phosphate that goes directly to step 6
-    const step4To6 = this.g.append('line')
-      .attr('class', 'connection connection-special')
+    const step4To6Hit = this.g.append('line')
+      .attr('class', 'connection-hit connection-hit-special')
       .attr('data-connection-type', 'step4-to-6')
-      .attr('x1', 550 + 30) // Start from right edge of step 4
+      .attr('x1', 550 + 30)
       .attr('y1', 100)
-      .attr('x2', 700 - 30) // End at left edge of step 6 (same row)
+      .attr('x2', 700 - 30)
       .attr('y2', 100)
-      .attr('stroke', '#2c5f7c')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      // Solid line (removed stroke-dasharray)
-      .attr('marker-end', 'url(#arrowhead)')
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 20)
+      .attr('stroke-opacity', 0)
       .style('cursor', 'pointer')
-      .on('mouseenter', function() {
-        d3.select(this).attr('stroke-width', 6).attr('stroke-opacity', 1);
+      .style('pointer-events', 'all')
+      .on('mouseenter', () => {
+        step4To6.attr('stroke-width', 6).attr('stroke-opacity', 1);
       })
-      .on('mouseleave', function() {
-        d3.select(this).attr('stroke-width', 4).attr('stroke-opacity', 0.7);
+      .on('mouseleave', () => {
+        step4To6.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
       })
       .on('click', (event) => {
         event.stopPropagation();
@@ -915,7 +999,44 @@ export class MetabolismViewer {
         this.container.dispatchEvent(detailEvent);
       });
     
+    const step4To6 = this.g.append('line')
+      .attr('class', 'connection connection-special')
+      .attr('data-connection-type', 'step4-to-6')
+      .attr('x1', 550 + 30) // Start from right edge of step 4
+      .attr('y1', 100)
+      .attr('x2', 700 - 30) // End at left edge of step 6 (same row)
+      .attr('y2', 100)
+      .attr('stroke', '#2c5f7c')
+      .attr('stroke-width', 4)
+      .attr('stroke-opacity', 0.7)
+      // Solid line (removed stroke-dasharray)
+      .attr('marker-end', 'url(#arrowhead)')
+      .style('pointer-events', 'none'); // Let hit area handle events
+    
     // Connection from glycolysis end (pyruvate) to pyruvate oxidation (first step)
+    const glycolysisToPyruvateOxHit = this.g.append('line')
+      .attr('class', 'connection-hit connection-hit-special')
+      .attr('data-connection-type', 'glycolysis-to-pyruvate')
+      .attr('x1', 1300 + 30)
+      .attr('y1', 100)
+      .attr('x2', 1450 - 30)
+      .attr('y2', 100)
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 20)
+      .attr('stroke-opacity', 0)
+      .style('cursor', 'pointer')
+      .style('pointer-events', 'all')
+      .on('mouseenter', () => {
+        glycolysisToPyruvateOx.attr('stroke-width', 6).attr('stroke-opacity', 1);
+      })
+      .on('mouseleave', () => {
+        glycolysisToPyruvateOx.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
+      })
+      .on('click', (event) => {
+        event.stopPropagation();
+        this.selectReaction(this.reactions[glycolysisLength]); // Pyruvate oxidation step 1
+      });
+    
     const glycolysisToPyruvateOx = this.g.append('line')
       .attr('class', 'connection connection-special')
       .attr('data-connection-type', 'glycolysis-to-pyruvate')
@@ -927,17 +1048,7 @@ export class MetabolismViewer {
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7)
       .attr('marker-end', 'url(#arrowhead)')
-      .style('cursor', 'pointer')
-      .on('mouseenter', function() {
-        d3.select(this).attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', function() {
-        d3.select(this).attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
-        this.selectReaction(this.reactions[glycolysisLength]); // Pyruvate oxidation step 1
-      });
+      .style('pointer-events', 'none'); // Let hit area handle events
     
     // Connection from pyruvate oxidation end (step 4) to citric acid cycle (citrate formation)
     // Calculate angle from last pyruvate oxidation step to citrate (top of octagon)
@@ -946,6 +1057,29 @@ export class MetabolismViewer {
     const citrateX = 2050;
     const citrateY = 200; // Updated to scaled 1.5x position
     const angle = Math.atan2(citrateY - pyruvateOxEndY, citrateX - pyruvateOxEndX);
+    
+    const pyruvateOxToCACHit = this.g.append('line')
+      .attr('class', 'connection-hit connection-hit-special')
+      .attr('data-connection-type', 'pyruvate-to-cac')
+      .attr('x1', pyruvateOxEndX + 30 * Math.cos(angle))
+      .attr('y1', pyruvateOxEndY + 30 * Math.sin(angle))
+      .attr('x2', citrateX - 30 * Math.cos(angle))
+      .attr('y2', citrateY - 30 * Math.sin(angle))
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 20)
+      .attr('stroke-opacity', 0)
+      .style('cursor', 'pointer')
+      .style('pointer-events', 'all')
+      .on('mouseenter', () => {
+        pyruvateOxToCAC.attr('stroke-width', 6).attr('stroke-opacity', 1);
+      })
+      .on('mouseleave', () => {
+        pyruvateOxToCAC.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
+      })
+      .on('click', (event) => {
+        event.stopPropagation();
+        this.selectReaction(this.reactions[glycolysisLength + pyruvateOxidationLength]); // First CAC step
+      });
     
     const pyruvateOxToCAC = this.g.append('line')
       .attr('class', 'connection connection-special')
@@ -958,23 +1092,36 @@ export class MetabolismViewer {
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7)
       .attr('marker-end', 'url(#arrowhead)')
-      .style('cursor', 'pointer')
-      .on('mouseenter', function() {
-        d3.select(this).attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', function() {
-        d3.select(this).attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
-        this.selectReaction(this.reactions[glycolysisLength + pyruvateOxidationLength]); // First CAC step
-      });
+      .style('pointer-events', 'none'); // Let hit area handle events
     
     // Connection from citric acid cycle end (malate, step 8) back to start (citrate, step 1)
     // This completes the cycle - malate is at top-left, citrate is at top
     const malateX = 1891; // Updated to scaled 1.5x position
     const malateY = 266; // Updated to scaled 1.5x position
     const cycleAngle = Math.atan2(citrateY - malateY, citrateX - malateX);
+    
+    const cacCycleHit = this.g.append('line')
+      .attr('class', 'connection-hit connection-hit-special')
+      .attr('data-connection-type', 'cac-cycle')
+      .attr('x1', malateX + 30 * Math.cos(cycleAngle))
+      .attr('y1', malateY + 30 * Math.sin(cycleAngle))
+      .attr('x2', citrateX - 30 * Math.cos(cycleAngle))
+      .attr('y2', citrateY - 30 * Math.sin(cycleAngle))
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 20)
+      .attr('stroke-opacity', 0)
+      .style('cursor', 'pointer')
+      .style('pointer-events', 'all')
+      .on('mouseenter', () => {
+        cacCycle.attr('stroke-width', 6).attr('stroke-opacity', 1);
+      })
+      .on('mouseleave', () => {
+        cacCycle.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
+      })
+      .on('click', (event) => {
+        event.stopPropagation();
+        this.selectReaction(this.reactions[glycolysisLength + pyruvateOxidationLength]); // First CAC step (cycle back)
+      });
     
     const cacCycle = this.g.append('line')
       .attr('class', 'connection connection-special')
@@ -987,17 +1134,7 @@ export class MetabolismViewer {
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7)
       .attr('marker-end', 'url(#arrowhead)')
-      .style('cursor', 'pointer')
-      .on('mouseenter', function() {
-        d3.select(this).attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', function() {
-        d3.select(this).attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
-        this.selectReaction(this.reactions[glycolysisLength + pyruvateOxidationLength]); // First CAC step
-      });
+      .style('pointer-events', 'none'); // Let hit area handle events
   }
   
   drawReactions() {
@@ -1053,6 +1190,30 @@ export class MetabolismViewer {
     // Fetch PubChem image URLs for all molecules
     this.fetchMoleculeImages();
     
+    // Helper function to split compound names at hyphens for better line breaks
+    const splitCompoundName = (name) => {
+      // Split names that contain hyphens with numbers (e.g., "Glucose-6-phosphate" -> "Glucose-6-" and "phosphate")
+      // Pattern: Look for hyphen followed by number(s) and then hyphen (e.g., "-6-", "-1,6-")
+      const hyphenNumberPattern = /-(\d+[,\d]*)-/;
+      const match = name.match(hyphenNumberPattern);
+      if (match) {
+        // Split after the hyphen-number-hyphen pattern (e.g., after "-6-")
+        // Keep the hyphen with the first part: "Glucose-6-" and "phosphate"
+        const splitIndex = match.index + match[0].length; // Split after "-6-"
+        const firstPart = name.substring(0, splitIndex); // "Glucose-6-"
+        const secondPart = name.substring(splitIndex); // "phosphate"
+        // Capitalize first letter of second part if it's lowercase
+        const capitalizedSecondPart = secondPart.charAt(0).toUpperCase() + secondPart.slice(1);
+        return firstPart + ' ' + capitalizedSecondPart;
+      }
+      // For other hyphenated names, split at the last hyphen
+      const lastHyphenIndex = name.lastIndexOf('-');
+      if (lastHyphenIndex > 0 && lastHyphenIndex < name.length - 1) {
+        return name.substring(0, lastHyphenIndex + 1) + ' ' + name.substring(lastHyphenIndex + 1);
+      }
+      return name;
+    };
+    
     // Add compound name label (positioned relative to circle bottom)
     // Circle radius is 30px, so bottom edge is at y = 30 (relative to node center at 0,0)
     // Position text consistently 12px below the bottom edge of circle
@@ -1064,7 +1225,10 @@ export class MetabolismViewer {
       .attr('fill', '#2c5f7c')
       .attr('font-size', '16px')
       .attr('font-weight', '500')
-      .text(d => d.substrate.name);
+      .text(d => {
+        // Split compound names at hyphens for better line breaks
+        return splitCompoundName(d.substrate.name);
+      });
     
     // Apply text wrapping to ALL labels (even single-word ones)
     // This ensures all labels use tspans with consistent y=42 positioning
