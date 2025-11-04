@@ -938,168 +938,94 @@ export class MetabolismViewer {
       return { x1, y1, x2, y2 };
     };
     
-    // Create visible arrows first (narrower, visible)
-    // Add unique ID to each connection for direct reference
-    const connections = this.g.selectAll('.connection')
-      .data(connectionsData)
-      .enter()
-      .append('line')
-      .attr('class', 'connection')
-      .attr('data-connection-id', (d, i) => `conn-${i}`)
-      .attr('x1', (d) => getArrowCoords(d).x1)
-      .attr('y1', (d) => getArrowCoords(d).y1)
-      .attr('x2', (d) => getArrowCoords(d).x2)
-      .attr('y2', (d) => getArrowCoords(d).y2)
-      .attr('stroke', '#2c5f7c')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('pointer-events', 'none'); // Let hit area handle events
-    
-    // Create invisible hit areas (wider, transparent) - must be after visible arrows
-    // Link each hit area directly to its corresponding arrow using the same index
-    const hitAreas = this.g.selectAll('.connection-hit')
-      .data(connectionsData)
-      .enter()
-      .append('line')
-      .attr('class', 'connection-hit')
-      .attr('data-connection-id', (d, i) => `conn-${i}`)
-      .attr('x1', (d) => getArrowCoords(d).x1)
-      .attr('y1', (d) => getArrowCoords(d).y1)
-      .attr('x2', (d) => getArrowCoords(d).x2)
-      .attr('y2', (d) => getArrowCoords(d).y2)
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', 20) // Wide invisible hit area
-      .attr('stroke-opacity', 0)
-      .style('cursor', 'pointer')
-      .style('pointer-events', 'all')
-      .on('mouseenter', function(event, d) {
-        // Find ONLY the specific arrow that corresponds to this hit area using the connection ID
-        const connectionId = d3.select(this).attr('data-connection-id');
-        const visibleArrow = this.g.select(`.connection[data-connection-id="${connectionId}"]`);
-        
-        if (!visibleArrow.empty()) {
-          // Make arrow bigger on hover (stroke-width 6, same as special arrows)
+    // Generalized function to create an arrow with visible line and hit area
+    const createArrow = (coords, connectionId, className, onClick) => {
+      // Create visible arrow line
+      const visibleArrow = this.g.append('line')
+        .attr('class', `connection ${className || ''}`)
+        .attr('data-connection-id', connectionId)
+        .attr('x1', coords.x1)
+        .attr('y1', coords.y1)
+        .attr('x2', coords.x2)
+        .attr('y2', coords.y2)
+        .attr('stroke', '#2c5f7c')
+        .attr('stroke-width', 4)
+        .attr('stroke-opacity', 0.7)
+        .attr('marker-end', 'url(#arrowhead)')
+        .style('pointer-events', 'none'); // Let hit area handle events
+      
+      // Create invisible hit area (wider, transparent)
+      const hitArea = this.g.append('line')
+        .attr('class', `connection-hit ${className ? 'connection-hit-special' : ''}`)
+        .attr('data-connection-id', connectionId)
+        .attr('x1', coords.x1)
+        .attr('y1', coords.y1)
+        .attr('x2', coords.x2)
+        .attr('y2', coords.y2)
+        .attr('stroke', 'transparent')
+        .attr('stroke-width', 20) // Wide invisible hit area
+        .attr('stroke-opacity', 0)
+        .style('cursor', 'pointer')
+        .style('pointer-events', 'all')
+        .on('mouseenter', () => {
+          // Make arrow bigger on hover
           visibleArrow
             .attr('stroke-width', 6)
             .attr('stroke-opacity', 1);
-        }
-      }.bind(this))
-      .on('mouseleave', function(event, d) {
-        // Reset ONLY the specific arrow that was hovered
-        const connectionId = d3.select(this).attr('data-connection-id');
-        const visibleArrow = this.g.select(`.connection[data-connection-id="${connectionId}"]`);
-        
-        if (!visibleArrow.empty()) {
+        })
+        .on('mouseleave', () => {
           // Reset to normal size
           visibleArrow
             .attr('stroke-width', 4)
             .attr('stroke-opacity', 0.7);
-        }
-      }.bind(this))
-      .on('click', (event, d) => {
-        event.stopPropagation();
+        })
+        .on('click', (event) => {
+          event.stopPropagation();
+          if (onClick) {
+            onClick(event);
+          }
+        });
+      
+      return { visibleArrow, hitArea };
+    };
+    
+    // Create regular connections using the generalized function
+    connectionsData.forEach((d, i) => {
+      const coords = getArrowCoords(d);
+      const connectionId = `conn-${i}`;
+      createArrow(coords, connectionId, '', (event) => {
         this.selectReaction(d.next);
       });
+    });
     
     // Special connections for glycolysis step 4 (Aldolase) which produces two products
     // Connection from step 4 to step 5 (vertical - dihydroxyacetone phosphate path)
-    // Create hit area first
-    const step4To5Hit = this.g.append('line')
-      .attr('class', 'connection-hit connection-hit-special')
-      .attr('data-connection-type', 'step4-to-5')
-      .attr('x1', 550)
-      .attr('y1', 100 + 30)
-      .attr('x2', 550)
-      .attr('y2', 250 - 30)
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', 20)
-      .attr('stroke-opacity', 0)
-      .style('cursor', 'pointer')
-      .style('pointer-events', 'all')
-      .on('mouseenter', () => {
-        step4To5.attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', () => {
-        step4To5.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
+    createArrow(
+      { x1: 550, y1: 100 + 30, x2: 550, y2: 250 - 30 },
+      'step4-to-5',
+      'connection-special',
+      () => {
         this.selectReaction(this.reactions[4]); // Step 5
-      });
-    
-    const step4To5 = this.g.append('line')
-      .attr('class', 'connection connection-special')
-      .attr('data-connection-type', 'step4-to-5')
-      .attr('x1', 550)
-      .attr('y1', 100 + 30) // Start from bottom of step 4 circle
-      .attr('x2', 550)
-      .attr('y2', 250 - 30) // End at top of step 5 circle (different row) - updated for increased distance
-      .attr('stroke', '#2c5f7c')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('pointer-events', 'none'); // Let hit area handle events
+      }
+    );
     
     // Connection from step 5 to step 6 (diagonal - converted glyceraldehyde-3-phosphate)
-    const step5To6Hit = this.g.append('line')
-      .attr('class', 'connection-hit connection-hit-special')
-      .attr('data-connection-type', 'step5-to-6')
-      .attr('x1', 550 + 30)
-      .attr('y1', 250)
-      .attr('x2', 700 - 30)
-      .attr('y2', 100)
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', 20)
-      .attr('stroke-opacity', 0)
-      .style('cursor', 'pointer')
-      .style('pointer-events', 'all')
-      .on('mouseenter', () => {
-        step5To6.attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', () => {
-        step5To6.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
+    createArrow(
+      { x1: 550 + 30, y1: 250, x2: 700 - 30, y2: 100 },
+      'step5-to-6',
+      'connection-special',
+      () => {
         this.selectReaction(this.reactions[5]); // Step 6
-      });
-    
-    const step5To6 = this.g.append('line')
-      .attr('class', 'connection connection-special')
-      .attr('data-connection-type', 'step5-to-6')
-      .attr('x1', 550 + 30) // Start from right edge of step 5
-      .attr('y1', 250) // Updated for increased distance from node 4
-      .attr('x2', 700 - 30) // End at left edge of step 6 (back to main row)
-      .attr('y2', 100)
-      .attr('stroke', '#2c5f7c')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('pointer-events', 'none'); // Let hit area handle events
+      }
+    );
     
     // Connection from step 4 to step 6 (diagonal - direct glyceraldehyde-3-phosphate path)
     // This represents the glyceraldehyde-3-phosphate that goes directly to step 6
-    const step4To6Hit = this.g.append('line')
-      .attr('class', 'connection-hit connection-hit-special')
-      .attr('data-connection-type', 'step4-to-6')
-      .attr('x1', 550 + 30)
-      .attr('y1', 100)
-      .attr('x2', 700 - 30)
-      .attr('y2', 100)
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', 20)
-      .attr('stroke-opacity', 0)
-      .style('cursor', 'pointer')
-      .style('pointer-events', 'all')
-      .on('mouseenter', () => {
-        step4To6.attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', () => {
-        step4To6.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
+    createArrow(
+      { x1: 550 + 30, y1: 100, x2: 700 - 30, y2: 100 },
+      'step4-to-6',
+      'connection-special',
+      () => {
         // This arrow connects step 4 to step 6, so highlight ONLY nodes 4 and 6 (not node 5)
         const reaction6 = this.reactions[5]; // Step 6 (0-indexed: step 1 = index 0, step 6 = index 5)
         const reaction4 = this.reactions[3]; // Step 4 (0-indexed: step 4 = index 3)
@@ -1163,58 +1089,18 @@ export class MetabolismViewer {
           });
           this.container.dispatchEvent(pathwayEvent);
         }
-      });
-    
-    const step4To6 = this.g.append('line')
-      .attr('class', 'connection connection-special')
-      .attr('data-connection-type', 'step4-to-6')
-      .attr('x1', 550 + 30) // Start from right edge of step 4
-      .attr('y1', 100)
-      .attr('x2', 700 - 30) // End at left edge of step 6 (same row)
-      .attr('y2', 100)
-      .attr('stroke', '#2c5f7c')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      // Solid line (removed stroke-dasharray)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('pointer-events', 'none'); // Let hit area handle events
+      }
+    );
     
     // Connection from glycolysis end (pyruvate) to pyruvate oxidation (first step)
-    const glycolysisToPyruvateOxHit = this.g.append('line')
-      .attr('class', 'connection-hit connection-hit-special')
-      .attr('data-connection-type', 'glycolysis-to-pyruvate')
-      .attr('x1', 1300 + 30)
-      .attr('y1', 100)
-      .attr('x2', 1450 - 30)
-      .attr('y2', 100)
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', 20)
-      .attr('stroke-opacity', 0)
-      .style('cursor', 'pointer')
-      .style('pointer-events', 'all')
-      .on('mouseenter', () => {
-        glycolysisToPyruvateOx.attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', () => {
-        glycolysisToPyruvateOx.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
+    createArrow(
+      { x1: 1300 + 30, y1: 100, x2: 1450 - 30, y2: 100 },
+      'glycolysis-to-pyruvate',
+      'connection-special',
+      () => {
         this.selectReaction(this.reactions[glycolysisLength]); // Pyruvate oxidation step 1
-      });
-    
-    const glycolysisToPyruvateOx = this.g.append('line')
-      .attr('class', 'connection connection-special')
-      .attr('data-connection-type', 'glycolysis-to-pyruvate')
-      .attr('x1', 1300 + 30) // End of glycolysis
-      .attr('y1', 100)
-      .attr('x2', 1450 - 30) // Start of pyruvate oxidation (step 1)
-      .attr('y2', 100)
-      .attr('stroke', '#2c5f7c')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('pointer-events', 'none'); // Let hit area handle events
+      }
+    );
     
     // Connection from pyruvate oxidation end (step 4) to citric acid cycle (citrate formation)
     // Calculate angle from last pyruvate oxidation step to citrate (top of octagon)
@@ -1224,41 +1110,19 @@ export class MetabolismViewer {
     const citrateY = 200; // Updated to scaled 1.5x position
     const angle = Math.atan2(citrateY - pyruvateOxEndY, citrateX - pyruvateOxEndX);
     
-    const pyruvateOxToCACHit = this.g.append('line')
-      .attr('class', 'connection-hit connection-hit-special')
-      .attr('data-connection-type', 'pyruvate-to-cac')
-      .attr('x1', pyruvateOxEndX + 30 * Math.cos(angle))
-      .attr('y1', pyruvateOxEndY + 30 * Math.sin(angle))
-      .attr('x2', citrateX - 30 * Math.cos(angle))
-      .attr('y2', citrateY - 30 * Math.sin(angle))
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', 20)
-      .attr('stroke-opacity', 0)
-      .style('cursor', 'pointer')
-      .style('pointer-events', 'all')
-      .on('mouseenter', () => {
-        pyruvateOxToCAC.attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', () => {
-        pyruvateOxToCAC.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
+    createArrow(
+      {
+        x1: pyruvateOxEndX + 30 * Math.cos(angle),
+        y1: pyruvateOxEndY + 30 * Math.sin(angle),
+        x2: citrateX - 30 * Math.cos(angle),
+        y2: citrateY - 30 * Math.sin(angle)
+      },
+      'pyruvate-to-cac',
+      'connection-special',
+      () => {
         this.selectReaction(this.reactions[glycolysisLength + pyruvateOxidationLength]); // First CAC step
-      });
-    
-    const pyruvateOxToCAC = this.g.append('line')
-      .attr('class', 'connection connection-special')
-      .attr('data-connection-type', 'pyruvate-to-cac')
-      .attr('x1', pyruvateOxEndX + 30 * Math.cos(angle)) // End of pyruvate oxidation (step 4)
-      .attr('y1', pyruvateOxEndY + 30 * Math.sin(angle))
-      .attr('x2', citrateX - 30 * Math.cos(angle)) // Start of citric acid cycle (citrate formation)
-      .attr('y2', citrateY - 30 * Math.sin(angle))
-      .attr('stroke', '#2c5f7c')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('pointer-events', 'none'); // Let hit area handle events
+      }
+    );
     
     // Connection from citric acid cycle end (malate, step 8) back to start (citrate, step 1)
     // This completes the cycle - malate is at top-left, citrate is at top
@@ -1266,41 +1130,19 @@ export class MetabolismViewer {
     const malateY = 266; // Updated to scaled 1.5x position
     const cycleAngle = Math.atan2(citrateY - malateY, citrateX - malateX);
     
-    const cacCycleHit = this.g.append('line')
-      .attr('class', 'connection-hit connection-hit-special')
-      .attr('data-connection-type', 'cac-cycle')
-      .attr('x1', malateX + 30 * Math.cos(cycleAngle))
-      .attr('y1', malateY + 30 * Math.sin(cycleAngle))
-      .attr('x2', citrateX - 30 * Math.cos(cycleAngle))
-      .attr('y2', citrateY - 30 * Math.sin(cycleAngle))
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', 20)
-      .attr('stroke-opacity', 0)
-      .style('cursor', 'pointer')
-      .style('pointer-events', 'all')
-      .on('mouseenter', () => {
-        cacCycle.attr('stroke-width', 6).attr('stroke-opacity', 1);
-      })
-      .on('mouseleave', () => {
-        cacCycle.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
+    createArrow(
+      {
+        x1: malateX + 30 * Math.cos(cycleAngle),
+        y1: malateY + 30 * Math.sin(cycleAngle),
+        x2: citrateX - 30 * Math.cos(cycleAngle),
+        y2: citrateY - 30 * Math.sin(cycleAngle)
+      },
+      'cac-cycle',
+      'connection-special',
+      () => {
         this.selectReaction(this.reactions[glycolysisLength + pyruvateOxidationLength]); // First CAC step (cycle back)
-      });
-    
-    const cacCycle = this.g.append('line')
-      .attr('class', 'connection connection-special')
-      .attr('data-connection-type', 'cac-cycle')
-      .attr('x1', malateX + 30 * Math.cos(cycleAngle)) // End of citric acid cycle (malate)
-      .attr('y1', malateY + 30 * Math.sin(cycleAngle))
-      .attr('x2', citrateX - 30 * Math.cos(cycleAngle)) // Start of citric acid cycle (citrate)
-      .attr('y2', citrateY - 30 * Math.sin(cycleAngle))
-      .attr('stroke', '#2c5f7c')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('pointer-events', 'none'); // Let hit area handle events
+      }
+    );
   }
   
   drawReactions() {
@@ -1668,6 +1510,7 @@ export class MetabolismViewer {
     this.reactionGroups.select('.reaction-node')
       .on('click', (event, d) => {
         event.stopPropagation();
+        event.preventDefault();
         // Show the substrate molecule when clicking node, and pass the reaction node for highlighting
         this.selectMolecule(d.substrate, d);
       })
