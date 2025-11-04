@@ -133,16 +133,43 @@ export class MetabolismViewer {
         this.svg.style('background', newBgColor);
       }
       // Update all molecule image backgrounds
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
       if (this.reactionGroups) {
         const imageBgColor = this.getImageBgColor();
         this.reactionGroups.selectAll('.molecule-image-bg')
-          .attr('fill', imageBgColor);
+          .attr('fill', imageBgColor)
+          .attr('stroke', isDarkMode ? '#000000' : '#dee2e6');
         
         // Apply filter to images in dark mode
-        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
         const imageFilter = isDarkMode ? 'invert(1) hue-rotate(180deg)' : 'none';
         this.reactionGroups.selectAll('image.molecule-structure-image')
           .style('filter', imageFilter);
+      }
+      
+      // Update all rect elements that should be black in dark mode
+      if (this.svg && isDarkMode) {
+        // Update all rects except buttons, tooltips, and transparent ones
+        this.svg.selectAll('rect')
+          .filter(function() {
+            const fill = d3.select(this).attr('fill');
+            const className = d3.select(this).attr('class') || '';
+            // Keep buttons, tooltips, and transparent rects as they are
+            return fill !== 'transparent' && 
+                   fill !== '#667eea' && 
+                   fill !== '#2c5f7c' && 
+                   fill !== '#5568d3' &&
+                   !className.includes('button') &&
+                   !className.includes('tooltip');
+          })
+          .attr('fill', '#000000');
+        
+        // Ensure molecule-image-group backgrounds are black
+        this.svg.selectAll('g.molecule-image-group')
+          .style('background-color', '#000000');
+      } else if (this.svg && !isDarkMode) {
+        // Reset to white in light mode
+        this.svg.selectAll('g.molecule-image-group')
+          .style('background-color', '#ffffff');
       }
     };
     
@@ -260,6 +287,9 @@ export class MetabolismViewer {
         
         if (newWidth > 0 && newHeight > 0 && 
             (newWidth !== this.options.width || newHeight !== this.options.height)) {
+          const oldWidth = this.options.width;
+          const oldHeight = this.options.height;
+          
           this.options.width = newWidth;
           this.options.height = newHeight;
           
@@ -268,6 +298,27 @@ export class MetabolismViewer {
             this.svg
               .attr('width', newWidth)
               .attr('height', newHeight);
+            
+            // Update zoom transform to account for size change
+            // This ensures the view stays centered and properly scaled
+            if (this.zoom && this.g) {
+              const currentTransform = d3.zoomTransform(this.g.node());
+              const scaleX = newWidth / oldWidth;
+              const scaleY = newHeight / oldHeight;
+              
+              // Adjust transform to maintain relative position
+              const newTransform = currentTransform
+                .scale(currentTransform.k)
+                .translate(
+                  currentTransform.x * scaleX,
+                  currentTransform.y * scaleY
+                );
+              
+              // Apply the updated transform
+              this.g.transition()
+                .duration(0)
+                .call(this.zoom.transform, newTransform);
+            }
           }
           
           // Update help button position relative to theme toggle button
@@ -314,6 +365,12 @@ export class MetabolismViewer {
       });
       this.resizeObserver.observe(this.container);
     }
+    
+    // Trigger initial resize check to ensure correct dimensions
+    // This handles cases where the container size changes after initialization
+    setTimeout(() => {
+      this.handleResize();
+    }, 100);
   }
   
   destroy() {
@@ -628,8 +685,9 @@ export class MetabolismViewer {
       .attr('stroke', '#2c5f7c')
       .attr('fill', '#5fa8d3');
     
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     this.reactionGroups.selectAll('.molecule-image-bg')
-      .attr('stroke', '#dee2e6')
+      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
       .attr('stroke-width', 2)
       .attr('fill', this.getImageBgColor());
     
@@ -796,8 +854,9 @@ export class MetabolismViewer {
       .attr('stroke', '#2c5f7c')
       .attr('fill', '#5fa8d3');
     
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     this.reactionGroups.selectAll('.molecule-image-bg')
-      .attr('stroke', '#dee2e6')
+      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
       .attr('stroke-width', 2)
       .attr('fill', this.getImageBgColor());
     
@@ -807,15 +866,28 @@ export class MetabolismViewer {
   }
   
   drawConnections() {
-    // Add arrow marker definition
-    this.svg.append('defs')
-      .append('marker')
+    // Add arrow marker definition (normal size)
+    const defs = this.svg.append('defs');
+    defs.append('marker')
       .attr('id', 'arrowhead')
       .attr('viewBox', '0 -5 10 10')
       .attr('refX', 8)
       .attr('refY', 0)
       .attr('markerWidth', 6)
       .attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('fill', '#2c5f7c');
+    
+    // Add larger arrow marker for hover state
+    defs.append('marker')
+      .attr('id', 'arrowhead-hover')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 8)
+      .attr('refY', 0)
+      .attr('markerWidth', 10)
+      .attr('markerHeight', 10)
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
@@ -867,11 +939,13 @@ export class MetabolismViewer {
     };
     
     // Create visible arrows first (narrower, visible)
+    // Add unique ID to each connection for direct reference
     const connections = this.g.selectAll('.connection')
       .data(connectionsData)
       .enter()
       .append('line')
       .attr('class', 'connection')
+      .attr('data-connection-id', (d, i) => `conn-${i}`)
       .attr('x1', (d) => getArrowCoords(d).x1)
       .attr('y1', (d) => getArrowCoords(d).y1)
       .attr('x2', (d) => getArrowCoords(d).x2)
@@ -883,11 +957,13 @@ export class MetabolismViewer {
       .style('pointer-events', 'none'); // Let hit area handle events
     
     // Create invisible hit areas (wider, transparent) - must be after visible arrows
+    // Link each hit area directly to its corresponding arrow using the same index
     const hitAreas = this.g.selectAll('.connection-hit')
       .data(connectionsData)
       .enter()
       .append('line')
       .attr('class', 'connection-hit')
+      .attr('data-connection-id', (d, i) => `conn-${i}`)
       .attr('x1', (d) => getArrowCoords(d).x1)
       .attr('y1', (d) => getArrowCoords(d).y1)
       .attr('x2', (d) => getArrowCoords(d).x2)
@@ -898,20 +974,27 @@ export class MetabolismViewer {
       .style('cursor', 'pointer')
       .style('pointer-events', 'all')
       .on('mouseenter', function(event, d) {
-        // Find and highlight the corresponding visible arrow by matching data
-        const visibleArrow = this.g.selectAll('.connection').filter((_, arrowData) => 
-          arrowData && arrowData.current === d.current && arrowData.next === d.next
-        );
+        // Find ONLY the specific arrow that corresponds to this hit area using the connection ID
+        const connectionId = d3.select(this).attr('data-connection-id');
+        const visibleArrow = this.g.select(`.connection[data-connection-id="${connectionId}"]`);
+        
         if (!visibleArrow.empty()) {
-          visibleArrow.attr('stroke-width', 6).attr('stroke-opacity', 1);
+          // Make arrow bigger on hover (stroke-width 6, same as special arrows)
+          visibleArrow
+            .attr('stroke-width', 6)
+            .attr('stroke-opacity', 1);
         }
       }.bind(this))
       .on('mouseleave', function(event, d) {
-        const visibleArrow = this.g.selectAll('.connection').filter((_, arrowData) => 
-          arrowData && arrowData.current === d.current && arrowData.next === d.next
-        );
+        // Reset ONLY the specific arrow that was hovered
+        const connectionId = d3.select(this).attr('data-connection-id');
+        const visibleArrow = this.g.select(`.connection[data-connection-id="${connectionId}"]`);
+        
         if (!visibleArrow.empty()) {
-          visibleArrow.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
+          // Reset to normal size
+          visibleArrow
+            .attr('stroke-width', 4)
+            .attr('stroke-opacity', 0.7);
         }
       }.bind(this))
       .on('click', (event, d) => {
@@ -1017,15 +1100,22 @@ export class MetabolismViewer {
       })
       .on('click', (event) => {
         event.stopPropagation();
-        // This arrow connects step 4 to step 6, so highlight nodes 4 and 6
+        // This arrow connects step 4 to step 6, so highlight ONLY nodes 4 and 6 (not node 5)
         const reaction6 = this.reactions[5]; // Step 6 (0-indexed: step 1 = index 0, step 6 = index 5)
         const reaction4 = this.reactions[3]; // Step 4 (0-indexed: step 4 = index 3)
         
-        // Use selectReaction to properly handle selection and pathway updates
-        // This will highlight reaction 6 and its previous reaction (step 5)
-        this.selectReaction(reaction6);
+        // Reset all highlights first
+        this.reactionGroups.selectAll('.reaction-circle')
+          .attr('stroke-width', 2)
+          .attr('stroke', '#2c5f7c')
+          .attr('fill', '#5fa8d3');
         
-        // Additionally highlight node 4 (substrate source) since this arrow connects step 4 to step 6
+        this.reactionGroups.selectAll('.molecule-image-bg')
+          .attr('stroke', '#dee2e6')
+          .attr('stroke-width', 2)
+          .attr('fill', this.getImageBgColor());
+        
+        // Highlight node 4 (substrate source)
         const reaction4Group = this.reactionGroups.filter(d => d === reaction4);
         reaction4Group.select('.reaction-circle')
           .attr('stroke-width', 4)
@@ -1035,6 +1125,44 @@ export class MetabolismViewer {
           .attr('stroke', '#ff6b6b')
           .attr('stroke-width', 4)
           .attr('fill', '#fff5f5');
+        
+        // Highlight node 6 (target) - but NOT node 5
+        const reaction6Group = this.reactionGroups.filter(d => d === reaction6);
+        reaction6Group.select('.reaction-circle')
+          .attr('stroke-width', 4)
+          .attr('stroke', '#ff6b6b')
+          .attr('fill', '#ff8787');
+        reaction6Group.select('.molecule-image-bg')
+          .attr('stroke', '#ff6b6b')
+          .attr('stroke-width', 4)
+          .attr('fill', '#fff5f5');
+        
+        // Update selection state
+        this.selectedReaction = reaction6;
+        this.selectedMolecule = null;
+        this.selectedNode = null;
+        this.selectedPathway = null;
+        
+        // Dispatch reaction selected event
+        const detailEvent = new CustomEvent('reaction-selected', {
+          detail: reaction6
+        });
+        this.container.dispatchEvent(detailEvent);
+        
+        // Also update pathway detail panel
+        const pathway = this.getPathwayForReaction(reaction6);
+        if (pathway) {
+          const pathwayEvent = new CustomEvent('pathway-updated', {
+            detail: {
+              summary: pathway.summary,
+              reactions: pathway.reactions,
+              pathway: pathway,
+              selectedReaction: reaction6,
+              selectedType: 'reaction'
+            }
+          });
+          this.container.dispatchEvent(pathwayEvent);
+        }
       });
     
     const step4To6 = this.g.append('line')
@@ -1189,16 +1317,6 @@ export class MetabolismViewer {
       .attr('stroke-width', 2)
       .attr('class', 'reaction-circle');
     
-    // Add step number (centered in circle)
-    nodes.append('text')
-      .attr('class', 'step-number')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '.3em')
-      .attr('fill', 'white')
-      .attr('font-size', '16px')
-      .attr('font-weight', 'bold')
-      .text(d => d.step);
-    
     // Create image group for 2D structure (initially hidden)
     const imageGroups = nodes.append('g')
       .attr('class', 'molecule-image-group')
@@ -1206,6 +1324,7 @@ export class MetabolismViewer {
     
     // Create image placeholder that will be updated when PubChem data is fetched
     // Add background rectangle for better visibility
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     imageGroups.append('rect')
       .attr('class', 'molecule-image-bg')
       .attr('x', -55)
@@ -1213,12 +1332,11 @@ export class MetabolismViewer {
       .attr('width', 110)
       .attr('height', 110)
       .attr('fill', this.getImageBgColor())
-      .attr('stroke', '#dee2e6')
+      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
       .attr('stroke-width', 2)
       .attr('rx', 4);
     
     // Apply initial filter based on current theme
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     const imageFilter = isDarkMode ? 'invert(1) hue-rotate(180deg)' : 'none';
     
     imageGroups.append('image')
@@ -1259,9 +1377,9 @@ export class MetabolismViewer {
     
     // Add compound name label (positioned relative to circle bottom)
     // Circle radius is 30px, so bottom edge is at y = 30 (relative to node center at 0,0)
-    // Position text consistently 12px below the bottom edge of circle
-    // Total distance from node center: 30 (radius) + 12 (gap) = 42px
-    // ALL labels must use y=42 with dominant-baseline='hanging' for consistency
+    // Position text consistently 8px below the bottom edge of circle
+    // Total distance from node center: 30 (radius) + 8 (gap) = 38px
+    // ALL labels must use y=38 with dominant-baseline='hanging' for consistency
     const labels = nodes.append('text')
       .attr('text-anchor', 'middle')
       .attr('x', 0) // Center horizontally
@@ -1274,7 +1392,7 @@ export class MetabolismViewer {
       });
     
     // Apply text wrapping to ALL labels (even single-word ones)
-    // This ensures all labels use tspans with consistent y=42 positioning
+    // This ensures all labels use tspans with consistent y=38 positioning
     labels.each(function() {
       const textEl = d3.select(this);
       const originalText = textEl.text();
@@ -1283,11 +1401,11 @@ export class MetabolismViewer {
       // Limit text width to 120px to force wrapping for long names
       textEl.call(MetabolismViewer.prototype.wrapText, 120);
       
-      // Verify first tspan has y=42 and dominant-baseline='hanging'
+      // Verify first tspan has y=38 and dominant-baseline='hanging'
       // Don't override subsequent lines - they use absolute positioning
       const firstTspan = textEl.select('tspan:first-child');
       if (!firstTspan.empty()) {
-        firstTspan.attr('y', 42);
+        firstTspan.attr('y', 38);
         firstTspan.attr('dominant-baseline', 'hanging');
       }
       
@@ -1313,8 +1431,8 @@ export class MetabolismViewer {
       const fontSize = 16; // Font size in pixels
       const lineSpacing = 16; // Tight spacing (16px = font size) to show wrapped lines are part of continuous name
       const x = textEl.attr('x') || '0';
-      // Always use y=42 for consistency (30 circle radius + 12px gap)
-      const baseY = 42;
+      // Always use y=38 for consistency (30 circle radius + 8px gap)
+      const baseY = 38;
       
       // Clear existing text
       textEl.text(null);
@@ -1326,7 +1444,7 @@ export class MetabolismViewer {
         
         if (!tspan) {
           // Create first tspan only when we have content
-          // ALL labels use y=42 with hanging baseline for consistent positioning
+          // ALL labels use y=38 with hanging baseline for consistent positioning
           tspan = textEl.append('tspan')
             .attr('x', x)
             .attr('y', baseY)
@@ -1387,7 +1505,7 @@ export class MetabolismViewer {
   }
   
   updateNodeDisplay(zoomLevel) {
-    const zoomThreshold = 1.0; // Show images when zoomed in beyond this threshold (decreased from 1.5)
+    const zoomThreshold = 0.5; // Show images when zoomed in beyond this threshold (decreased from 1.5)
     const nodeRadius = zoomLevel >= zoomThreshold ? 55 : 30; // Larger radius when showing images
     
     // Update arrow connections to avoid overlap
@@ -1396,23 +1514,20 @@ export class MetabolismViewer {
     this.reactionGroups.each(function(d) {
       const nodeGroup = d3.select(this);
       const circle = nodeGroup.select('.reaction-circle');
-      const stepText = nodeGroup.select('.step-number');
       const imageGroup = nodeGroup.select('.molecule-image-group');
       const bgRect = imageGroup.select('.molecule-image-bg');
       
       if (zoomLevel >= zoomThreshold) {
-        // Show image, hide circle and step number
+        // Show image, hide circle
         circle.style('display', 'none');
-        stepText.style('display', 'none');
         
         // Show image if it exists
         if (!imageGroup.empty()) {
           imageGroup.style('display', 'block');
         }
       } else {
-        // Show circle and step number, hide image
+        // Show circle, hide image
         circle.style('display', 'block');
-        stepText.style('display', 'block');
         if (!imageGroup.empty()) {
           imageGroup.style('display', 'none');
         }
@@ -1429,7 +1544,7 @@ export class MetabolismViewer {
   }
   
   updateArrowConnections(zoomLevel, nodeRadius) {
-    const zoomThreshold = 1.0; // Decreased from 1.5 to change view mode earlier
+    const zoomThreshold = 0.5; // Decreased from 1.5 to change view mode earlier
     const radius = zoomLevel >= zoomThreshold ? nodeRadius : 30;
     
     // Update regular connections based on zoom level
@@ -1588,8 +1703,9 @@ export class MetabolismViewer {
       .attr('stroke', '#2c5f7c')
       .attr('fill', '#5fa8d3');
     
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     this.reactionGroups.selectAll('.molecule-image-bg')
-      .attr('stroke', '#dee2e6')
+      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
       .attr('stroke-width', 2)
       .attr('fill', this.getImageBgColor());
     
@@ -1668,8 +1784,9 @@ export class MetabolismViewer {
       .attr('fill', '#5fa8d3');
     
     // Reset image backgrounds
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     this.reactionGroups.selectAll('.molecule-image-bg')
-      .attr('stroke', '#dee2e6')
+      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
       .attr('stroke-width', 2)
       .attr('fill', this.getImageBgColor());
     
@@ -1758,8 +1875,9 @@ export class MetabolismViewer {
       .attr('fill', '#5fa8d3');
     
     // Reset image backgrounds
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     this.reactionGroups.selectAll('.molecule-image-bg')
-      .attr('stroke', '#dee2e6')
+      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
       .attr('stroke-width', 2)
       .attr('fill', this.getImageBgColor());
     

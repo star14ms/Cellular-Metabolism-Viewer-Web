@@ -54,11 +54,13 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background-color: var(--bg-primary);
 }
 
 body {
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--bg-primary);
 }
 
 .app-container {
@@ -403,7 +405,7 @@ body {
 .regulatory-steps li {
   padding: 0.75rem;
   margin-bottom: 0.5rem;
-  background: #f8f9fa;
+  background: var(--bg-panel-secondary);
   border-left: 3px solid #667eea;
   border-radius: 4px;
 }
