@@ -3,12 +3,45 @@
   font-size: 16px;
   line-height: 1.6;
   font-weight: 400;
-  color: #2c3e50;
-  background-color: #f5f7fa;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  /* Light theme colors (default) */
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #fafafa;
+  --bg-panel: #ffffff;
+  --bg-panel-secondary: #f8f9fa;
+  --bg-image: #ffffff; /* For image backgrounds */
+  --text-primary: #2c3e50;
+  --text-secondary: #6c757d;
+  --text-tertiary: #495057;
+  --border-color: #dee2e6;
+  --border-color-light: #e9ecef;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --shadow-dark: rgba(0, 0, 0, 0.2);
+  
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+}
+
+[data-theme="dark"] {
+  /* Dark theme colors - all backgrounds are black */
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+  --bg-tertiary: #000000;
+  --bg-panel: #000000;
+  --bg-panel-secondary: #000000;
+  --bg-image: #000000; /* For image backgrounds */
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #c0c0c0;
+  --border-color: #404040;
+  --border-color-light: #353535;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --shadow-dark: rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -93,7 +126,7 @@ body {
   flex: 1 1 0%;
   display: flex;
   flex-direction: column;
-  background: #fafafa;
+  background: var(--bg-tertiary);
   overflow: hidden;
   min-height: 0;
   min-width: 0;
@@ -102,7 +135,7 @@ body {
 
 .panel-resizer {
   width: 4px;
-  background-color: #e9ecef;
+  background-color: var(--border-color-light);
   cursor: col-resize;
   user-select: none;
   flex-shrink: 0;
@@ -175,7 +208,7 @@ body {
   flex: 0 0 25%;
   min-width: 200px;
   max-width: 50%;
-  background: white;
+  background: var(--bg-panel);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -184,8 +217,8 @@ body {
 
 .detail-tabs {
   display: flex;
-  border-bottom: 2px solid #e9ecef;
-  background: #f8f9fa;
+  border-bottom: 2px solid var(--border-color-light);
+  background: var(--bg-panel-secondary);
   gap: 0;
 }
 
@@ -218,7 +251,7 @@ body {
   cursor: pointer;
   font-size: 1rem;
   font-weight: 500;
-  color: #6c757d;
+  color: var(--text-secondary);
   transition: all 0.2s;
   box-sizing: border-box;
   vertical-align: middle;
@@ -226,14 +259,14 @@ body {
 }
 
 .detail-tab:hover {
-  background: #e9ecef;
-  color: #495057;
+  background: var(--border-color-light);
+  color: var(--text-primary);
 }
 
 .detail-tab.active {
   color: #667eea;
   border-bottom-color: #667eea;
-  background: white;
+  background: var(--bg-panel);
 }
 
 .detail-content {
@@ -260,7 +293,7 @@ body {
 .detail-placeholder {
   padding: 3rem 2rem;
   text-align: center;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-size: 1.1rem;
 }
 
@@ -292,7 +325,7 @@ body {
   gap: 1rem;
   flex-wrap: wrap;
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--bg-panel-secondary);
   border-radius: 6px;
 }
 
@@ -301,9 +334,9 @@ body {
   min-width: 150px;
   text-align: center;
   padding: 0.75rem;
-  background: white;
+  background: var(--bg-panel);
   border-radius: 4px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--border-color);
 }
 
 .reaction-arrow {
@@ -328,7 +361,7 @@ body {
 
 .pathway-description {
   line-height: 1.6;
-  color: #495057;
+  color: var(--text-tertiary);
 }
 
 .pathway-stats-grid {
@@ -336,7 +369,7 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--bg-panel-secondary);
   border-radius: 6px;
 }
 
@@ -345,7 +378,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem;
-  background: white;
+  background: var(--bg-panel);
   border-radius: 4px;
   border: 1px solid #dee2e6;
 }
@@ -388,19 +421,19 @@ body {
 
 .reaction-item {
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--bg-panel-secondary);
   border-radius: 6px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--border-color);
   transition: all 0.2s;
 }
 
 .reaction-item:hover {
-  background: #e9ecef;
+  background: var(--border-color-light);
   border-color: #667eea;
 }
 
 .reaction-item-selected {
-  background: #fff5f5 !important;
+  background: var(--bg-panel-secondary) !important;
   border: 2px solid #ff6b6b !important;
   box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
 }
@@ -418,7 +451,7 @@ body {
 .reaction-selection-note {
   margin-top: 0.5rem;
   padding: 0.5rem;
-  background: #fff;
+  background: var(--bg-panel);
   border-radius: 4px;
   font-size: 0.85rem;
   color: #667eea;
@@ -429,11 +462,11 @@ body {
 .pathway-selection-indicator {
   margin-top: 0.5rem;
   padding: 0.75rem;
-  background: #e7f3ff;
+  background: var(--bg-panel-secondary);
   border-radius: 6px;
   border-left: 4px solid #667eea;
   font-size: 0.9rem;
-  color: #495057;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -446,13 +479,13 @@ body {
 
 .reaction-name {
   font-weight: 500;
-  color: #212529;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
 .reaction-enzyme {
   font-size: 0.9rem;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -465,13 +498,13 @@ body {
 .detail-header h2 {
   margin: 0;
   font-size: 1.5rem;
-  color: #2c3e50;
+  color: var(--text-primary);
   border-bottom: 2px solid #667eea;
   padding-bottom: 0.5rem;
 }
 
 .detail-section {
-  background: #f8f9fa;
+  background: var(--bg-panel-secondary);
   padding: 1.25rem;
   border-radius: 6px;
   border-left: 4px solid #667eea;
@@ -480,7 +513,7 @@ body {
 .detail-section h3 {
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
-  color: #495057;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -488,7 +521,7 @@ body {
 .enzyme-info,
 .cosubstrate-info,
 .byproduct-info {
-  background: white;
+  background: var(--bg-panel);
   padding: 1rem;
   border-radius: 4px;
   margin-bottom: 0.75rem;
@@ -498,21 +531,21 @@ body {
 .enzyme-name {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .molecule-formula {
   font-family: 'Courier New', monospace;
   font-size: 0.95rem;
-  color: #495057;
+  color: var(--text-tertiary);
   margin-bottom: 0.5rem;
 }
 
 .molecule-description,
 .enzyme-description {
   font-size: 0.9rem;
-  color: #6c757d;
+  color: var(--text-secondary);
   margin-top: 0.5rem;
   line-height: 1.6;
 }
@@ -527,7 +560,7 @@ body {
 .enzyme-cofactors {
   margin-top: 0.75rem;
   font-size: 0.9rem;
-  color: #495057;
+  color: var(--text-tertiary);
 }
 
 .consumed-badge,
@@ -556,14 +589,14 @@ body {
 
 .structure-label {
   font-size: 0.85rem;
-  color: #6c757d;
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
   font-family: 'Courier New', monospace;
 }
 
 .structure-representation {
-  background: white;
-  border: 1px solid #dee2e6;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 1rem;
 }
@@ -581,7 +614,7 @@ body {
 
 .structure-note {
   font-size: 0.85rem;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -589,7 +622,7 @@ body {
 .pubchem-loading {
   margin-top: 1rem;
   padding: 0.75rem;
-  background: #e7f3ff;
+  background: var(--bg-panel-secondary);
   border-radius: 4px;
   text-align: center;
 }
@@ -602,8 +635,8 @@ body {
 .pubchem-data {
   margin-top: 1rem;
   padding: 1rem;
-  background: #f0f8ff;
-  border: 1px solid #b3d9ff;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
 }
 
@@ -613,7 +646,7 @@ body {
   align-items: center;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #b3d9ff;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .pubchem-link {
@@ -636,10 +669,11 @@ body {
 .pubchem-property {
   font-size: 0.9rem;
   line-height: 1.6;
+  color: var(--text-primary);
 }
 
 .pubchem-property strong {
-  color: #495057;
+  color: var(--text-tertiary);
   margin-right: 0.5rem;
 }
 
@@ -649,12 +683,12 @@ body {
   display: block;
   font-family: 'Courier New', monospace;
   font-size: 0.85rem;
-  background: white;
+  background: var(--bg-panel);
   padding: 0.5rem;
   border-radius: 4px;
   margin-top: 0.25rem;
   word-break: break-all;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--border-color);
 }
 
 .pubchem-error {
@@ -689,14 +723,14 @@ body {
 .structure-image-label {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #495057;
+  color: var(--text-tertiary);
   margin-bottom: 0.5rem;
   text-align: center;
 }
 
 .structure-image-wrapper {
-  background: white;
-  border: 1px solid #dee2e6;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 0.5rem;
   display: flex;
@@ -709,6 +743,12 @@ body {
   max-width: 100%;
   height: auto;
   display: block;
+}
+
+/* Invert images in dark mode for better visibility on black background */
+[data-theme="dark"] .structure-image,
+[data-theme="dark"] image.molecule-structure-image {
+  filter: invert(1) hue-rotate(180deg);
 }
 
 .structure-image-error {
@@ -726,19 +766,19 @@ body {
 
 .condition-item {
   padding: 0.75rem;
-  background: white;
+  background: var(--bg-panel);
   border-radius: 4px;
   font-size: 0.95rem;
   line-height: 1.6;
 }
 
 .condition-item strong {
-  color: #495057;
+  color: var(--text-tertiary);
   margin-right: 0.5rem;
 }
 
 .condition-item.regulation {
-  background: #e7f3ff;
+  background: var(--bg-panel-secondary);
   border-left: 3px solid #2196F3;
 }
 
@@ -747,8 +787,53 @@ body {
   transition: transform 0.2s;
 }
 
+/* Arrow hover effects - transitions handled via JavaScript */
+.connection {
+  transition: stroke-width 0.2s ease, stroke-opacity 0.2s ease;
+}
+
 .reaction-node:hover {
   transform: scale(1.1);
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px var(--shadow-dark);
+  border-color: var(--text-primary);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+.theme-icon {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover .theme-icon {
+  transform: rotate(15deg);
 }
 
 /* Scrollbar styling */
@@ -757,16 +842,16 @@ body {
 }
 
 .detail-panel::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--bg-panel-secondary);
 }
 
 .detail-panel::-webkit-scrollbar-thumb {
-  background: #888;
+  background: var(--border-color);
   border-radius: 4px;
 }
 
 .detail-panel::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--text-secondary);
 }
 
 /* Responsive design */

@@ -7,6 +7,15 @@ import { glycolysisReactions, glycolysisSummary } from './data/glycolysis.js'
 import { pyruvateOxidationReactions, pyruvateOxidationSummary } from './data/pyruvateOxidation.js'
 import { citricAcidCycleReactions, citricAcidCycleSummary } from './data/citricAcidCycle.js'
 
+// Initialize theme IMMEDIATELY before anything else to prevent flash
+const initTheme = () => {
+  const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark mode
+  document.documentElement.setAttribute('data-theme', savedTheme);
+};
+
+// Initialize theme right away
+initTheme();
+
 const app = document.querySelector('#app')
 
 if (!app) {
@@ -14,6 +23,9 @@ if (!app) {
 } else {
   app.innerHTML = `
     <div class="app-container">
+        <button id="theme-toggle" class="theme-toggle" title="Toggle light/dark mode" aria-label="Toggle theme">
+          <span class="theme-icon">🌙</span>
+        </button>
         <div class="main-content">
           <div class="viewer-panel">
             <div id="metabolism-viewer" class="metabolism-viewer"></div>
@@ -36,6 +48,36 @@ if (!app) {
       </div>
     </div>
   `
+  
+  // Update theme icon based on current theme
+  const updateThemeIcon = (theme) => {
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      const icon = themeToggle.querySelector('.theme-icon');
+      if (icon) {
+        icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+      }
+    }
+  };
+  
+  // Toggle theme
+  const toggleTheme = () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon(newTheme);
+  };
+  
+  // Update icon based on current theme
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  updateThemeIcon(currentTheme);
+  
+  // Add theme toggle button event listener
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+  }
 
   // Hide detail panel by default
   const detailPanel = document.querySelector('.detail-panel')

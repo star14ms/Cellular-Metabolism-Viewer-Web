@@ -71,6 +71,14 @@ export class MetabolismViewer {
     this.currentZoom = 1;
     this.moleculeImages = new Map(); // Cache for molecule 2D images
     
+    // Helper to get image background color based on theme
+    this.getImageBgColor = () => {
+      const computedStyle = window.getComputedStyle(document.documentElement);
+      return computedStyle.getPropertyValue('--bg-image').trim() || 
+             computedStyle.getPropertyValue('--bg-panel').trim() || 
+             'white';
+    };
+    
     console.log('MetabolismViewer initialized with', this.reactions.length, 'reactions')
     
     this.init();
@@ -101,13 +109,54 @@ export class MetabolismViewer {
     // Create SVG container
     // Width and height attributes use container dimensions (window-based)
     // No viewBox - SVG will scale naturally with container
+    // Get initial background color from CSS variable
+    const getInitialBgColor = () => {
+      const computedStyle = window.getComputedStyle(document.documentElement);
+      return computedStyle.getPropertyValue('--bg-tertiary').trim() || '#fafafa';
+    };
+    
+    const bgColor = getInitialBgColor();
+    
     this.svg = d3.select(this.container)
       .append('svg')
       .attr('width', this.options.width)
       .attr('height', this.options.height)
-      .style('background', '#fafafa')
+      .style('background', bgColor)
       .style('cursor', 'grab')
       .style('display', 'block');
+    
+    // Update SVG background and image backgrounds when theme changes
+    const updateSVGBackground = () => {
+      const computedStyle = window.getComputedStyle(document.documentElement);
+      const newBgColor = computedStyle.getPropertyValue('--bg-tertiary').trim() || '#fafafa';
+      if (this.svg) {
+        this.svg.style('background', newBgColor);
+      }
+      // Update all molecule image backgrounds
+      if (this.reactionGroups) {
+        const imageBgColor = this.getImageBgColor();
+        this.reactionGroups.selectAll('.molecule-image-bg')
+          .attr('fill', imageBgColor);
+        
+        // Apply filter to images in dark mode
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        const imageFilter = isDarkMode ? 'invert(1) hue-rotate(180deg)' : 'none';
+        this.reactionGroups.selectAll('image.molecule-structure-image')
+          .style('filter', imageFilter);
+      }
+    };
+    
+    // Listen for theme changes
+    const observer = new MutationObserver(() => {
+      updateSVGBackground();
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
+    
+    // Store observer for cleanup if needed
+    this.themeObserver = observer;
     
     console.log('SVG created with dimensions:', this.options.width, this.options.height)
     
@@ -221,21 +270,30 @@ export class MetabolismViewer {
               .attr('height', newHeight);
           }
           
-          // Update help button position (it's in overlay, positioned relative to viewport)
-          // The button should be positioned relative to the current container width (which shrinks when detail panel appears)
+          // Update help button position relative to theme toggle button
+          // Theme toggle: right: 20px, top: 20px, width: 50px, height: 50px (fixed to viewport)
           if (this.overlay) {
             const helpButton = this.overlay.select('.help-button');
             if (!helpButton.empty()) {
-              // Position button at right edge of current container (not full viewport)
-              const buttonX = newWidth - 60; // 60px from right edge of current container
-              helpButton.attr('transform', `translate(${buttonX}, 50)`);
+              // Calculate position relative to theme toggle using viewport width (not container width)
+              const viewportWidth = window.innerWidth;
+              const themeToggleRight = 20; // Theme toggle right margin
+              const themeToggleWidth = 50; // Theme toggle width
+              const helpButtonRadius = 15; // Help button radius
+              const spacing = 15; // Spacing between buttons
+              
+              // Position help button to the left of theme toggle with spacing
+              const buttonX = viewportWidth - themeToggleRight - themeToggleWidth - spacing - helpButtonRadius;
+              const buttonY = 20 + 25; // Align with center of theme toggle button
+              helpButton.attr('transform', `translate(${buttonX}, ${buttonY})`);
               
               // Also update tooltip position to avoid going off right edge
               const tooltipGroup = helpButton.select('.help-tooltip');
               if (!tooltipGroup.empty()) {
                 const tooltipWidth = 450;
                 const tooltipX = -tooltipWidth / 2;
-                const maxRight = newWidth - 20;
+                // Use viewport width since button is positioned relative to viewport
+                const maxRight = viewportWidth - 20;
                 const tooltipRightEdge = buttonX + tooltipX + tooltipWidth;
                 const adjustedX = tooltipRightEdge > maxRight ? tooltipX - (tooltipRightEdge - maxRight) : tooltipX;
                 tooltipGroup.attr('transform', `translate(${adjustedX}, 25)`);
@@ -316,11 +374,21 @@ export class MetabolismViewer {
   }
   
   drawHelpButton() {
-    // Position button relative to viewport (not SVG content)
-    // Use container width instead of SVG width
-    const containerWidth = this.options.width;
-    const buttonX = containerWidth - 60; // Position from right edge of viewport
-    const buttonY = 50; // Same row as pathway buttons
+    // Position button relative to theme toggle button
+    // Theme toggle: right: 20px, top: 20px, width: 50px, height: 50px (fixed to viewport)
+    // Help button: radius 15px (30px total width)
+    // Calculate position relative to theme toggle using viewport width (not container width)
+    const viewportWidth = window.innerWidth;
+    const themeToggleRight = 20; // Theme toggle right margin
+    const themeToggleWidth = 50; // Theme toggle width
+    const helpButtonRadius = 15; // Help button radius
+    const spacing = 15; // Spacing between buttons
+    
+    // Position help button to the left of theme toggle with spacing
+    // X: viewport width - theme toggle right - theme toggle width - spacing - help button radius
+    const buttonX = viewportWidth - themeToggleRight - themeToggleWidth - spacing - helpButtonRadius;
+    // Y: Align vertically with theme toggle (top: 20px + half height: 25px = 45px)
+    const buttonY = 20 + 25; // Align with center of theme toggle button
     
     const helpGroup = this.overlay.append('g')
       .attr('class', 'help-button btn')
@@ -349,8 +417,8 @@ export class MetabolismViewer {
     // Use wider tooltip and split text into more lines to prevent overflow
     const tooltipWidth = 450; // Wider to accommodate text
     const tooltipX = -tooltipWidth / 2; // Center on button
-    // Adjust if tooltip would go off right edge
-    const maxRight = containerWidth - 20; // 20px margin from right edge
+    // Adjust if tooltip would go off right edge (use viewport width since button is positioned relative to viewport)
+    const maxRight = viewportWidth - 20; // 20px margin from right edge
     const tooltipRightEdge = buttonX + tooltipX + tooltipWidth;
     const adjustedX = tooltipRightEdge > maxRight ? tooltipX - (tooltipRightEdge - maxRight) : tooltipX;
     
@@ -563,7 +631,7 @@ export class MetabolismViewer {
     this.reactionGroups.selectAll('.molecule-image-bg')
       .attr('stroke', '#dee2e6')
       .attr('stroke-width', 2)
-      .attr('fill', 'white');
+      .attr('fill', this.getImageBgColor());
     
     // Highlight all nodes in this pathway
     const pathwayReactions = this.reactions.slice(pathway.startIndex, pathway.endIndex);
@@ -731,7 +799,7 @@ export class MetabolismViewer {
     this.reactionGroups.selectAll('.molecule-image-bg')
       .attr('stroke', '#dee2e6')
       .attr('stroke-width', 2)
-      .attr('fill', 'white');
+      .attr('fill', this.getImageBgColor());
     
     // Update current zoom level
     this.currentZoom = scale;
@@ -1144,10 +1212,14 @@ export class MetabolismViewer {
       .attr('y', -55)
       .attr('width', 110)
       .attr('height', 110)
-      .attr('fill', 'white')
+      .attr('fill', this.getImageBgColor())
       .attr('stroke', '#dee2e6')
       .attr('stroke-width', 2)
       .attr('rx', 4);
+    
+    // Apply initial filter based on current theme
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const imageFilter = isDarkMode ? 'invert(1) hue-rotate(180deg)' : 'none';
     
     imageGroups.append('image')
       .attr('class', 'molecule-structure-image')
@@ -1155,7 +1227,8 @@ export class MetabolismViewer {
       .attr('y', -50)
       .attr('width', 100)
       .attr('height', 100)
-      .attr('preserveAspectRatio', 'xMidYMid meet');
+      .attr('preserveAspectRatio', 'xMidYMid meet')
+      .style('filter', imageFilter);
     
     // Fetch PubChem image URLs for all molecules
     this.fetchMoleculeImages();
@@ -1314,7 +1387,7 @@ export class MetabolismViewer {
   }
   
   updateNodeDisplay(zoomLevel) {
-    const zoomThreshold = 1.5; // Show images when zoomed in beyond this threshold
+    const zoomThreshold = 1.0; // Show images when zoomed in beyond this threshold (decreased from 1.5)
     const nodeRadius = zoomLevel >= zoomThreshold ? 55 : 30; // Larger radius when showing images
     
     // Update arrow connections to avoid overlap
@@ -1356,7 +1429,7 @@ export class MetabolismViewer {
   }
   
   updateArrowConnections(zoomLevel, nodeRadius) {
-    const zoomThreshold = 1.5;
+    const zoomThreshold = 1.0; // Decreased from 1.5 to change view mode earlier
     const radius = zoomLevel >= zoomThreshold ? nodeRadius : 30;
     
     // Update regular connections based on zoom level
@@ -1518,7 +1591,7 @@ export class MetabolismViewer {
     this.reactionGroups.selectAll('.molecule-image-bg')
       .attr('stroke', '#dee2e6')
       .attr('stroke-width', 2)
-      .attr('fill', 'white');
+      .attr('fill', this.getImageBgColor());
     
     // Reset pathway button highlighting
     this.pathways.forEach(pathway => {
@@ -1598,7 +1671,7 @@ export class MetabolismViewer {
     this.reactionGroups.selectAll('.molecule-image-bg')
       .attr('stroke', '#dee2e6')
       .attr('stroke-width', 2)
-      .attr('fill', 'white');
+      .attr('fill', this.getImageBgColor());
     
     this.g.selectAll('.connection')
       .attr('stroke-width', 4)
@@ -1688,7 +1761,7 @@ export class MetabolismViewer {
     this.reactionGroups.selectAll('.molecule-image-bg')
       .attr('stroke', '#dee2e6')
       .attr('stroke-width', 2)
-      .attr('fill', 'white');
+      .attr('fill', this.getImageBgColor());
     
     // Highlight only the clicked node in teal/cyan
     const selectedGroup = this.reactionGroups.filter(d => d === reactionNode);
