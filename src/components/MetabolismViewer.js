@@ -1846,7 +1846,10 @@ export class MetabolismViewer {
       'α-Ketoglutarate': ['alpha-Ketoglutarate', 'α-Ketoglutarate', '2-Oxoglutarate', '2-Oxoglutaric acid', 'Alpha-ketoglutarate'],
       'Succinyl-CoA': ['Succinyl coenzyme A', 'Succinyl-CoA', 'Succinyl CoA'],
       'Fumarate': ['Fumaric acid', 'Fumarate', 'trans-Butenedioic acid'],
-      'Malate': ['Malic acid', 'Malate', 'Hydroxybutanedioic acid']
+      'Malate': ['Malic acid', 'Malate', 'Hydroxybutanedioic acid'],
+      // Pyruvate Oxidation intermediates
+      'Hydroxyethyl-TPP': ['2-(1-Hydroxyethyl)thiamine pyrophosphate', '2-(1-Hydroxyethyl)thiamine diphosphate', '2-(alpha-Hydroxyethyl)thiamine pyrophosphate', 'Hydroxyethyl thiamine pyrophosphate', '2-(1-Hydroxyethyl)TPP'],
+      'Acetyl-lipoamide': ['S-Acetyldihydrolipoamide', 'Acetyldihydrolipoamide', 'S-Acetyl dihydrolipoamide', 'Acetyl dihydrolipoamide', 'Acetyl-lipoic acid']
     };
     
     return alternatives[moleculeName] || [];

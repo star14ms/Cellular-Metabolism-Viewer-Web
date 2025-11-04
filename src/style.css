@@ -207,7 +207,7 @@ body {
 }
 
 .detail-panel {
-  flex: 0 0 25%;
+  flex: 0 0 35%;
   min-width: 200px;
   max-width: 50%;
   background: var(--bg-panel);

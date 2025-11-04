@@ -199,7 +199,10 @@ export class ReactionDetail {
       'NAD⁺': ['NAD+', 'Nicotinamide adenine dinucleotide', 'NAD'],
       'NADH': ['NADH', 'Nicotinamide adenine dinucleotide (reduced)', 'Reduced NAD'],
       'H₂O': ['Water', 'H2O'],
-      'Pi': ['Inorganic phosphate', 'Phosphate', 'PO4']
+      'Pi': ['Inorganic phosphate', 'Phosphate', 'PO4'],
+      // Pyruvate Oxidation intermediates
+      'Hydroxyethyl-TPP': ['2-(1-Hydroxyethyl)thiamine pyrophosphate', '2-(1-Hydroxyethyl)thiamine diphosphate', '2-(alpha-Hydroxyethyl)thiamine pyrophosphate', 'Hydroxyethyl thiamine pyrophosphate', '2-(1-Hydroxyethyl)TPP'],
+      'Acetyl-lipoamide': ['S-Acetyldihydrolipoamide', 'Acetyldihydrolipoamide', 'S-Acetyl dihydrolipoamide', 'Acetyl dihydrolipoamide', 'Acetyl-lipoic acid']
     };
     
     return alternatives[moleculeName] || [];

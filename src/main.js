@@ -249,7 +249,7 @@ if (!app) {
           detailPanel.style.visibility = ''
           detailPanel.style.opacity = ''
           // Use flex basis to set width - this ensures it takes space from the layout
-          detailPanel.style.flex = '0 0 25%'
+          detailPanel.style.flex = '0 0 35%'
           detailPanel.style.width = ''
           detailPanel.style.minWidth = '200px'
           
