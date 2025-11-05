@@ -68,9 +68,15 @@ export class MoleculeView {
         return;
       }
       
+      // Normalize CO₂/CO2 to "Carbon dioxide" for PubChem search
+      let searchName = moleculeName;
+      if (moleculeName === 'CO₂' || moleculeName === 'CO2') {
+        searchName = 'Carbon dioxide';
+      }
+      
       // Try alternative names
       const alternativeNames = this.getAlternativeNames(moleculeName);
-      const pubchemData = await fetchCompoundWithFallback(moleculeName, alternativeNames);
+      const pubchemData = await fetchCompoundWithFallback(searchName, alternativeNames);
       
       // Cache the result
       this.pubchemCache.set(moleculeName, pubchemData);
@@ -106,6 +112,8 @@ export class MoleculeView {
       'NADH': ['NADH', 'Nicotinamide adenine dinucleotide (reduced)', 'Reduced NAD'],
       'H₂O': ['Water', 'H2O'],
       'Pi': ['Inorganic phosphate', 'Phosphate', 'PO4'],
+      'CO₂': ['Carbon dioxide', 'CO2', 'CO₂'],
+      'CO2': ['Carbon dioxide', 'CO2', 'CO₂'],
       // Citric Acid Cycle compounds
       'Succinate': ['Succinic acid', 'Succinate', 'Butanedioic acid', 'Ethylene succinic acid'],
       'Oxaloacetate': ['Oxaloacetic acid', 'Oxaloacetate', 'Oxalacetic acid'],

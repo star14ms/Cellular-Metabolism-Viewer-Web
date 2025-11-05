@@ -135,10 +135,15 @@ if (!app) {
       const moleculeView = new MoleculeView(moleculeContainer)
       const reactionView = new ReactionDetail(reactionContainer)
       const pathwayView = new PathwayDetail(pathwayContainer)
+      
+      // Set viewer container reference for pathway view and reaction view to enable selection
+      pathwayView.setViewerContainer(viewerContainer)
+      reactionView.setViewerContainer(viewerContainer)
 
       // Tab switching
       const tabs = document.querySelectorAll('.detail-tab')
       const views = document.querySelectorAll('.detail-view')
+      const detailContent = document.querySelector('.detail-content')
       
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -156,6 +161,11 @@ if (!app) {
             reactionContainer.classList.add('active')
           } else if (tabName === 'pathway') {
             pathwayContainer.classList.add('active')
+          }
+          
+          // Scroll to top when switching tabs
+          if (detailContent) {
+            detailContent.scrollTo({ top: 0, behavior: 'smooth' })
           }
         })
       })
@@ -178,24 +188,49 @@ if (!app) {
 
       // Listen for reaction selection (from arrows)
       viewerContainer.addEventListener('reaction-selected', (event) => {
-        reactionView.render(event.detail)
+        const reactionData = event.detail;
+        const reaction = reactionData.reaction || reactionData; // Handle both old and new format
+        const skipTabSwitch = reactionData.skipTabSwitch || false;
+        
+        reactionView.render(reaction)
         // Clear molecule view when reaction is selected
         moleculeView.render(null)
-        // Switch to reaction tab
-        tabs.forEach(t => t.classList.remove('active'))
-        tabs[1].classList.add('active')
-        views.forEach(v => v.classList.remove('active'))
-        reactionContainer.classList.add('active')
+        
+        // Only switch to reaction tab if not skipping tab switch (i.e., clicked from pathway card)
+        if (!skipTabSwitch) {
+          // Switch to reaction tab
+          tabs.forEach(t => t.classList.remove('active'))
+          tabs[1].classList.add('active')
+          views.forEach(v => v.classList.remove('active'))
+          reactionContainer.classList.add('active')
+        }
       })
       
       // Listen for molecule selection (from nodes)
       viewerContainer.addEventListener('molecule-selected', (event) => {
-        moleculeView.render(event.detail)
-        // Switch to molecule tab
-        tabs.forEach(t => t.classList.remove('active'))
-        tabs[0].classList.add('active')
-        views.forEach(v => v.classList.remove('active'))
-        moleculeContainer.classList.add('active')
+        const moleculeData = event.detail;
+        const molecule = moleculeData.molecule || moleculeData; // Handle both old and new format
+        const skipTabSwitch = moleculeData.skipTabSwitch || false;
+        
+        moleculeView.render(molecule)
+        
+        // Only switch to molecule tab if not skipping tab switch (i.e., clicked from reaction detail)
+        if (!skipTabSwitch) {
+          // Switch to molecule tab
+          tabs.forEach(t => t.classList.remove('active'))
+          tabs[0].classList.add('active')
+          views.forEach(v => v.classList.remove('active'))
+          moleculeContainer.classList.add('active')
+        }
+      })
+      
+      // Listen for molecule selection from reaction detail cards
+      viewerContainer.addEventListener('select-molecule-by-name', (event) => {
+        const { moleculeName, moleculeId } = event.detail
+        viewer.selectMoleculeByName(moleculeName, moleculeId, { skipTabSwitch: true })
+        // Load molecule view but keep reaction tab active (don't switch tabs)
+        // The molecule-selected event will be fired and moleculeView will be updated
+        // but tab switching will be skipped due to skipTabSwitch flag
       })
       
       // Listen for pathway updates (when node or arrow is selected)
@@ -204,6 +239,14 @@ if (!app) {
         pathwayView.render(event.detail)
         // Don't switch tabs - keep the current tab active
         // The pathway detail panel will be updated in the background
+      })
+      
+      // Listen for reaction selection from pathway detail cards
+      viewerContainer.addEventListener('select-reaction-by-step', (event) => {
+        const { step } = event.detail
+        viewer.selectReactionByStep(step)
+        // Keep pathway tab active - don't switch tabs
+        // Just update the pathway view to highlight the selected reaction
       })
       
       // Listen for clear selection (when clicking background)

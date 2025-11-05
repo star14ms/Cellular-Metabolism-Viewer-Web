@@ -10,6 +10,11 @@ export class PathwayDetail {
     this.currentPathway = null;
     this.selectedReaction = null;
     this.selectedMolecule = null;
+    this.viewerContainer = null; // Will be set to the metabolism viewer container
+  }
+  
+  setViewerContainer(viewerContainer) {
+    this.viewerContainer = viewerContainer;
   }
   
   render(pathway) {
@@ -74,9 +79,13 @@ export class PathwayDetail {
             <div class="reaction-list">
               ${pathway.reactions.map((reaction, index) => {
                 const isSelected = highlightedStep && (reaction.step === highlightedStep || (reaction.step === null && index + 1 === highlightedStep));
+                const stepNumber = reaction.step || index + 1;
                 return `
-                <div class="reaction-item ${isSelected ? 'reaction-item-selected' : ''}">
-                  <div class="reaction-step">Step ${reaction.step || index + 1}</div>
+                <div class="reaction-item ${isSelected ? 'reaction-item-selected' : ''}" 
+                     data-step="${stepNumber}" 
+                     data-reaction-index="${index}"
+                     style="cursor: pointer;">
+                  <div class="reaction-step">Step ${stepNumber}</div>
                   <div class="reaction-name">${reaction.name}</div>
                   <div class="reaction-enzyme">${reaction.enzyme.name}</div>
                   ${isSelected && selectedType === 'molecule' ? `<div class="reaction-selection-note">Selected molecule: ${selectedMolecule?.name || reaction.substrate.name}</div>` : ''}
@@ -90,6 +99,23 @@ export class PathwayDetail {
     `;
     
     this.container.innerHTML = html;
+    
+    // Add click handlers to reaction items
+    const reactionItems = this.container.querySelectorAll('.reaction-item');
+    reactionItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        const stepNumber = parseInt(item.dataset.step);
+        const reactionIndex = parseInt(item.dataset.reactionIndex);
+        
+        // Dispatch event to select reaction in viewer
+        if (this.viewerContainer) {
+          const selectEvent = new CustomEvent('select-reaction-by-step', {
+            detail: { step: stepNumber, reactionIndex: reactionIndex, pathway: pathway }
+          });
+          this.viewerContainer.dispatchEvent(selectEvent);
+        }
+      });
+    });
   }
   
   renderNetProducts(netProducts) {

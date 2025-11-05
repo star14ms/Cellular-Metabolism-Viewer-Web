@@ -1029,6 +1029,19 @@ export class MetabolismViewer {
       .attr('d', 'M0,-5L10,0L0,5')
       .attr('fill', '#2c5f7c');
     
+    // Add highlighted arrow marker (for selected reactions)
+    defs.append('marker')
+      .attr('id', 'arrowhead-highlighted')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 8)
+      .attr('refY', 0)
+      .attr('markerWidth', 8)
+      .attr('markerHeight', 8)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('fill', '#ff6b6b');
+    
     // Draw arrows between reactions
     // Filter out special cases:
     // - Glycolysis step 4 (aldolase) has special connections
@@ -1896,7 +1909,7 @@ export class MetabolismViewer {
     const labels = nodes.append('text')
       .attr('text-anchor', 'middle')
       .attr('x', 0) // Center horizontally
-      .attr('fill', '#2c5f7c')
+      .attr('fill', '#e0e0e0')
       .attr('font-size', '16px')
       .attr('font-weight', '500')
       .text(d => {
@@ -2248,6 +2261,13 @@ export class MetabolismViewer {
     this.selectedNode = null;
     this.selectedPathway = null;
     
+    // Reset all arrow highlighting
+    this.g.selectAll('.connection')
+      .attr('stroke-width', 4)
+      .attr('stroke-opacity', 0.7)
+      .attr('stroke', '#2c5f7c')
+      .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
+    
     // Reset all highlights
     this.reactionGroups.selectAll('.reaction-circle')
       .attr('stroke-width', 2)
@@ -2288,7 +2308,22 @@ export class MetabolismViewer {
     return null;
   }
   
-  selectReaction(reaction) {
+  /**
+   * Select a reaction by step number
+   * Finds the reaction in the reactions array and calls selectReaction
+   */
+  selectReactionByStep(step) {
+    const reaction = this.reactions.find(r => r.step === step);
+    if (reaction) {
+      this.selectReaction(reaction, { skipTabSwitch: true });
+      // Also zoom to the arrow representing this reaction, not the node
+      this.zoomToReactionArrow(reaction);
+    } else {
+      console.warn(`Reaction with step ${step} not found`);
+    }
+  }
+  
+  selectReaction(reaction, options = {}) {
     this.selectedReaction = reaction;
     this.selectedMolecule = null;
     this.selectedNode = null;
@@ -2307,7 +2342,8 @@ export class MetabolismViewer {
     this.g.selectAll('.connection')
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7)
-      .attr('stroke', '#2c5f7c');
+      .attr('stroke', '#2c5f7c')
+      .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
     
     // Highlight all arrows representing this reaction
     // Compare by nodeId to handle cases where reaction objects are different references
@@ -2321,7 +2357,8 @@ export class MetabolismViewer {
           arrowElement
             .attr('stroke-width', 6)
             .attr('stroke-opacity', 1)
-            .attr('stroke', '#ff6b6b'); // Highlight color for selected reaction arrows
+            .attr('stroke', '#ff6b6b') // Highlight color for selected reaction arrows
+            .attr('marker-end', 'url(#arrowhead-highlighted)'); // Use highlighted arrowhead
         }
       }
     }
@@ -2330,7 +2367,10 @@ export class MetabolismViewer {
     
     // Dispatch custom event for reaction detail view
     const detailEvent = new CustomEvent('reaction-selected', {
-      detail: reaction
+      detail: {
+        reaction: reaction,
+        skipTabSwitch: options.skipTabSwitch || false
+      }
     });
     this.container.dispatchEvent(detailEvent);
     
@@ -2531,7 +2571,197 @@ export class MetabolismViewer {
     });
   }
   
-  selectMolecule(molecule, reactionNode) {
+  /**
+   * Select a molecule by name/id
+   * Finds the reaction node that visually displays this molecule and calls selectMolecule
+   * For CAC reactions, nodes display the previous reaction's product, not the substrate
+   */
+  selectMoleculeByName(moleculeName, moleculeId, options = {}) {
+    // First check product nodes (like Acetyl-CoA, Lipoamide) - these have their own nodes
+    let targetReaction = null;
+    let targetMolecule = null;
+    
+    for (const reaction of this.reactions) {
+      if (reaction.isProductNode && reaction.substrate &&
+          (reaction.substrate.name === moleculeName || 
+           (moleculeId && reaction.substrate.id === moleculeId))) {
+        targetReaction = reaction;
+        targetMolecule = reaction.substrate;
+        break;
+      }
+    }
+    
+    // If not found in product nodes, find where the molecule is visually displayed
+    if (!targetReaction) {
+      // Calculate CAC start index
+      const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 2; // +2 for Acetyl-CoA and Lipoamide nodes
+      
+      for (let i = 0; i < this.reactions.length; i++) {
+        const reaction = this.reactions[i];
+        
+        // Skip product nodes - already checked
+        if (reaction.isProductNode) continue;
+        
+        const isCACReaction = i >= cacStartIndex;
+        let displayedMolecule = null;
+        
+        // Determine which molecule is visually displayed on this node
+        if (isCACReaction) {
+          // CAC nodes display the previous reaction's product
+          const cacLength = citricAcidCycleReactions.length;
+          const relativeIndex = i - cacStartIndex;
+          const prevRelativeIndex = (relativeIndex - 1 + cacLength) % cacLength;
+          const prevCACIndex = cacStartIndex + prevRelativeIndex;
+          const prevReaction = this.reactions[prevCACIndex];
+          displayedMolecule = prevReaction && prevReaction.product ? prevReaction.product : reaction.substrate;
+        } else {
+          // For glycolysis and pyruvate oxidation, nodes display the substrate
+          displayedMolecule = reaction.substrate;
+        }
+        
+        // Check if this is the molecule we're looking for
+        if (displayedMolecule && 
+            (displayedMolecule.name === moleculeName || 
+             (moleculeId && displayedMolecule.id === moleculeId))) {
+          targetReaction = reaction;
+          targetMolecule = displayedMolecule;
+          break;
+        }
+        
+        // Also check if molecule is a product of this reaction and find where it's displayed next
+        if (reaction.product && 
+            (reaction.product.name === moleculeName || 
+             (moleculeId && reaction.product.id === moleculeId))) {
+          // Product is displayed on the next reaction node that uses it as substrate
+          const productId = reaction.product.id || moleculeId;
+          
+          // Find the next reaction that uses this product as substrate
+          const nextReaction = this.reactions.slice(i + 1).find(r => {
+            if (r.isProductNode) return false;
+            const nextIndex = this.reactions.indexOf(r);
+            const isNextCAC = nextIndex >= cacStartIndex;
+            
+            // For CAC, check if previous reaction's product matches
+            if (isNextCAC) {
+              const cacLength = citricAcidCycleReactions.length;
+              const nextRelativeIndex = nextIndex - cacStartIndex;
+              const nextPrevRelativeIndex = (nextRelativeIndex - 1 + cacLength) % cacLength;
+              const nextPrevCACIndex = cacStartIndex + nextPrevRelativeIndex;
+              const nextPrevReaction = this.reactions[nextPrevCACIndex];
+              const nextDisplayedMolecule = nextPrevReaction && nextPrevReaction.product ? nextPrevReaction.product : r.substrate;
+              return nextDisplayedMolecule && (nextDisplayedMolecule.id === productId || nextDisplayedMolecule.name === moleculeName);
+            } else {
+              // For non-CAC, check substrate
+              return r.substrate && (r.substrate.id === productId || r.substrate.name === moleculeName);
+            }
+          });
+          
+          if (nextReaction) {
+            const nextIndex = this.reactions.indexOf(nextReaction);
+            const isNextCAC = nextIndex >= cacStartIndex;
+            
+            if (isNextCAC) {
+              // CAC nodes display previous reaction's product
+              const cacLength = citricAcidCycleReactions.length;
+              const nextRelativeIndex = nextIndex - cacStartIndex;
+              const nextPrevRelativeIndex = (nextRelativeIndex - 1 + cacLength) % cacLength;
+              const nextPrevCACIndex = cacStartIndex + nextPrevRelativeIndex;
+              const nextPrevReaction = this.reactions[nextPrevCACIndex];
+              targetReaction = nextReaction;
+              targetMolecule = nextPrevReaction && nextPrevReaction.product ? nextPrevReaction.product : nextReaction.substrate;
+            } else {
+              targetReaction = nextReaction;
+              targetMolecule = nextReaction.substrate;
+            }
+          } else {
+            // Fallback: check product nodes
+            const productNode = this.reactions.find(r => 
+              r.isProductNode && r.substrate && 
+              (r.substrate.id === productId || r.substrate.name === moleculeName)
+            );
+            if (productNode) {
+              targetReaction = productNode;
+              targetMolecule = productNode.substrate;
+            } else {
+              // Last resort: use the reaction that produces it
+              targetReaction = reaction;
+              targetMolecule = reaction.product;
+            }
+          }
+          break;
+        }
+        
+        // Check if molecule is in products array
+        if (reaction.products && Array.isArray(reaction.products)) {
+          const product = reaction.products.find(p => 
+            p.name === moleculeName || (moleculeId && p.id === moleculeId)
+          );
+          if (product) {
+            // Similar logic as above for single product
+            const productId = product.id || moleculeId;
+            const nextReaction = this.reactions.slice(i + 1).find(r => {
+              if (r.isProductNode) return false;
+              const nextIndex = this.reactions.indexOf(r);
+              const isNextCAC = nextIndex >= cacStartIndex;
+              
+              if (isNextCAC) {
+                const cacLength = citricAcidCycleReactions.length;
+                const nextRelativeIndex = nextIndex - cacStartIndex;
+                const nextPrevRelativeIndex = (nextRelativeIndex - 1 + cacLength) % cacLength;
+                const nextPrevCACIndex = cacStartIndex + nextPrevRelativeIndex;
+                const nextPrevReaction = this.reactions[nextPrevCACIndex];
+                const nextDisplayedMolecule = nextPrevReaction && nextPrevReaction.product ? nextPrevReaction.product : r.substrate;
+                return nextDisplayedMolecule && (nextDisplayedMolecule.id === productId || nextDisplayedMolecule.name === moleculeName);
+              } else {
+                return r.substrate && (r.substrate.id === productId || r.substrate.name === moleculeName);
+              }
+            });
+            
+            if (nextReaction) {
+              const nextIndex = this.reactions.indexOf(nextReaction);
+              const isNextCAC = nextIndex >= cacStartIndex;
+              
+              if (isNextCAC) {
+                const cacLength = citricAcidCycleReactions.length;
+                const nextRelativeIndex = nextIndex - cacStartIndex;
+                const nextPrevRelativeIndex = (nextRelativeIndex - 1 + cacLength) % cacLength;
+                const nextPrevCACIndex = cacStartIndex + nextPrevRelativeIndex;
+                const nextPrevReaction = this.reactions[nextPrevCACIndex];
+                targetReaction = nextReaction;
+                targetMolecule = nextPrevReaction && nextPrevReaction.product ? nextPrevReaction.product : nextReaction.substrate;
+              } else {
+                targetReaction = nextReaction;
+                targetMolecule = nextReaction.substrate;
+              }
+            } else {
+              const productNode = this.reactions.find(r => 
+                r.isProductNode && r.substrate && 
+                (r.substrate.id === productId || r.substrate.name === moleculeName)
+              );
+              if (productNode) {
+                targetReaction = productNode;
+                targetMolecule = productNode.substrate;
+              } else {
+                targetReaction = reaction;
+                targetMolecule = product;
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+    
+    if (targetReaction && targetMolecule) {
+      this.selectMolecule(targetMolecule, targetReaction, options);
+      // Zoom to the molecule node (not the arrow/reaction)
+      this.zoomToNode(targetReaction);
+    } else {
+      console.warn(`Molecule "${moleculeName}" not found in reactions`);
+    }
+  }
+  
+  selectMolecule(molecule, reactionNode, options = {}) {
     this.selectedMolecule = molecule;
     this.selectedNode = reactionNode;
     this.selectedReaction = null;
@@ -2550,13 +2780,17 @@ export class MetabolismViewer {
     this.g.selectAll('.connection')
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7)
-      .attr('stroke', '#2c5f7c');
+      .attr('stroke', '#2c5f7c')
+      .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
     
     this.applyMoleculeHighlight(molecule, reactionNode);
     
     // Dispatch custom event for molecule detail view
     const detailEvent = new CustomEvent('molecule-selected', {
-      detail: molecule
+      detail: {
+        molecule: molecule,
+        skipTabSwitch: options.skipTabSwitch || false
+      }
     });
     this.container.dispatchEvent(detailEvent);
     
@@ -2624,6 +2858,69 @@ export class MetabolismViewer {
     this.currentZoom = scale;
     this.updateNodeDisplay(scale);
     this.selectReaction(reaction);
+  }
+  
+  /**
+   * Zoom to a node without selecting the reaction (for molecule selection)
+   */
+  zoomToNode(reactionNode) {
+    const scale = 2;
+    const x = this.options.width / 2 - reactionNode.position.x * scale;
+    const y = this.options.height / 2 - reactionNode.position.y * scale;
+    
+    const transform = d3.zoomIdentity
+      .translate(x, y)
+      .scale(scale);
+    
+    this.svg.transition()
+      .duration(750)
+      .call(this.zoom.transform, transform);
+    
+    this.currentTransform = transform;
+    this.currentZoom = scale;
+    this.updateNodeDisplay(scale);
+    // Don't call selectReaction - we're selecting a molecule, not a reaction
+  }
+  
+  /**
+   * Zoom to the arrow representing a reaction, not the node
+   * Finds the first arrow representing this reaction and zooms to its midpoint
+   */
+  zoomToReactionArrow(reaction) {
+    const reactionNodeId = reaction.nodeId;
+    let targetCoords = null;
+    
+    // Find the first arrow representing this reaction
+    for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
+      const targetReactionNodeId = arrowData.targetReaction?.nodeId;
+      if (targetReactionNodeId === reactionNodeId && arrowData.coords) {
+        // Calculate midpoint of the arrow
+        const midpoint = calculateArrowMidpoint(arrowData.coords);
+        targetCoords = midpoint;
+        break; // Use the first arrow found
+      }
+    }
+    
+    // If no arrow found, fall back to node position
+    if (!targetCoords) {
+      targetCoords = reaction.position;
+    }
+    
+    const scale = 2;
+    const x = this.options.width / 2 - targetCoords.x * scale;
+    const y = this.options.height / 2 - targetCoords.y * scale;
+    
+    const transform = d3.zoomIdentity
+      .translate(x, y)
+      .scale(scale);
+    
+    this.svg.transition()
+      .duration(750)
+      .call(this.zoom.transform, transform);
+    
+    this.currentTransform = transform;
+    this.currentZoom = scale;
+    this.updateNodeDisplay(scale);
   }
   
   resetZoom() {

@@ -12,6 +12,11 @@ export class ReactionDetail {
     this.container = container;
     this.currentReaction = null;
     this.pubchemCache = new Map();
+    this.viewerContainer = null; // Will be set to the metabolism viewer container
+  }
+  
+  setViewerContainer(viewerContainer) {
+    this.viewerContainer = viewerContainer;
   }
   
   render(reaction) {
@@ -31,26 +36,55 @@ export class ReactionDetail {
         <div class="detail-section">
           <h3>Substrate → Product</h3>
           <div class="reaction-flow">
-            <div class="reaction-molecule">
-              <strong>${reaction.substrate.name}</strong>
-              ${reaction.substrate.formula ? `<div class="molecule-formula">${reaction.substrate.formula}</div>` : ''}
+            <div class="reaction-reactants">
+              <div class="reaction-molecule clickable-molecule" 
+                   data-molecule-name="${reaction.substrate.name}" 
+                   data-molecule-id="${reaction.substrate.id || ''}"
+                   style="cursor: pointer;">
+                <strong>${reaction.substrate.name}</strong>
+                ${reaction.substrate.formula ? `<div class="molecule-formula">${reaction.substrate.formula}</div>` : ''}
+              </div>
+              ${reaction.coSubstrate ? `
+                <div class="reaction-molecule clickable-molecule co-reactant" 
+                     data-molecule-name="${reaction.coSubstrate.name}" 
+                     data-molecule-id=""
+                     style="cursor: pointer;">
+                  <strong>${reaction.coSubstrate.name}</strong>
+                  ${reaction.coSubstrate.formula ? `<div class="molecule-formula">${reaction.coSubstrate.formula}</div>` : ''}
+                </div>
+              ` : ''}
             </div>
             <div class="reaction-arrow">→</div>
-            ${reaction.products && Array.isArray(reaction.products) ? `
-              <div class="reaction-products">
+            <div class="reaction-products">
+              ${reaction.products && Array.isArray(reaction.products) ? `
                 ${reaction.products.map(p => `
-                  <div class="reaction-molecule">
+                  <div class="reaction-molecule clickable-molecule" 
+                       data-molecule-name="${p.name}" 
+                       data-molecule-id="${p.id || ''}"
+                       style="cursor: pointer;">
                     <strong>${p.name}</strong>
                     ${p.formula ? `<div class="molecule-formula">${p.formula}</div>` : ''}
                   </div>
                 `).join('')}
-              </div>
-            ` : `
-              <div class="reaction-molecule">
-                <strong>${reaction.product.name}</strong>
-                ${reaction.product.formula ? `<div class="molecule-formula">${reaction.product.formula}</div>` : ''}
-              </div>
-            `}
+              ` : `
+                <div class="reaction-molecule clickable-molecule" 
+                     data-molecule-name="${reaction.product.name}" 
+                     data-molecule-id="${reaction.product.id || ''}"
+                     style="cursor: pointer;">
+                  <strong>${reaction.product.name}</strong>
+                  ${reaction.product.formula ? `<div class="molecule-formula">${reaction.product.formula}</div>` : ''}
+                </div>
+              `}
+              ${reaction.byproduct ? `
+                <div class="reaction-molecule clickable-molecule co-product" 
+                     data-molecule-name="${reaction.byproduct.name}" 
+                     data-molecule-id=""
+                     style="cursor: pointer;">
+                  <strong>${reaction.byproduct.name}</strong>
+                  ${reaction.byproduct.formula ? `<div class="molecule-formula">${reaction.byproduct.formula}</div>` : ''}
+                </div>
+              ` : ''}
+            </div>
           </div>
         </div>
         
@@ -121,6 +155,27 @@ export class ReactionDetail {
     
     this.container.innerHTML = html;
     
+    // Add click handlers to molecule elements
+    const moleculeElements = this.container.querySelectorAll('.clickable-molecule');
+    moleculeElements.forEach(element => {
+      element.addEventListener('click', (e) => {
+        const moleculeName = element.dataset.moleculeName;
+        const moleculeId = element.dataset.moleculeId;
+        
+        // Dispatch event to select molecule in viewer
+        if (this.viewerContainer) {
+          const selectEvent = new CustomEvent('select-molecule-by-name', {
+            detail: { 
+              moleculeName: moleculeName,
+              moleculeId: moleculeId,
+              reaction: reaction
+            }
+          });
+          this.viewerContainer.dispatchEvent(selectEvent);
+        }
+      });
+    });
+    
     // Fetch PubChem data for co-substrates and byproducts
     this.fetchPubChemData(reaction);
   }
@@ -151,9 +206,15 @@ export class ReactionDetail {
         return;
       }
       
+      // Normalize CO₂/CO2 to "Carbon dioxide" for PubChem search
+      let searchName = moleculeName;
+      if (moleculeName === 'CO₂' || moleculeName === 'CO2') {
+        searchName = 'Carbon dioxide';
+      }
+      
       // Try alternative names for common compounds
       const alternativeNames = this.getAlternativeNames(moleculeName);
-      const pubchemData = await fetchCompoundWithFallback(moleculeName, alternativeNames);
+      const pubchemData = await fetchCompoundWithFallback(searchName, alternativeNames);
       
       // Cache the result
       this.pubchemCache.set(moleculeName, pubchemData);
@@ -200,6 +261,8 @@ export class ReactionDetail {
       'NADH': ['NADH', 'Nicotinamide adenine dinucleotide (reduced)', 'Reduced NAD'],
       'H₂O': ['Water', 'H2O'],
       'Pi': ['Inorganic phosphate', 'Phosphate', 'PO4'],
+      'CO₂': ['Carbon dioxide', 'CO2', 'CO₂'],
+      'CO2': ['Carbon dioxide', 'CO2', 'CO₂'],
       // Pyruvate Oxidation intermediates
       'Hydroxyethyl-TPP': ['2-(1-Hydroxyethyl)thiamine pyrophosphate', '2-(1-Hydroxyethyl)thiamine diphosphate', '2-(alpha-Hydroxyethyl)thiamine pyrophosphate', 'Hydroxyethyl thiamine pyrophosphate', '2-(1-Hydroxyethyl)TPP'],
       'Acetyl-lipoamide': ['S-Acetyldihydrolipoamide', 'Acetyldihydrolipoamide', 'S-Acetyl dihydrolipoamide', 'Acetyl dihydrolipoamide', 'Acetyl-lipoic acid']
