@@ -9,6 +9,19 @@ import { glycolysisReactions, glycolysisSummary } from '../data/glycolysis.js';
 import { pyruvateOxidationReactions, pyruvateOxidationSummary } from '../data/pyruvateOxidation.js';
 import { citricAcidCycleReactions, citricAcidCycleSummary } from '../data/citricAcidCycle.js';
 import { fetchCompoundWithFallback } from '../services/pubchemService.js';
+import {
+  calculateArrowCoords,
+  calculateArrowMidpoint,
+  findArrowData,
+  getReactionByStep,
+  getReactionByIndex,
+  getProductNode
+} from './ConnectionHelpers.js';
+import {
+  findMultiProductReactions,
+  findPrimaryArrow,
+  createSecondaryArrowFromMidpoint
+} from './MultiProductHandler.js';
 
 export class MetabolismViewer {
   constructor(container, options = {}) {
@@ -93,8 +106,10 @@ export class MetabolismViewer {
     ];
     
     // Add unique node IDs to all reactions/nodes
+    // Also initialize arrowIds array to track arrows related to this reaction
     this.reactions.forEach((reaction, index) => {
       reaction.nodeId = `node-${index}`;
+      reaction.arrowIds = []; // Array of connection IDs for arrows related to this reaction
     });
     
     // Create node ID to reaction mapping for quick lookup
@@ -1172,31 +1187,64 @@ export class MetabolismViewer {
     // Helper function to create arrow key from node IDs
     const getArrowKey = (fromNodeId, toNodeId) => `${fromNodeId}-${toNodeId}`;
     
-    // Unified function to create arrow and store in arrowDataMap
-    // Arrows are identified by reactant and product molecules (not just reactions)
-    const createArrowWithData = (fromNodeId, toNodeId, coords, connectionId, className, targetReaction, reactantMoleculeId = null, productMoleculeId = null) => {
-      const arrowKey = getArrowKey(fromNodeId, toNodeId);
-      const fromNode = this.nodeMap.get(fromNodeId);
-      const toNode = this.nodeMap.get(toNodeId);
+    // Unified function to create arrow(s) and store in arrowDataMap
+    // Supports both single arrow and array of arrows for batch processing
+    // Auto-calculates coordinates if not provided
+    const createArrowWithData = (fromNode, toNodeOrArray, coordsOrConfig, connectionId, className, targetReaction, reactantMoleculeId = null, productMoleculeId = null) => {
+      // Handle array of arrows (batch mode)
+      if (Array.isArray(toNodeOrArray)) {
+        toNodeOrArray.forEach((arrowConfig, index) => {
+          const fromNodeObj = typeof fromNode === 'string' ? this.nodeMap.get(fromNode) : fromNode;
+          const toNodeObj = arrowConfig.toNode || this.nodeMap.get(arrowConfig.toNodeId);
+          const coords = arrowConfig.customCoords || calculateArrowCoords(fromNodeObj, toNodeObj);
+          createArrowWithData(
+            fromNodeObj,
+            toNodeObj,
+            coords,
+            arrowConfig.connectionId,
+            arrowConfig.className || className || 'connection-special',
+            arrowConfig.targetReaction || targetReaction,
+            arrowConfig.reactantId || reactantMoleculeId,
+            arrowConfig.productId || productMoleculeId
+          );
+        });
+        return;
+      }
+      
+      // Single arrow mode
+      const fromNodeObj = typeof fromNode === 'string' ? this.nodeMap.get(fromNode) : fromNode;
+      const toNodeObj = typeof toNodeOrArray === 'string' ? this.nodeMap.get(toNodeOrArray) : toNodeOrArray;
+      
+      // Auto-calculate coordinates if not provided
+      const coords = coordsOrConfig || calculateArrowCoords(fromNodeObj, toNodeObj);
+      
+      const arrowKey = getArrowKey(fromNodeObj.nodeId, toNodeObj.nodeId);
+      const fromNodeData = this.nodeMap.get(fromNodeObj.nodeId);
+      const toNodeData = this.nodeMap.get(toNodeObj.nodeId);
       
       // Determine reactant and product molecules from the target reaction
-      // If not provided, infer from reaction's substrate and product
       const reactantId = reactantMoleculeId || (targetReaction.substrate ? targetReaction.substrate.id : null);
       const productId = productMoleculeId || (targetReaction.product ? targetReaction.product.id : null);
       
-      // Store arrow data in dictionary - key includes molecule IDs for uniqueness
+      // Store arrow data
       const moleculeKey = reactantId && productId ? `${arrowKey}-${reactantId}-${productId}` : arrowKey;
-      this.arrowDataMap.set(moleculeKey, {
-        fromNodeId: fromNodeId,
-        toNodeId: toNodeId,
-        fromReaction: fromNode,
-        toReaction: toNode,
+      const arrowData = {
+        fromNodeId: fromNodeObj.nodeId,
+        toNodeId: toNodeObj.nodeId,
+        fromReaction: fromNodeData,
+        toReaction: toNodeData,
         targetReaction: targetReaction,
         reactantMoleculeId: reactantId,
         productMoleculeId: productId,
         coords: coords,
         connectionId: connectionId
-      });
+      };
+      this.arrowDataMap.set(moleculeKey, arrowData);
+      
+      // Add connection ID to target reaction's arrowIds array
+      if (targetReaction && !targetReaction.arrowIds.includes(connectionId)) {
+        targetReaction.arrowIds.push(connectionId);
+      }
       
       // Create visual arrow
       return createArrow(coords, connectionId, className, () => {
@@ -1236,69 +1284,23 @@ export class MetabolismViewer {
     const step5Node = this.reactions[4];
     const step6Node = this.reactions[5];
     
-    // Connection from step 4 to step 5 (vertical - dihydroxyacetone phosphate path)
-    // Reactant: Fructose-1,6-bisphosphate, Product: Dihydroxyacetone phosphate
-    // This arrow represents Step 4 reaction producing Dihydroxyacetone phosphate
     const fructoseBisphosphateId = step4Node.substrate?.id; // "fructose_1_6_bisphosphate"
     const dihydroxyacetoneId = step5Node.substrate?.id; // "dihydroxyacetone_phosphate"
     const glyceraldehydeId = step6Node.substrate?.id; // "glyceraldehyde_3_phosphate"
     
-    createArrowWithData(
-      step4Node.nodeId,
-      step5Node.nodeId,
-      { x1: 550, y1: 100 + 30, x2: 550, y2: 250 - 30 },
-      'step4-to-5',
-      'connection-special',
-      step4Node, // Step 4 (produces Dihydroxyacetone phosphate)
-      fructoseBisphosphateId,
-      dihydroxyacetoneId
-    );
+    // Step 4 branching: create multiple arrows at once
+    createArrowWithData(step4Node, [
+      { toNode: step5Node, connectionId: 'step4-to-5', customCoords: { x1: 550, y1: 130, x2: 550, y2: 220 }, reactantId: fructoseBisphosphateId, productId: dihydroxyacetoneId },
+      { toNode: step6Node, connectionId: 'step4-to-6', customCoords: { x1: 580, y1: 100, x2: 670, y2: 100 }, reactantId: fructoseBisphosphateId, productId: glyceraldehydeId }
+    ], null, null, 'connection-special', step4Node);
     
-    // Connection from step 5 to step 6 (diagonal - converted glyceraldehyde-3-phosphate)
-    // Reactant: Dihydroxyacetone phosphate, Product: Glyceraldehyde-3-phosphate
-    // This arrow represents Step 5 reaction
-    createArrowWithData(
-      step5Node.nodeId,
-      step6Node.nodeId,
-      { x1: 550 + 30, y1: 250, x2: 700 - 30, y2: 100 },
-      'step5-to-6',
-      'connection-special',
-      step5Node, // Step 5
-      dihydroxyacetoneId,
-      glyceraldehydeId
-    );
+    // Step 5 to Step 6
+    createArrowWithData(step5Node, step6Node, { x1: 580, y1: 250, x2: 670, y2: 100 }, 'step5-to-6', 'connection-special', step5Node, dihydroxyacetoneId, glyceraldehydeId);
     
-    // Connection from step 4 to step 6 (diagonal - direct glyceraldehyde-3-phosphate path)
-    // This represents: Fructose-1,6-bisphosphate → Glyceraldehyde-3-phosphate
-    // Reactant: Fructose-1,6-bisphosphate, Product: Glyceraldehyde-3-phosphate
-    // This arrow represents Step 4 reaction producing Glyceraldehyde-3-phosphate
-    createArrowWithData(
-      step4Node.nodeId,
-      step6Node.nodeId,
-      { x1: 550 + 30, y1: 100, x2: 700 - 30, y2: 100 },
-      'step4-to-6',
-      'connection-special',
-      step4Node, // Step 4 (produces Glyceraldehyde-3-phosphate)
-      fructoseBisphosphateId,
-      glyceraldehydeId
-    );
-    
-    // Connection from glycolysis end (pyruvate) to pyruvate oxidation (first step)
-    // This arrow represents: Phosphoenolpyruvate → Pyruvate (Glycolysis step 10)
-    // Reactant: Phosphoenolpyruvate (substrate of glycolysis step 10)
-    // Product: Pyruvate (product of glycolysis step 10, consumed by pyruvate oxidation step 1)
+    // Glycolysis to Pyruvate oxidation
     const glycolysisEndNode = this.reactions[glycolysisLength - 1];
     const pyruvateOxStartNode = this.reactions[glycolysisLength];
-    createArrowWithData(
-      glycolysisEndNode.nodeId,
-      pyruvateOxStartNode.nodeId,
-      { x1: 1300 + 30, y1: 100, x2: 1450 - 30, y2: 100 },
-      'glycolysis-to-pyruvate',
-      'connection-special',
-      glycolysisEndNode, // Glycolysis step 10 (produces Pyruvate)
-      'phosphoenolpyruvate', // Reactant: Phosphoenolpyruvate (substrate of step 10)
-      'pyruvate' // Product: Pyruvate (product of step 10)
-    );
+    createArrowWithData(glycolysisEndNode, pyruvateOxStartNode, null, 'glycolysis-to-pyruvate', 'connection-special', glycolysisEndNode, 'phosphoenolpyruvate', 'pyruvate');
     
     const pyruvateOxStep1Node = this.reactions[glycolysisLength]; // Step 1 (Step 11)
     const pyruvateOxStep2Node = this.reactions[glycolysisLength + 1]; // Step 2 (Step 12)
@@ -1355,81 +1357,8 @@ export class MetabolismViewer {
       'acetyl-lipoamide' // Product: Acetyl-lipoamide (product of Step 12, flows to Step 3)
     );
     
-    // Connection from midpoint of Step 3 → Acetyl-CoA arrow to Step 4
-    // Dihydrolipoamide is a byproduct of Step 3 (Acetyl-CoA Formation), so arrow should start from midpoint of the NEXT arrow (Step 3 → Acetyl-CoA)
-    const step4Node_pyruvate_temp = this.reactions[glycolysisLength + 4];
-    const step4X_temp = 1825; // Aligned with midpoint of Step 3 → Acetyl-CoA arrow for vertical connection
-    const step4Y_temp = 250; // Same y as Lipoamide, forming bottom row of square
-    
-    // Find the arrow from Step 3 to Acetyl-CoA node (the next arrow after Step 3)
-    const step3ToAcetylCoaKey = getArrowKey(step3Node.nodeId, acetylCoaNode.nodeId);
-    const step3ReactantId_for_step4 = step3Node.substrate?.id || 'acetyl-lipoamide';
-    const step3ProductId_for_step4 = step3Node.product?.id || 'acetyl-coa';
-    const step3ToAcetylCoaMoleculeKey = `${step3ToAcetylCoaKey}-${step3ReactantId_for_step4}-${step3ProductId_for_step4}`;
-    let step3ToAcetylCoaArrow = this.arrowDataMap.get(step3ToAcetylCoaMoleculeKey);
-    if (!step3ToAcetylCoaArrow) {
-      step3ToAcetylCoaArrow = this.arrowDataMap.get(step3ToAcetylCoaKey);
-    }
-    if (!step3ToAcetylCoaArrow) {
-      for (const [key, arrowData] of this.arrowDataMap.entries()) {
-        if (arrowData.fromNodeId === step3Node.nodeId && arrowData.toNodeId === acetylCoaNode.nodeId) {
-          step3ToAcetylCoaArrow = arrowData;
-          break;
-        }
-      }
-    }
-    
-    // Calculate midpoint of Step 3 → Acetyl-CoA arrow (the next arrow after Step 3)
-    let midpoint_step3_acetylCoa;
-    if (step3ToAcetylCoaArrow && step3ToAcetylCoaArrow.coords) {
-      midpoint_step3_acetylCoa = {
-        x: (step3ToAcetylCoaArrow.coords.x1 + step3ToAcetylCoaArrow.coords.x2) / 2,
-        y: (step3ToAcetylCoaArrow.coords.y1 + step3ToAcetylCoaArrow.coords.y2) / 2
-      };
-    } else {
-      // Fallback: calculate directly from node positions
-      const angle_step3_to_acetylCoa = Math.atan2(acetylCoaY - step3Y, acetylCoaX - step3X);
-      const startX = step3X + 30 * Math.cos(angle_step3_to_acetylCoa);
-      const startY = step3Y + 30 * Math.sin(angle_step3_to_acetylCoa);
-      const endX = acetylCoaX - 30 * Math.cos(angle_step3_to_acetylCoa);
-      const endY = acetylCoaY - 30 * Math.sin(angle_step3_to_acetylCoa);
-      midpoint_step3_acetylCoa = {
-        x: (startX + endX) / 2,
-        y: (startY + endY) / 2
-      };
-    }
-    
-    if (midpoint_step3_acetylCoa && !isNaN(midpoint_step3_acetylCoa.x)) {
-      const dx = step4X_temp - midpoint_step3_acetylCoa.x;
-      const dy = step4Y_temp - midpoint_step3_acetylCoa.y;
-      const angle = Math.atan2(dy, dx);
-      const startX = midpoint_step3_acetylCoa.x + 10 * Math.cos(angle);
-      const startY = midpoint_step3_acetylCoa.y + 10 * Math.sin(angle);
-      
-      // Store arrow data for midpoint connection
-      const dihydrolipoamideMidpointKey = getArrowKey(step3Node.nodeId + '-midpoint', step4Node_pyruvate_temp.nodeId);
-      this.arrowDataMap.set(dihydrolipoamideMidpointKey, {
-        fromNodeId: step3Node.nodeId, // Conceptually from Step 3→Acetyl-CoA midpoint
-        toNodeId: step4Node_pyruvate_temp.nodeId,
-        fromReaction: step3Node,
-        toReaction: step4Node_pyruvate_temp,
-        targetReaction: step3Node, // This arrow represents Step 13 producing dihydrolipoamide as byproduct
-        reactantMoleculeId: 'acetyl-lipoamide', // Reactant: Acetyl-lipoamide
-        productMoleculeId: 'dihydrolipoamide', // Product: Dihydrolipoamide (byproduct, feeds into Step 4)
-        coords: { x1: startX, y1: startY, x2: step4X_temp, y2: step4Y_temp - 30 }, // Connect at top of bottom node
-        connectionId: 'step3-acetylCoa-midpoint-to-step4',
-        isMidpointConnection: true
-      });
-      
-      createArrow(
-        { x1: startX, y1: startY, x2: step4X_temp, y2: step4Y_temp - 30 }, // Connect at top of bottom node
-        'step3-acetylCoa-midpoint-to-step4',
-        'connection-midpoint',
-        () => {
-          this.selectReaction(step3Node);
-        }
-      ).hitArea.attr('stroke-width', 30);
-    }
+    // Secondary arrows from midpoints are now created automatically via createSecondaryArrowsFromMidpoints()
+    // This handles cases like Step 3 → Acetyl-CoA (primary) and Step 3 → Step 4 (secondary from midpoint)
     
     // Connection from Acetyl-CoA node to the midpoint of Step 1 → Step 2 arrow in citric acid cycle
     const step1Node = this.reactions[cacStartIndex];
@@ -1642,7 +1571,7 @@ export class MetabolismViewer {
     
     // Store cycle arrow data
     const cycleKey = getArrowKey(step8Node.nodeId, step1Node.nodeId);
-    this.arrowDataMap.set(cycleKey, {
+    const cycleArrowData = {
       fromNodeId: step8Node.nodeId,
       toNodeId: step1Node.nodeId,
       fromReaction: step8Node,
@@ -1650,7 +1579,13 @@ export class MetabolismViewer {
       targetReaction: step8Node, // Step 8 (Malate Oxidation)
       coords: cycleCoords,
       connectionId: 'cac-cycle'
-    });
+    };
+    this.arrowDataMap.set(cycleKey, cycleArrowData);
+    
+    // Add connection ID to step 8's arrowIds
+    if (!step8Node.arrowIds.includes('cac-cycle')) {
+      step8Node.arrowIds.push('cac-cycle');
+    }
     
     // Draw cycle arrow with narrower hit area
     const cycleArrow = this.g.append('line')
@@ -1688,6 +1623,197 @@ export class MetabolismViewer {
         event.stopPropagation();
         this.selectReaction(step8Node);
       });
+    
+    // Automatically create secondary arrows from midpoints for multi-product reactions
+    // This must be called after all primary arrows are created
+    this.createSecondaryArrowsFromMidpoints();
+  }
+  
+  /**
+   * Helper method to create a connection from a node to the midpoint of an arrow
+   */
+  createMidpointConnection(fromNode, toArrowConnectionId, connectionId, targetReaction, reactantId, productId, toNodePosition = null) {
+    const arrowData = findArrowData(
+      this.arrowDataMap,
+      toArrowConnectionId,
+      null,
+      null,
+      null,
+      null
+    );
+    
+    let midpoint;
+    if (arrowData && arrowData.coords) {
+      midpoint = calculateArrowMidpoint(arrowData.coords);
+    } else if (toNodePosition) {
+      // Fallback: calculate from node positions
+      const fromPos = fromNode.position;
+      const angle = Math.atan2(toNodePosition.y - fromPos.y, toNodePosition.x - fromPos.x);
+      const startX = fromPos.x + 30 * Math.cos(angle);
+      const startY = fromPos.y + 30 * Math.sin(angle);
+      const endX = toNodePosition.x - 30 * Math.cos(angle);
+      const endY = toNodePosition.y - 30 * Math.sin(angle);
+      midpoint = { x: (startX + endX) / 2, y: (startY + endY) / 2 };
+    } else {
+      console.warn(`Cannot find midpoint for connection ${connectionId}`);
+      return null;
+    }
+    
+    const fromPos = fromNode.position;
+    const dx = midpoint.x - (fromPos.x + 30);
+    const dy = midpoint.y - fromPos.y;
+    const angle = Math.atan2(dy, dx);
+    const endX = midpoint.x - 10 * Math.cos(angle);
+    const endY = midpoint.y - 10 * Math.sin(angle);
+    
+    const coords = { x1: fromPos.x + 30, y1: fromPos.y, x2: endX, y2: endY };
+    
+    // Store arrow data
+    const midpointKey = `${fromNode.nodeId}-midpoint-${connectionId}`;
+    const arrowDataEntry = {
+      fromNodeId: fromNode.nodeId,
+      toNodeId: targetReaction?.nodeId || 'midpoint',
+      fromReaction: fromNode,
+      toReaction: targetReaction,
+      targetReaction: targetReaction,
+      reactantMoleculeId: reactantId,
+      productMoleculeId: productId,
+      coords: coords,
+      connectionId: connectionId,
+      isMidpointConnection: true
+    };
+    this.arrowDataMap.set(midpointKey, arrowDataEntry);
+    
+    // Add to reaction's arrowIds
+    if (targetReaction && !targetReaction.arrowIds.includes(connectionId)) {
+      targetReaction.arrowIds.push(connectionId);
+    }
+    
+    // Create visual arrow with wider hit area for midpoint connections
+    const arrowResult = this.createArrowVisual(coords, connectionId, 'connection-midpoint', () => {
+      this.selectReaction(targetReaction);
+    });
+    if (arrowResult && arrowResult.hitArea) {
+      arrowResult.hitArea.attr('stroke-width', 30);
+    }
+    
+    return arrowResult;
+  }
+  
+  /**
+   * Automatically create secondary arrows from midpoints of primary arrows
+   * for reactions that produce multiple products
+   */
+  createSecondaryArrowsFromMidpoints() {
+    // Configuration for reactions with multiple products
+    // Format: { reactionIndex, primaryArrowConnectionId, secondaryProducts: [{ toNodeId, connectionId, reactantId, productId, targetReaction }] }
+    const multiProductConfig = [
+      {
+        // Step 3 (Pyruvate Oxidation) produces Acetyl-CoA (primary) and Dihydrolipoamide (secondary)
+        reactionIndex: glycolysisReactions.length + 2, // Step 3
+        primaryArrowConnectionId: 'step3-to-acetyl-coa',
+        secondaryProducts: [{
+          toNodeId: this.reactions[glycolysisReactions.length + 4].nodeId, // Step 4
+          connectionId: 'step3-acetylCoa-midpoint-to-step4',
+          reactantId: 'acetyl-lipoamide',
+          productId: 'dihydrolipoamide',
+          targetReaction: this.reactions[glycolysisReactions.length + 2], // Step 3
+          toNodePosition: { x: 1825, y: 250 } // Step 4 position
+        }]
+      }
+    ];
+    
+    multiProductConfig.forEach(config => {
+      const reaction = this.reactions[config.reactionIndex];
+      if (!reaction) return;
+      
+      // Find the primary arrow
+      const primaryArrow = findArrowData(
+        this.arrowDataMap,
+        config.primaryArrowConnectionId,
+        reaction.nodeId,
+        null,
+        null,
+        null
+      );
+      
+      if (!primaryArrow) {
+        console.warn(`Primary arrow not found for reaction at index ${config.reactionIndex}`);
+        return;
+      }
+      
+      // Create secondary arrows from midpoint
+      config.secondaryProducts.forEach(secondary => {
+        const toNode = this.nodeMap.get(secondary.toNodeId);
+        if (!toNode) {
+          console.warn(`Target node not found: ${secondary.toNodeId}`);
+          return;
+        }
+        
+        createSecondaryArrowFromMidpoint(
+          this,
+          primaryArrow,
+          reaction,
+          toNode,
+          secondary.connectionId,
+          secondary.targetReaction,
+          secondary.reactantId,
+          secondary.productId,
+          secondary.toNodePosition
+        );
+      });
+    });
+  }
+  
+  /**
+   * Helper method to create visual arrow elements
+   */
+  createArrowVisual(coords, connectionId, className, onClick) {
+    // Create visible arrow line
+    const visibleArrow = this.g.append('line')
+      .attr('class', `connection ${className || ''}`)
+      .attr('data-connection-id', connectionId)
+      .attr('x1', coords.x1)
+      .attr('y1', coords.y1)
+      .attr('x2', coords.x2)
+      .attr('y2', coords.y2)
+      .attr('stroke', '#2c5f7c')
+      .attr('stroke-width', 4)
+      .attr('stroke-opacity', 0.7)
+      .attr('marker-end', 'url(#arrowhead)')
+      .style('pointer-events', 'none');
+    
+    // Create invisible hit area
+    const hitArea = this.g.append('line')
+      .attr('class', `connection-hit ${className ? 'connection-hit-special' : ''}`)
+      .attr('data-connection-id', connectionId)
+      .attr('x1', coords.x1)
+      .attr('y1', coords.y1)
+      .attr('x2', coords.x2)
+      .attr('y2', coords.y2)
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 40)
+      .attr('stroke-opacity', 0)
+      .style('cursor', 'pointer')
+      .style('pointer-events', 'all')
+      .on('mouseenter', () => {
+        visibleArrow
+          .attr('stroke-width', 6)
+          .attr('stroke-opacity', 1);
+      })
+      .on('mouseleave', () => {
+        visibleArrow
+          .attr('stroke-width', 4)
+          .attr('stroke-opacity', 0.7);
+      })
+      .on('click', (event) => {
+        event.stopPropagation();
+        if (onClick) {
+          onClick(event);
+        }
+      });
+    
+    return { visibleArrow, hitArea };
   }
   
   drawReactions() {
