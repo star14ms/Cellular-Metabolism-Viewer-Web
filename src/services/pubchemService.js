@@ -84,6 +84,17 @@ export async function fetchCompoundByName(compoundName) {
       compoundName.trim().replace(/-/g, ' '),
     ];
     
+    // Handle comma-containing names (e.g., "1,3-Bisphosphoglycerate")
+    // Try variations with and without spaces after commas
+    if (compoundName.includes(',')) {
+      nameVariations.push(
+        compoundName.trim().replace(/,\s*/g, ','),  // Remove spaces after commas
+        compoundName.trim().replace(/,\s*/g, ', '),  // Ensure space after comma
+        compoundName.trim().replace(/,\s*/g, ' '),   // Replace comma with space
+        compoundName.trim().replace(/,/g, '')        // Remove commas entirely
+      );
+    }
+    
     // Add Greek-to-English converted versions
     const greekConverted = convertGreekToEnglish(compoundName.trim());
     if (greekConverted !== compoundName.trim()) {
@@ -93,6 +104,16 @@ export async function fetchCompoundByName(compoundName) {
         greekConverted.replace(/\s+/g, ' '),
         greekConverted.replace(/-/g, ' ')
       );
+      
+      // Also handle commas in Greek-converted names
+      if (greekConverted.includes(',')) {
+        nameVariations.push(
+          greekConverted.replace(/,\s*/g, ','),
+          greekConverted.replace(/,\s*/g, ', '),
+          greekConverted.replace(/,\s*/g, ' '),
+          greekConverted.replace(/,/g, '')
+        );
+      }
     }
     
     // Remove duplicates

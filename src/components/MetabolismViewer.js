@@ -19,22 +19,78 @@ export class MetabolismViewer {
       ...options
     };
     
-    // Combine all pathway reactions
+    // Create Acetyl-CoA product node (final product of pyruvate oxidation step 3)
+    const acetylCoaNode = {
+      step: null, // This is a product node, not a reaction step
+      name: 'Acetyl-CoA Product',
+      substrate: {
+        id: 'acetyl-coa',
+        name: 'Acetyl-CoA',
+        formula: 'C₂₃H₃₈N₇O₁₇P₃S',
+        description: 'Acetyl coenzyme A, the entry point to the citric acid cycle',
+        smiles: 'CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1'
+      },
+      product: {
+        id: 'acetyl-coa',
+        name: 'Acetyl-CoA',
+        formula: 'C₂₃H₃₈N₇O₁₇P₃S',
+        description: 'Acetyl coenzyme A, the entry point to the citric acid cycle',
+        smiles: 'CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1'
+      },
+      enzyme: {
+        name: 'Product of Pyruvate Oxidation',
+        ecNumber: '',
+        description: 'Final product of pyruvate dehydrogenase complex',
+        cofactors: []
+      },
+      position: {
+        x: 1900, // 150px from step 3 (1750) for consistent arrow length
+        y: 100
+      },
+      isProductNode: true // Flag to identify this as a product node
+    };
+    
+    // Combine all pathway reactions, inserting Acetyl-CoA node after pyruvate oxidation step 3
+    const pyruvateOxStep3Index = glycolysisReactions.length + 2; // Step 3 is at index 2 in pyruvate oxidation
     this.reactions = [
       ...glycolysisReactions,
-      ...pyruvateOxidationReactions,
+      ...pyruvateOxidationReactions.slice(0, 3), // Steps 1-3
+      acetylCoaNode, // Acetyl-CoA product node
+      ...pyruvateOxidationReactions.slice(3), // Step 4
       ...citricAcidCycleReactions
     ];
     
+    // Add unique node IDs to all reactions/nodes
+    this.reactions.forEach((reaction, index) => {
+      reaction.nodeId = `node-${index}`;
+    });
+    
+    // Create node ID to reaction mapping for quick lookup
+    this.nodeMap = new Map();
+    this.reactions.forEach(reaction => {
+      this.nodeMap.set(reaction.nodeId, reaction);
+    });
+    
     // Adjust step numbers for continuity
     let stepCounter = glycolysisReactions.length + 1;
-    pyruvateOxidationReactions.forEach(reaction => {
-      reaction.step = stepCounter++;
-    });
+    // Step through pyruvate oxidation reactions (skip the Acetyl-CoA node)
+    for (let i = 0; i < pyruvateOxidationReactions.length; i++) {
+      const reactionIndex = glycolysisReactions.length + i;
+      if (i < 3) {
+        this.reactions[reactionIndex].step = stepCounter++;
+      } else if (i === 3) {
+        // Skip Acetyl-CoA node
+        this.reactions[reactionIndex + 1].step = stepCounter++;
+      }
+    }
     stepCounter = 1; // Reset for citric acid cycle (it's a cycle, so steps are independent)
-    citricAcidCycleReactions.forEach(reaction => {
-      reaction.step = stepCounter++;
+    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 1; // +1 for Acetyl-CoA node
+    citricAcidCycleReactions.forEach((reaction, i) => {
+      this.reactions[cacStartIndex + i].step = stepCounter++;
     });
+    
+    // Create arrow data dictionary: key = "fromNodeId-toNodeId", value = arrow data
+    this.arrowDataMap = new Map();
     
     // Define pathway groups
     this.pathways = [
@@ -52,15 +108,15 @@ export class MetabolismViewer {
         reactions: pyruvateOxidationReactions,
         summary: pyruvateOxidationSummary,
         startIndex: glycolysisReactions.length,
-        endIndex: glycolysisReactions.length + pyruvateOxidationReactions.length
+        endIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + 1 // +1 for Acetyl-CoA node
       },
       {
         id: 'citric-acid-cycle',
         name: 'Citric Acid Cycle',
         reactions: citricAcidCycleReactions,
         summary: citricAcidCycleSummary,
-        startIndex: glycolysisReactions.length + pyruvateOxidationReactions.length,
-        endIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + citricAcidCycleReactions.length
+        startIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + 1, // +1 for Acetyl-CoA node
+        endIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + 1 + citricAcidCycleReactions.length
       }
     ];
     
@@ -927,21 +983,32 @@ export class MetabolismViewer {
     const glycolysisLength = glycolysisReactions.length;
     const pyruvateOxidationLength = pyruvateOxidationReactions.length;
     const citricAcidCycleLength = citricAcidCycleReactions.length;
+    const cacStartIndex = glycolysisLength + pyruvateOxidationLength + 1; // After Acetyl-CoA node - declare once
     
     const connectionsData = this.reactions
       .slice(0, -1)
       .map((d, i) => ({ current: d, next: this.reactions[i + 1], index: i }))
-      .filter(({ index }) => {
+      .filter(({ index, current, next }) => {
         // Skip glycolysis step 4→5 and step 5→6 (special connections)
         if (index === 3 || index === 4) return false;
         // Skip connection from glycolysis end to pyruvate oxidation (handled separately)
         if (index === glycolysisLength - 1) return false;
+        // Skip connection from pyruvate oxidation step 3 to Acetyl-CoA node (handled separately)
+        if (index === glycolysisLength + 2) return false; // Step 3 is at index glycolysisLength + 2
+        // Skip connection from Acetyl-CoA node to pyruvate oxidation step 4 (handled separately)
+        if (current.isProductNode) return false;
         // Skip connection from pyruvate oxidation last step to citric acid cycle (handled separately)
-        if (index === glycolysisLength + pyruvateOxidationLength - 1) return false;
+        // Note: last step is now at index glycolysisLength + pyruvateOxidationLength (step 4 comes after Acetyl-CoA)
+        if (index === glycolysisLength + pyruvateOxidationLength) return false;
         // Skip citric acid cycle last step (it connects back to first, handled separately)
-        if (index === glycolysisLength + pyruvateOxidationLength + citricAcidCycleLength - 1) return false;
+        const cacStartIndex = glycolysisLength + pyruvateOxidationLength + 1; // After Acetyl-CoA node
+        if (index === cacStartIndex + citricAcidCycleLength - 1) return false;
         return true;
       });
+    
+    // Store arrow information for midpoint connections
+    // Maps arrow connection IDs to their coordinates and target reactions
+    const arrowInfoMap = new Map();
     
     // Helper function to calculate arrow coordinates
     const getArrowCoords = (d) => {
@@ -962,6 +1029,53 @@ export class MetabolismViewer {
       }
       
       return { x1, y1, x2, y2 };
+    };
+    
+    // Helper function to get midpoint of an arrow
+    const getArrowMidpoint = (arrowId) => {
+      const arrowInfo = arrowInfoMap.get(arrowId);
+      if (!arrowInfo) return null;
+      return {
+        x: (arrowInfo.x1 + arrowInfo.x2) / 2,
+        y: (arrowInfo.y1 + arrowInfo.y2) / 2
+      };
+    };
+    
+    // Helper function to create an arrow that connects to the midpoint of another arrow
+    // This is a generalized feature: any arrow drawn into the middle of another arrow
+    // will, when clicked, select the reaction that the target arrow represents
+    const createArrowToMidpoint = (startX, startY, targetArrowId, connectionId, className, targetReaction) => {
+      const midpoint = getArrowMidpoint(targetArrowId);
+      if (!midpoint) {
+        console.warn(`Arrow ${targetArrowId} not found for midpoint connection`);
+        return null;
+      }
+      
+      const dx = midpoint.x - startX;
+      const dy = midpoint.y - startY;
+      const angle = Math.atan2(dy, dx);
+      
+      // End the arrow slightly before the midpoint to avoid overlap
+      const endX = midpoint.x - 10 * Math.cos(angle);
+      const endY = midpoint.y - 10 * Math.sin(angle);
+      
+      // Create the arrow with special handling for midpoint connections
+      const arrowResult = createArrow(
+        { x1: startX, y1: startY, x2: endX, y2: endY },
+        connectionId,
+        className || 'connection-midpoint',
+        () => {
+          // When clicked, select the target reaction (the reaction the target arrow represents)
+          this.selectReaction(targetReaction);
+        }
+      );
+      
+      // Make the hit area wider at the endpoint for easier clicking
+      if (arrowResult && arrowResult.hitArea) {
+        arrowResult.hitArea.attr('stroke-width', 30); // Wider hit area for midpoint connections
+      }
+      
+      return arrowResult;
     };
     
     // Generalized function to create an arrow with visible line and hit area
@@ -1015,160 +1129,322 @@ export class MetabolismViewer {
       return { visibleArrow, hitArea };
     };
     
+    // Helper function to create arrow key from node IDs
+    const getArrowKey = (fromNodeId, toNodeId) => `${fromNodeId}-${toNodeId}`;
+    
+    // Unified function to create arrow and store in arrowDataMap
+    // Arrows are identified by reactant and product molecules (not just reactions)
+    const createArrowWithData = (fromNodeId, toNodeId, coords, connectionId, className, targetReaction, reactantMoleculeId = null, productMoleculeId = null) => {
+      const arrowKey = getArrowKey(fromNodeId, toNodeId);
+      const fromNode = this.nodeMap.get(fromNodeId);
+      const toNode = this.nodeMap.get(toNodeId);
+      
+      // Determine reactant and product molecules from the target reaction
+      // If not provided, infer from reaction's substrate and product
+      const reactantId = reactantMoleculeId || (targetReaction.substrate ? targetReaction.substrate.id : null);
+      const productId = productMoleculeId || (targetReaction.product ? targetReaction.product.id : null);
+      
+      // Store arrow data in dictionary - key includes molecule IDs for uniqueness
+      const moleculeKey = reactantId && productId ? `${arrowKey}-${reactantId}-${productId}` : arrowKey;
+      this.arrowDataMap.set(moleculeKey, {
+        fromNodeId: fromNodeId,
+        toNodeId: toNodeId,
+        fromReaction: fromNode,
+        toReaction: toNode,
+        targetReaction: targetReaction,
+        reactantMoleculeId: reactantId,
+        productMoleculeId: productId,
+        coords: coords,
+        connectionId: connectionId
+      });
+      
+      // Create visual arrow
+      return createArrow(coords, connectionId, className, () => {
+        this.selectReaction(targetReaction);
+      });
+    };
+    
     // Create regular connections using the generalized function
+    // The arrow from reaction[i] to reaction[i+1] represents reaction[i+1] (the one consuming the product)
+    // EXCEPTION: For citric acid cycle Step 1 → Step 2, the arrow represents Step 1 (Citrate Formation)
     connectionsData.forEach((d, i) => {
       const coords = getArrowCoords(d);
       const connectionId = `conn-${i}`;
-      createArrow(coords, connectionId, '', (event) => {
-        this.selectReaction(d.next);
+      
+      // Store arrow information for midpoint connections (legacy support)
+      arrowInfoMap.set(connectionId, {
+        ...coords,
+        targetReaction: d.current,
+        arrowKey: getArrowKey(d.current.nodeId, d.next.nodeId)
       });
+      
+      // Arrows represent the CURRENT reaction (the one producing the product)
+      // The arrow from Step 1 → Step 2 represents Step 1 (which produces Citrate)
+      // The arrow from Step 2 → Step 3 represents Step 2 (which produces Isocitrate)
+      createArrowWithData(
+        d.current.nodeId,
+        d.next.nodeId,
+        coords,
+        connectionId,
+        '',
+        d.current // Target reaction (the one producing the product)
+      );
     });
     
     // Special connections for glycolysis step 4 (Aldolase) which produces two products
+    const step4Node = this.reactions[3];
+    const step5Node = this.reactions[4];
+    const step6Node = this.reactions[5];
+    
     // Connection from step 4 to step 5 (vertical - dihydroxyacetone phosphate path)
-    createArrow(
+    // Reactant: Fructose-1,6-bisphosphate, Product: Dihydroxyacetone phosphate
+    // This arrow represents Step 4 reaction producing Dihydroxyacetone phosphate
+    const fructoseBisphosphateId = step4Node.substrate?.id; // "fructose_1_6_bisphosphate"
+    const dihydroxyacetoneId = step5Node.substrate?.id; // "dihydroxyacetone_phosphate"
+    const glyceraldehydeId = step6Node.substrate?.id; // "glyceraldehyde_3_phosphate"
+    
+    createArrowWithData(
+      step4Node.nodeId,
+      step5Node.nodeId,
       { x1: 550, y1: 100 + 30, x2: 550, y2: 250 - 30 },
       'step4-to-5',
       'connection-special',
-      () => {
-        this.selectReaction(this.reactions[4]); // Step 5
-      }
+      step4Node, // Step 4 (produces Dihydroxyacetone phosphate)
+      fructoseBisphosphateId,
+      dihydroxyacetoneId
     );
     
     // Connection from step 5 to step 6 (diagonal - converted glyceraldehyde-3-phosphate)
-    createArrow(
+    // Reactant: Dihydroxyacetone phosphate, Product: Glyceraldehyde-3-phosphate
+    // This arrow represents Step 5 reaction
+    createArrowWithData(
+      step5Node.nodeId,
+      step6Node.nodeId,
       { x1: 550 + 30, y1: 250, x2: 700 - 30, y2: 100 },
       'step5-to-6',
       'connection-special',
-      () => {
-        this.selectReaction(this.reactions[5]); // Step 6
-      }
+      step5Node, // Step 5
+      dihydroxyacetoneId,
+      glyceraldehydeId
     );
     
     // Connection from step 4 to step 6 (diagonal - direct glyceraldehyde-3-phosphate path)
-    // This represents the glyceraldehyde-3-phosphate that goes directly to step 6
-    createArrow(
+    // This represents: Fructose-1,6-bisphosphate → Glyceraldehyde-3-phosphate
+    // Reactant: Fructose-1,6-bisphosphate, Product: Glyceraldehyde-3-phosphate
+    // This arrow represents Step 4 reaction producing Glyceraldehyde-3-phosphate
+    createArrowWithData(
+      step4Node.nodeId,
+      step6Node.nodeId,
       { x1: 550 + 30, y1: 100, x2: 700 - 30, y2: 100 },
       'step4-to-6',
       'connection-special',
-      () => {
-        // This arrow connects step 4 to step 6, so highlight ONLY nodes 4 and 6 (not node 5)
-        const reaction6 = this.reactions[5]; // Step 6 (0-indexed: step 1 = index 0, step 6 = index 5)
-        const reaction4 = this.reactions[3]; // Step 4 (0-indexed: step 4 = index 3)
-        
-        // Reset all highlights first
-        this.reactionGroups.selectAll('.reaction-circle')
-          .attr('stroke-width', 2)
-          .attr('stroke', '#2c5f7c')
-          .attr('fill', '#5fa8d3');
-        
-        this.reactionGroups.selectAll('.molecule-image-bg')
-          .attr('stroke', '#dee2e6')
-          .attr('stroke-width', 2)
-          .attr('fill', this.getImageBgColor());
-        
-        // Highlight node 4 (substrate source)
-        const reaction4Group = this.reactionGroups.filter(d => d === reaction4);
-        reaction4Group.select('.reaction-circle')
-          .attr('stroke-width', 4)
-          .attr('stroke', '#ff6b6b')
-          .attr('fill', '#ff8787');
-        reaction4Group.select('.molecule-image-bg')
-          .attr('stroke', '#ff6b6b')
-          .attr('stroke-width', 4)
-          .attr('fill', '#fff5f5');
-        
-        // Highlight node 6 (target) - but NOT node 5
-        const reaction6Group = this.reactionGroups.filter(d => d === reaction6);
-        reaction6Group.select('.reaction-circle')
-          .attr('stroke-width', 4)
-          .attr('stroke', '#ff6b6b')
-          .attr('fill', '#ff8787');
-        reaction6Group.select('.molecule-image-bg')
-          .attr('stroke', '#ff6b6b')
-          .attr('stroke-width', 4)
-          .attr('fill', '#fff5f5');
-        
-        // Update selection state
-        this.selectedReaction = reaction6;
-        this.selectedMolecule = null;
-        this.selectedNode = null;
-        this.selectedPathway = null;
-        
-        // Dispatch reaction selected event
-        const detailEvent = new CustomEvent('reaction-selected', {
-          detail: reaction6
-        });
-        this.container.dispatchEvent(detailEvent);
-        
-        // Also update pathway detail panel
-        const pathway = this.getPathwayForReaction(reaction6);
-        if (pathway) {
-          const pathwayEvent = new CustomEvent('pathway-updated', {
-            detail: {
-              summary: pathway.summary,
-              reactions: pathway.reactions,
-              pathway: pathway,
-              selectedReaction: reaction6,
-              selectedType: 'reaction'
-            }
-          });
-          this.container.dispatchEvent(pathwayEvent);
-        }
-      }
+      step4Node, // Step 4 (produces Glyceraldehyde-3-phosphate)
+      fructoseBisphosphateId,
+      glyceraldehydeId
     );
     
     // Connection from glycolysis end (pyruvate) to pyruvate oxidation (first step)
-    createArrow(
+    // This arrow represents: Phosphoenolpyruvate → Pyruvate (Glycolysis step 10)
+    // Reactant: Phosphoenolpyruvate (substrate of glycolysis step 10)
+    // Product: Pyruvate (product of glycolysis step 10, consumed by pyruvate oxidation step 1)
+    const glycolysisEndNode = this.reactions[glycolysisLength - 1];
+    const pyruvateOxStartNode = this.reactions[glycolysisLength];
+    createArrowWithData(
+      glycolysisEndNode.nodeId,
+      pyruvateOxStartNode.nodeId,
       { x1: 1300 + 30, y1: 100, x2: 1450 - 30, y2: 100 },
       'glycolysis-to-pyruvate',
       'connection-special',
-      () => {
-        this.selectReaction(this.reactions[glycolysisLength]); // Pyruvate oxidation step 1
-      }
+      glycolysisEndNode, // Glycolysis step 10 (produces Pyruvate)
+      'phosphoenolpyruvate', // Reactant: Phosphoenolpyruvate (substrate of step 10)
+      'pyruvate' // Product: Pyruvate (product of step 10)
     );
     
-    // Connection from pyruvate oxidation end (step 4) to citric acid cycle (citrate formation)
-    // Calculate angle from last pyruvate oxidation step to citrate (top of octagon)
-    const pyruvateOxEndX = 1900;
-    const pyruvateOxEndY = 100;
-    const citrateX = 2050;
-    const citrateY = 200; // Updated to scaled 1.5x position
-    const angle = Math.atan2(citrateY - pyruvateOxEndY, citrateX - pyruvateOxEndX);
-    
-    createArrow(
-      {
-        x1: pyruvateOxEndX + 30 * Math.cos(angle),
-        y1: pyruvateOxEndY + 30 * Math.sin(angle),
-        x2: citrateX - 30 * Math.cos(angle),
-        y2: citrateY - 30 * Math.sin(angle)
-      },
-      'pyruvate-to-cac',
+    // Connection from pyruvate oxidation step 3 to Acetyl-CoA node
+    const step3X = 1750;
+    const step3Y = 100;
+    const acetylCoaX = 1900;
+    const acetylCoaY = 100;
+    const step3Node = this.reactions[glycolysisLength + 2];
+    const acetylCoaNode = this.reactions[glycolysisLength + 3];
+    createArrowWithData(
+      step3Node.nodeId,
+      acetylCoaNode.nodeId,
+      { x1: step3X + 30, y1: step3Y, x2: acetylCoaX - 30, y2: acetylCoaY },
+      'step3-to-acetyl-coa',
       'connection-special',
-      () => {
-        this.selectReaction(this.reactions[glycolysisLength + pyruvateOxidationLength]); // First CAC step
-      }
+      step3Node // Pyruvate oxidation step 3
     );
     
-    // Connection from citric acid cycle end (malate, step 8) back to start (citrate, step 1)
-    // This completes the cycle - malate is at top-left, citrate is at top
-    const malateX = 1891; // Updated to scaled 1.5x position
-    const malateY = 266; // Updated to scaled 1.5x position
-    const cycleAngle = Math.atan2(citrateY - malateY, citrateX - malateX);
+    // Connection from Acetyl-CoA node to the midpoint of Step 1 → Step 2 arrow in citric acid cycle
+    const step1Node = this.reactions[cacStartIndex];
+    const step2Node = this.reactions[cacStartIndex + 1];
+    const step1ToStep2Key = getArrowKey(step1Node.nodeId, step2Node.nodeId);
     
-    createArrow(
-      {
-        x1: malateX + 30 * Math.cos(cycleAngle),
-        y1: malateY + 30 * Math.sin(cycleAngle),
-        x2: citrateX - 30 * Math.cos(cycleAngle),
-        y2: citrateY - 30 * Math.sin(cycleAngle)
-      },
-      'cac-cycle',
+    // Try to find the arrow with molecule-based key first, then fallback to simple key
+    const step1ReactantId = step1Node.substrate?.id || 'oxaloacetate';
+    const step1ProductId = step1Node.product?.id || 'citrate';
+    const step1ToStep2MoleculeKey = `${step1ToStep2Key}-${step1ReactantId}-${step1ProductId}`;
+    let step1ToStep2Arrow = this.arrowDataMap.get(step1ToStep2MoleculeKey);
+    if (!step1ToStep2Arrow) {
+      // Fallback to simple key
+      step1ToStep2Arrow = this.arrowDataMap.get(step1ToStep2Key);
+    }
+    // If still not found, search through all arrows to find one with matching from/to nodes
+    if (!step1ToStep2Arrow) {
+      for (const [key, arrowData] of this.arrowDataMap.entries()) {
+        if (arrowData.fromNodeId === step1Node.nodeId && arrowData.toNodeId === step2Node.nodeId) {
+          step1ToStep2Arrow = arrowData;
+          break;
+        }
+      }
+    }
+    
+    // Calculate midpoint coordinates - either from arrow data or directly from node positions
+    let midpoint;
+    if (step1ToStep2Arrow && step1ToStep2Arrow.coords) {
+      midpoint = {
+        x: (step1ToStep2Arrow.coords.x1 + step1ToStep2Arrow.coords.x2) / 2,
+        y: (step1ToStep2Arrow.coords.y1 + step1ToStep2Arrow.coords.y2) / 2
+      };
+    } else {
+      // Fallback: calculate midpoint directly from node positions
+      const step1X = step1Node.position.x;
+      const step1Y = step1Node.position.y;
+      const step2X = step2Node.position.x;
+      const step2Y = step2Node.position.y;
+      const angle_step1_to_step2 = Math.atan2(step2Y - step1Y, step2X - step1X);
+      const startX = step1X + 30 * Math.cos(angle_step1_to_step2);
+      const startY = step1Y + 30 * Math.sin(angle_step1_to_step2);
+      const endX_temp = step2X - 30 * Math.cos(angle_step1_to_step2);
+      const endY_temp = step2Y - 30 * Math.sin(angle_step1_to_step2);
+      midpoint = {
+        x: (startX + endX_temp) / 2,
+        y: (startY + endY_temp) / 2
+      };
+    }
+    
+    if (midpoint && !isNaN(midpoint.x) && !isNaN(midpoint.y)) {
+      const dx = midpoint.x - (acetylCoaX + 30);
+      const dy = midpoint.y - acetylCoaY;
+      const angle = Math.atan2(dy, dx);
+      const endX = midpoint.x - 10 * Math.cos(angle);
+      const endY = midpoint.y - 10 * Math.sin(angle);
+      
+      // Store arrow data for midpoint connection (from Acetyl-CoA to midpoint)
+      const midpointKey = getArrowKey(acetylCoaNode.nodeId, step1Node.nodeId + '-midpoint');
+      this.arrowDataMap.set(midpointKey, {
+        fromNodeId: acetylCoaNode.nodeId,
+        toNodeId: step1Node.nodeId, // Points to Step 1's node
+        fromReaction: acetylCoaNode,
+        toReaction: step1Node,
+        targetReaction: step1Node, // Step 1
+        coords: { x1: acetylCoaX + 30, y1: acetylCoaY, x2: endX, y2: endY },
+        connectionId: 'acetyl-coa-to-cac-step1',
+        isMidpointConnection: true
+      });
+      
+      // Only create arrow if coordinates are valid
+      if (!isNaN(endX) && !isNaN(endY)) {
+        const arrowCoords = { x1: acetylCoaX + 30, y1: acetylCoaY, x2: endX, y2: endY };
+        const arrowResult = createArrow(
+          arrowCoords,
+          'acetyl-coa-to-cac-step1',
+          'connection-midpoint',
+          () => {
+            this.selectReaction(step1Node);
+          }
+        );
+        if (arrowResult && arrowResult.hitArea) {
+          arrowResult.hitArea.attr('stroke-width', 30);
+        }
+        // Keep arrow styling consistent with other arrows
+        if (arrowResult && arrowResult.visibleArrow) {
+          arrowResult.visibleArrow
+            .attr('stroke-width', 4)
+            .attr('stroke-opacity', 0.7)
+            .attr('stroke', '#2c5f7c'); // Same color as other arrows
+        }
+      } else {
+        console.warn('Invalid coordinates for Acetyl-CoA to CAC Step 1 arrow:', { endX, endY, midpoint });
+      }
+    }
+    
+    // Connection from Acetyl-CoA node to pyruvate oxidation step 4 (Lipoamide Regeneration)
+    const step4Node_pyruvate = this.reactions[glycolysisLength + 4];
+    const step4X = 2050;
+    const step4Y = 100;
+    createArrowWithData(
+      acetylCoaNode.nodeId,
+      step4Node_pyruvate.nodeId,
+      { x1: acetylCoaX + 30, y1: acetylCoaY, x2: step4X - 30, y2: step4Y },
+      'acetyl-coa-to-step4',
       'connection-special',
-      () => {
-        this.selectReaction(this.reactions[glycolysisLength + pyruvateOxidationLength]); // First CAC step (cycle back)
-      }
+      step4Node_pyruvate // Pyruvate oxidation step 4
     );
+    
+    // Connection from citric acid cycle end (step 8) back to start (step 1)
+    const step8Node = this.reactions[cacStartIndex + citricAcidCycleLength - 1];
+    const step8X = 1975;
+    const step8Y = 425;
+    const step1X_cycle = 2041;
+    const step1Y_cycle = 266;
+    const cycleAngle = Math.atan2(step1Y_cycle - step8Y, step1X_cycle - step8X);
+    const cycleCoords = {
+      x1: step8X + 30 * Math.cos(cycleAngle),
+      y1: step8Y + 30 * Math.sin(cycleAngle),
+      x2: step1X_cycle - 30 * Math.cos(cycleAngle),
+      y2: step1Y_cycle - 30 * Math.sin(cycleAngle)
+    };
+    
+    // Store cycle arrow data
+    const cycleKey = getArrowKey(step8Node.nodeId, step1Node.nodeId);
+    this.arrowDataMap.set(cycleKey, {
+      fromNodeId: step8Node.nodeId,
+      toNodeId: step1Node.nodeId,
+      fromReaction: step8Node,
+      toReaction: step1Node,
+      targetReaction: step8Node, // Step 8 (Malate Oxidation)
+      coords: cycleCoords,
+      connectionId: 'cac-cycle'
+    });
+    
+    // Draw cycle arrow with narrower hit area
+    const cycleArrow = this.g.append('line')
+      .attr('class', 'connection connection-special')
+      .attr('data-connection-id', 'cac-cycle')
+      .attr('x1', cycleCoords.x1)
+      .attr('y1', cycleCoords.y1)
+      .attr('x2', cycleCoords.x2)
+      .attr('y2', cycleCoords.y2)
+      .attr('stroke', '#2c5f7c')
+      .attr('stroke-width', 4)
+      .attr('stroke-opacity', 0.7)
+      .attr('marker-end', 'url(#arrowhead)')
+      .style('pointer-events', 'none');
+    
+    const cycleHitArea = this.g.append('line')
+      .attr('class', 'connection-hit connection-hit-special')
+      .attr('data-connection-id', 'cac-cycle')
+      .attr('x1', cycleCoords.x1)
+      .attr('y1', cycleCoords.y1)
+      .attr('x2', step1X_cycle - 80 * Math.cos(cycleAngle))
+      .attr('y2', step1Y_cycle - 80 * Math.sin(cycleAngle))
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 10)
+      .attr('stroke-opacity', 0)
+      .style('cursor', 'pointer')
+      .style('pointer-events', 'all')
+      .on('mouseenter', () => {
+        cycleArrow.attr('stroke-width', 6).attr('stroke-opacity', 1);
+      })
+      .on('mouseleave', () => {
+        cycleArrow.attr('stroke-width', 4).attr('stroke-opacity', 0.7);
+      })
+      .on('click', (event) => {
+        event.stopPropagation();
+        this.selectReaction(step8Node);
+      });
   }
   
   drawReactions() {
@@ -1255,8 +1531,26 @@ export class MetabolismViewer {
       .attr('font-size', '16px')
       .attr('font-weight', '500')
       .text(d => {
-        // Split compound names at hyphens for better line breaks
-        return splitCompoundName(d.substrate.name);
+        // For citric acid cycle reactions, show previous reaction's product (shifted one step backward)
+        // For other reactions, show substrate name
+        const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 1;
+        const currentIndex = this.reactions.indexOf(d);
+        const isCACReaction = currentIndex >= cacStartIndex;
+        
+        let moleculeName;
+        if (isCACReaction) {
+          // Find the previous reaction in the cycle (wrapping around if at the start)
+          const cacLength = citricAcidCycleReactions.length;
+          const relativeIndex = currentIndex - cacStartIndex;
+          const prevRelativeIndex = (relativeIndex - 1 + cacLength) % cacLength;
+          const prevCACIndex = cacStartIndex + prevRelativeIndex;
+          const prevReaction = this.reactions[prevCACIndex];
+          // Use previous reaction's product
+          moleculeName = prevReaction && prevReaction.product ? prevReaction.product.name : d.product.name;
+        } else {
+          moleculeName = d.substrate.name;
+        }
+        return splitCompoundName(moleculeName);
       });
     
     // Apply text wrapping to ALL labels (even single-word ones)
@@ -1537,8 +1831,27 @@ export class MetabolismViewer {
       .on('click', (event, d) => {
         event.stopPropagation();
         event.preventDefault();
-        // Show the substrate molecule when clicking node, and pass the reaction node for highlighting
-        this.selectMolecule(d.substrate, d);
+        // For CAC reactions, select the molecule that's visually displayed on the node
+        // (which is the previous reaction's product)
+        // For other reactions, show the substrate
+        const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 1;
+        const currentIndex = this.reactions.indexOf(d);
+        const isCACReaction = currentIndex >= cacStartIndex;
+        
+        let molecule;
+        if (isCACReaction) {
+          // Find the previous reaction in the cycle (which product is displayed on this node)
+          const cacLength = citricAcidCycleReactions.length;
+          const relativeIndex = currentIndex - cacStartIndex;
+          const prevRelativeIndex = (relativeIndex - 1 + cacLength) % cacLength;
+          const prevCACIndex = cacStartIndex + prevRelativeIndex;
+          const prevReaction = this.reactions[prevCACIndex];
+          // Use previous reaction's product (what's actually displayed on this node)
+          molecule = prevReaction && prevReaction.product ? prevReaction.product : d.product;
+        } else {
+          molecule = d.substrate;
+        }
+        this.selectMolecule(molecule, d);
       })
       .on('dblclick', (event, d) => {
         event.stopPropagation();
@@ -1645,14 +1958,47 @@ export class MetabolismViewer {
     }
   }
   
+  // Helper function to highlight a node by nodeId with specified color
+  highlightNode(nodeId, colorType = 'product') {
+    const node = this.nodeMap.get(nodeId);
+    if (!node) return;
+    
+    // Different colors for reactants vs products
+    // Reactants use the same color as node selection (teal/cyan)
+    const colors = {
+      reactant: {
+        stroke: '#4ecdc4',  // Teal/cyan - same as node selection color
+        fill: '#6ee7e7',
+        bgStroke: '#4ecdc4',
+        bgFill: '#f0fdfa'
+      },
+      product: {
+        stroke: '#ff6b6b',  // Red for products
+        fill: '#ff8787',
+        bgStroke: '#ff6b6b',
+        bgFill: '#fff5f5'
+      }
+    };
+    
+    const color = colors[colorType] || colors.product;
+    const nodeGroup = this.reactionGroups.filter(d => d === node);
+    nodeGroup.select('.reaction-circle')
+      .attr('stroke-width', 4)
+      .attr('stroke', color.stroke)
+      .attr('fill', color.fill);
+    nodeGroup.select('.molecule-image-bg')
+      .attr('stroke', color.bgStroke)
+      .attr('stroke-width', 4)
+      .attr('fill', color.bgFill);
+  }
+  
   applyReactionHighlight(reaction) {
-    // Remove previous selection - reset all nodes and arrows to original style
+    // Reset all highlights
     this.reactionGroups.selectAll('.reaction-circle')
       .attr('stroke-width', 2)
       .attr('stroke', '#2c5f7c')
       .attr('fill', '#5fa8d3');
     
-    // Reset image backgrounds
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     this.reactionGroups.selectAll('.molecule-image-bg')
       .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
@@ -1663,37 +2009,117 @@ export class MetabolismViewer {
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7);
     
-    // Highlight nodes involved in this reaction
-    const reactionGroup = this.reactionGroups.filter(d => d === reaction);
+    // Find ALL arrows that represent this reaction (to handle multiple products)
+    // Collect all unique reactant and product nodes
+    const reactantNodeIds = new Set();
+    const productNodeIds = new Set();
     
-    // Highlight circle (if visible)
-    reactionGroup.select('.reaction-circle')
-      .attr('stroke-width', 4)
-      .attr('stroke', '#ff6b6b')
-      .attr('fill', '#ff8787');
-    
-    // Highlight image background (if visible)
-    reactionGroup.select('.molecule-image-bg')
-      .attr('stroke', '#ff6b6b')
-      .attr('stroke-width', 4)
-      .attr('fill', '#fff5f5');
-    
-    // Also highlight the previous reaction node (substrate source)
-    const prevIndex = this.reactions.indexOf(reaction) - 1;
-    if (prevIndex >= 0) {
-      const prevReaction = this.reactions[prevIndex];
-      const prevGroup = this.reactionGroups.filter(d => d === prevReaction);
-      
-      prevGroup.select('.reaction-circle')
-        .attr('stroke-width', 4)
-        .attr('stroke', '#ff6b6b')
-        .attr('fill', '#ff8787');
-      
-      prevGroup.select('.molecule-image-bg')
-        .attr('stroke', '#ff6b6b')
-        .attr('stroke-width', 4)
-        .attr('fill', '#fff5f5');
+    // Define excluded molecules for specific reactions (molecules that should not be highlighted as reactants)
+    const excludedReactants = new Map();
+    // For Step 11 (Pyruvate Decarboxylation), exclude Phosphoenolpyruvate from reactant highlighting
+    if (reaction.step === 11 && reaction.name === 'Pyruvate Decarboxylation') {
+      excludedReactants.set('phosphoenolpyruvate', true);
     }
+    
+    // Search for all arrows with this target reaction
+    for (const [arrowKey, data] of this.arrowDataMap.entries()) {
+      if (data.targetReaction === reaction) {
+        // Check if the reactant node should be highlighted
+        // Only add if the node's displayed molecule matches the reactant molecule, or if it's excluded
+        const fromNode = this.nodeMap.get(data.fromNodeId);
+        if (fromNode) {
+          // Check if the node's displayed substrate matches the reactant molecule
+          const nodeSubstrateId = fromNode.substrate?.id;
+          const nodeProductId = fromNode.product?.id;
+          const reactantMoleculeId = data.reactantMoleculeId;
+          
+          // If we have a specific reactant molecule ID, check if the node displays it
+          if (reactantMoleculeId) {
+            // Only highlight if:
+            // 1. The node's substrate matches the reactant molecule, OR
+            // 2. The node's product matches the reactant molecule (and substrate is not excluded)
+            const substrateMatches = nodeSubstrateId === reactantMoleculeId;
+            const productMatches = nodeProductId === reactantMoleculeId;
+            
+            if (substrateMatches || productMatches) {
+              // Check if the displayed substrate should be excluded
+              if (!excludedReactants.has(nodeSubstrateId)) {
+                reactantNodeIds.add(data.fromNodeId);
+              }
+            }
+          } else {
+            // No specific reactant molecule, add the node (legacy behavior)
+            if (!excludedReactants.has(nodeSubstrateId)) {
+              reactantNodeIds.add(data.fromNodeId);
+            }
+          }
+        } else {
+          // Fallback: add the node if we can't check it
+          reactantNodeIds.add(data.fromNodeId);
+        }
+        
+        // For product node, find where the product molecule is actually displayed
+        // In pyruvate oxidation and glycolysis, nodes show substrates, so the product
+        // is displayed on the next node (where it becomes the substrate)
+        if (data.productMoleculeId) {
+          // Find the next reaction after this one that uses the product as substrate
+          const reactionIndex = this.reactions.indexOf(reaction);
+          const nextNode = this.reactions.slice(reactionIndex + 1).find(r => 
+            r.substrate?.id === data.productMoleculeId
+          );
+          if (nextNode) {
+            productNodeIds.add(nextNode.nodeId);
+          } else {
+            // Fallback to toNodeId if we can't find where product is displayed
+            productNodeIds.add(data.toNodeId);
+          }
+        } else {
+          // Fallback to toNodeId if no product molecule ID
+          productNodeIds.add(data.toNodeId);
+        }
+      }
+    }
+    
+    // If no arrows found, try fallback logic
+    if (reactantNodeIds.size === 0 && productNodeIds.size === 0) {
+      const reactionIndex = this.reactions.indexOf(reaction);
+      if (reactionIndex >= 0 && reactionIndex < this.reactions.length - 1) {
+        const nextNode = this.reactions[reactionIndex + 1];
+        if (!nextNode.isProductNode) {
+          reactantNodeIds.add(reaction.nodeId);
+          productNodeIds.add(nextNode.nodeId);
+        }
+      }
+    }
+    
+    // Special handling for CAC Step 1 (Citrate Formation)
+    // For CAC reactions, nodes display the previous reaction's product, not the substrate
+    // So we need to ensure Step 1 node (displaying Oxaloacetate) is highlighted as reactant
+    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 1;
+    const isCACStep1 = reaction.step === 1 && this.reactions.indexOf(reaction) === cacStartIndex;
+    
+    if (isCACStep1) {
+      // Ensure Step 1 node (Oxaloacetate) is in reactant list, not product list
+      productNodeIds.delete(reaction.nodeId);
+      reactantNodeIds.add(reaction.nodeId);
+      
+      // Also ensure Acetyl-CoA node is in reactant list if not already there
+      const acetylCoaNode = this.reactions.find(r => r.isProductNode && r.substrate?.id === 'acetyl-coa');
+      if (acetylCoaNode) {
+        reactantNodeIds.add(acetylCoaNode.nodeId);
+        productNodeIds.delete(acetylCoaNode.nodeId);
+      }
+    }
+    
+    // Highlight all reactant nodes in blue
+    reactantNodeIds.forEach(nodeId => {
+      this.highlightNode(nodeId, 'reactant');
+    });
+    
+    // Highlight all product nodes in red
+    productNodeIds.forEach(nodeId => {
+      this.highlightNode(nodeId, 'product');
+    });
   }
   
   selectMolecule(molecule, reactionNode) {
@@ -1750,7 +2176,7 @@ export class MetabolismViewer {
       .attr('stroke-width', 2)
       .attr('fill', this.getImageBgColor());
     
-    // Highlight only the clicked node in teal/cyan
+    // Always highlight the clicked node itself (the molecule selected is what's displayed on that node)
     const selectedGroup = this.reactionGroups.filter(d => d === reactionNode);
     
     // Highlight circle (if visible)
@@ -1795,11 +2221,24 @@ export class MetabolismViewer {
   }
   
   async fetchMoleculeImages() {
-    // Fetch PubChem data for all substrates to get image URLs
+    // Fetch PubChem data for all molecules to get image URLs
     const uniqueMolecules = new Map();
+    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 1;
+    const cacLength = citricAcidCycleReactions.length;
     
-    this.reactions.forEach(reaction => {
-      const molecule = reaction.substrate;
+    this.reactions.forEach((reaction, index) => {
+      let molecule;
+      // For CAC reactions, use previous reaction's product (shifted one step backward)
+      if (index >= cacStartIndex && index < cacStartIndex + cacLength) {
+        const relativeIndex = index - cacStartIndex;
+        const prevRelativeIndex = (relativeIndex - 1 + cacLength) % cacLength;
+        const prevCACIndex = cacStartIndex + prevRelativeIndex;
+        const prevReaction = this.reactions[prevCACIndex];
+        molecule = prevReaction && prevReaction.product ? prevReaction.product : reaction.product;
+      } else {
+        molecule = reaction.substrate;
+      }
+      
       if (molecule && !uniqueMolecules.has(molecule.id)) {
         uniqueMolecules.set(molecule.id, molecule);
       }
@@ -1815,9 +2254,26 @@ export class MetabolismViewer {
           this.moleculeImages.set(id, pubchemData.image2DUrlSmall);
           
           // Update all nodes that use this molecule
-          this.reactionGroups.filter(d => d.substrate.id === id)
-            .select('.molecule-structure-image')
-            .attr('href', pubchemData.image2DUrlSmall);
+          // For CAC reactions, check if they should display this molecule (previous reaction's product)
+          const reactions = this.reactions;
+          this.reactionGroups.each(function(d) {
+            const reactionIndex = reactions.indexOf(d);
+            let displayMolecule;
+            if (reactionIndex >= cacStartIndex && reactionIndex < cacStartIndex + cacLength) {
+              const relativeIndex = reactionIndex - cacStartIndex;
+              const prevRelativeIndex = (relativeIndex - 1 + cacLength) % cacLength;
+              const prevCACIndex = cacStartIndex + prevRelativeIndex;
+              const prevReaction = reactions[prevCACIndex];
+              displayMolecule = prevReaction && prevReaction.product ? prevReaction.product : d.product;
+            } else {
+              displayMolecule = d.substrate;
+            }
+            
+            if (displayMolecule && displayMolecule.id === id) {
+              d3.select(this).select('.molecule-structure-image')
+                .attr('href', pubchemData.image2DUrlSmall);
+            }
+          });
         }
       } catch (error) {
         console.warn(`Failed to fetch image for ${molecule.name}:`, error);
@@ -1833,7 +2289,7 @@ export class MetabolismViewer {
       'Fructose-1,6-bisphosphate': ['Fructose 1,6-bisphosphate', 'F1,6BP', 'Fructose-1,6-diphosphate'],
       'Glyceraldehyde-3-phosphate': ['Glyceraldehyde 3-phosphate', 'GAP', 'D-Glyceraldehyde 3-phosphate'],
       'Dihydroxyacetone phosphate': ['Dihydroxyacetone phosphate', 'DHAP', 'Dihydroxyacetone-P'],
-      '1,3-Bisphosphoglycerate': ['1,3-Bisphosphoglycerate', '1,3-BPG', '1,3-Diphosphoglycerate'],
+      '1,3-Bisphosphoglycerate': ['1,3-Bisphosphoglycerate', '1,3-BPG', '1,3-Diphosphoglycerate', '1,3-diphosphoglycerate', 'glycerate-1,3-bisphosphate', '1,3-bisphosphoglycerate', '1,3-Bisphosphoglyceric acid', 'Glycerate 1,3-bisphosphate'],
       '3-Phosphoglycerate': ['3-Phosphoglycerate', '3PG', 'D-3-Phosphoglycerate'],
       '2-Phosphoglycerate': ['2-Phosphoglycerate', '2PG', 'D-2-Phosphoglycerate'],
       'Phosphoenolpyruvate': ['Phosphoenolpyruvate', 'PEP', 'Phosphoenolpyruvic acid'],

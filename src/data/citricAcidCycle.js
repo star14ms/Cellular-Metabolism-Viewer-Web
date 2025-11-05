@@ -38,8 +38,8 @@ export const citricAcidCycleReactions = [
       notes: 'First step of the cycle, highly regulated'
     },
     position: {
-      x: 2050,
-      y: 200  // Top (0°) - scaled 1.5x from center (425)
+      x: 2041,  // Shifted back - Step 1 should be at Step 8's previous position (shows Malate from step 7)
+      y: 266
     }
   },
   {
@@ -71,8 +71,8 @@ export const citricAcidCycleReactions = [
       notes: 'Reversible reaction'
     },
     position: {
-      x: 2209,  // Top-right (45°) - scaled 1.5x
-      y: 266
+      x: 2200,  // Shifted back - Step 2 should be at previous Step 1's position (shows Oxaloacetate from step 8)
+      y: 200
     }
   },
   {
@@ -111,8 +111,8 @@ export const citricAcidCycleReactions = [
       notes: 'First oxidative decarboxylation, produces NADH and CO₂'
     },
     position: {
-      x: 2275,  // Right (90°) - scaled 1.5x
-      y: 425
+      x: 2359,  // Shifted back - Step 3 should be at previous Step 2's position (shows Citrate from step 1)
+      y: 266
     }
   },
   {
@@ -152,8 +152,8 @@ export const citricAcidCycleReactions = [
       notes: 'Second oxidative decarboxylation, similar to pyruvate oxidation'
     },
     position: {
-      x: 2209,  // Bottom-right (135°) - scaled 1.5x
-      y: 584
+      x: 2425,  // Shifted back - Step 4 should be at previous Step 3's position (shows Isocitrate from step 2)
+      y: 425
     }
   },
   {
@@ -193,8 +193,8 @@ export const citricAcidCycleReactions = [
       notes: 'Substrate-level phosphorylation producing GTP'
     },
     position: {
-      x: 2050,  // Bottom (180°) - scaled 1.5x from center (425)
-      y: 650
+      x: 2359,  // Shifted back - Step 5 should be at previous Step 4's position (shows α-Ketoglutarate from step 3)
+      y: 584
     }
   },
   {
@@ -233,8 +233,8 @@ export const citricAcidCycleReactions = [
       notes: 'Only membrane-bound enzyme of the cycle, part of Complex II'
     },
     position: {
-      x: 1891,  // Bottom-left (225°) - scaled 1.5x
-      y: 584
+      x: 2200,  // Shifted back - Step 6 should be at previous Step 5's position (shows Succinyl-CoA from step 4)
+      y: 650
     }
   },
   {
@@ -270,8 +270,8 @@ export const citricAcidCycleReactions = [
       notes: 'Stereospecific addition of water'
     },
     position: {
-      x: 1825,  // Left (270°) - scaled 1.5x
-      y: 425
+      x: 2041,  // Shifted back - Step 7 should be at previous Step 6's position (shows Succinate from step 5)
+      y: 584
     }
   },
   {
@@ -310,8 +310,8 @@ export const citricAcidCycleReactions = [
       notes: 'Regenerates oxaloacetate to complete the cycle'
     },
     position: {
-      x: 1891,  // Top-left (315°) - scaled 1.5x
-      y: 266
+      x: 1975,  // Shifted back - Step 8 should be at previous Step 7's position (shows Fumarate from step 6)
+      y: 425
     }
   }
 ];
