@@ -151,8 +151,8 @@ export const pyruvateOxidationReactions = [
       notes: 'Final step: regenerates lipoamide and produces NADH'
     },
     position: {
-      x: 2050, // 150px from Acetyl-CoA (1900) for consistent arrow length, also moves cycle further right
-      y: 100
+      x: 1825, // Aligned with midpoint of Step 3 → Acetyl-CoA arrow ((1750 + 1900) / 2 = 1825) for vertical connection
+      y: 250 // Same y as Lipoamide, forming bottom row of square
     }
   }
 ];
