@@ -68,17 +68,43 @@ export class PathwayDetail {
             <h3>Key Regulatory Steps</h3>
             <ul class="regulatory-steps">
               ${pathway.summary.keyRegulatorySteps.map(step => {
-                // Extract step number from string like "Step 1: ..." or "Step 3: ..."
-                const stepMatch = step.match(/Step\s+(\d+)/i);
-                const stepNumber = stepMatch ? parseInt(stepMatch[1]) : null;
-                if (stepNumber) {
-                  // Make step number clickable (no special styling)
-                  const stepText = step.replace(/Step\s+\d+/i, (match) => {
-                    return `<span class="clickable-step" data-step="${stepNumber}">${match}</span>`;
+                // Handle both old format (string) and new format (object with id and text)
+                const stepObj = typeof step === 'string' ? { text: step } : step;
+                const stepText = stepObj.text || step;
+                const reactionId = stepObj.id;
+                
+                if (reactionId) {
+                  // Find the reaction to get its relative step number within the pathway
+                  const reaction = pathway.reactions.find(r => r.product && r.product.id === reactionId);
+                  const relativeStepNumber = reaction ? pathway.reactions.indexOf(reaction) + 1 : null;
+                  
+                  // Replace absolute step number with relative step number for display
+                  let displayText = stepText;
+                  if (relativeStepNumber) {
+                    displayText = stepText.replace(/Step\s+\d+/i, `Step ${relativeStepNumber}`);
+                  }
+                  
+                  // Make step number clickable using reaction ID
+                  const clickableText = displayText.replace(/Step\s+\d+/i, (match) => {
+                    return `<span class="clickable-step" data-reaction-id="${reactionId}">${match}</span>`;
                   });
+                  return `<li>${clickableText}</li>`;
+                } else {
+                  // Fallback for old format - try to extract step number
+                  const stepMatch = stepText.match(/Step\s+(\d+)/i);
+                  const stepNumber = stepMatch ? parseInt(stepMatch[1]) : null;
+                  if (stepNumber) {
+                    // Find relative step number within pathway
+                    const reaction = pathway.reactions.find(r => r.step === stepNumber);
+                    const relativeStepNumber = reaction ? pathway.reactions.indexOf(reaction) + 1 : stepNumber;
+                    const displayText = stepText.replace(/Step\s+\d+/i, `Step ${relativeStepNumber}`);
+                    const clickableText = displayText.replace(/Step\s+\d+/i, (match) => {
+                      return `<span class="clickable-step" data-step="${stepNumber}">${match}</span>`;
+                    });
+                    return `<li>${clickableText}</li>`;
+                  }
                   return `<li>${stepText}</li>`;
                 }
-                return `<li>${step}</li>`;
               }).join('')}
             </ul>
           </div>
@@ -90,14 +116,16 @@ export class PathwayDetail {
             <p><strong>Total Steps:</strong> ${pathway.reactions.length}</p>
             <div class="reaction-list">
               ${pathway.reactions.map((reaction, index) => {
-                const isSelected = highlightedStep && (reaction.step === highlightedStep || (reaction.step === null && index + 1 === highlightedStep));
-                const stepNumber = reaction.step || index + 1;
+                // Use relative step number within the pathway (1-based index)
+                const relativeStepNumber = index + 1;
+                const isSelected = highlightedStep && (reaction.step === highlightedStep || (reaction.step === null && relativeStepNumber === highlightedStep));
                 return `
                 <div class="reaction-item ${isSelected ? 'reaction-item-selected' : ''}" 
-                     data-step="${stepNumber}" 
+                     data-step="${reaction.step || relativeStepNumber}" 
+                     data-relative-step="${relativeStepNumber}"
                      data-reaction-index="${index}"
                      style="cursor: pointer;">
-                  <div class="reaction-step">Step ${stepNumber}</div>
+                  <div class="reaction-step">Step ${relativeStepNumber}</div>
                   <div class="reaction-name">${reaction.name}</div>
                   <div class="reaction-enzyme">${reaction.enzyme.name}</div>
                   ${isSelected && selectedType === 'molecule' ? `<div class="reaction-selection-note">Selected molecule: ${selectedMolecule?.name || reaction.substrate.name}</div>` : ''}
@@ -139,18 +167,42 @@ export class PathwayDetail {
         liElement.style.cursor = 'pointer';
         liElement.addEventListener('click', (e) => {
           e.stopPropagation();
-          const stepNumber = parseInt(clickableStep.dataset.step);
           
-          // Find the reaction index for this step
-          const reactionIndex = pathway.reactions.findIndex(r => r.step === stepNumber);
+          // Use reaction ID if available (new format), otherwise fall back to step number
+          const reactionId = clickableStep.dataset.reactionId;
+          const stepNumber = clickableStep.dataset.step ? parseInt(clickableStep.dataset.step) : null;
+          
+          // Find the reaction by ID (product.id) or by step number (fallback)
+          let reaction = null;
+          let reactionIndexInPathway = -1;
+          
+          if (reactionId) {
+            // Find reaction by product ID
+            reactionIndexInPathway = pathway.reactions.findIndex(r => r.product && r.product.id === reactionId);
+            if (reactionIndexInPathway >= 0) {
+              reaction = pathway.reactions[reactionIndexInPathway];
+            }
+          } else if (stepNumber !== null) {
+            // Fallback: find by step number
+            reactionIndexInPathway = pathway.reactions.findIndex(r => r.step === stepNumber);
+            if (reactionIndexInPathway >= 0) {
+              reaction = pathway.reactions[reactionIndexInPathway];
+            }
+          }
+          
+          // Get the actual pathway object - it might be nested in pathway.pathway
+          const actualPathway = pathway.pathway || pathway;
           
           // Dispatch event to select reaction in viewer (switch to reaction tab, zoom to reaction)
-          if (this.viewerContainer) {
+          if (this.viewerContainer && reaction) {
             const selectEvent = new CustomEvent('select-reaction-by-step', {
               detail: { 
-                step: stepNumber, 
-                reactionIndex: reactionIndex >= 0 ? reactionIndex : null, 
-                pathway: pathway,
+                step: reaction.step,
+                reactionId: reactionId || (reaction.product ? reaction.product.id : null),
+                pathwayId: actualPathway.id,
+                pathwayStartIndex: actualPathway.startIndex,
+                reactionIndexInPathway: reactionIndexInPathway >= 0 ? reactionIndexInPathway : null, 
+                pathway: actualPathway,
                 skipZoom: false, // Move/zoom to reaction (same as clicking in Reactions tab)
                 switchToReactionTab: true // Switch to reaction tab
               }

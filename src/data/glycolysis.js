@@ -402,9 +402,9 @@ export const glycolysisSummary = {
     pyruvate: { produced: 2, consumed: 0, net: 2 }
   },
   keyRegulatorySteps: [
-    "Step 1: Hexokinase (inhibited by glucose-6-phosphate)",
-    "Step 3: Phosphofructokinase-1 (key regulatory step)",
-    "Step 10: Pyruvate kinase (allosteric regulation)"
+    { id: 'glucose_6_phosphate', text: 'Step 1: Hexokinase (inhibited by glucose-6-phosphate)' },
+    { id: 'fructose_1_6_bisphosphate', text: 'Step 3: Phosphofructokinase-1 (key regulatory step)' },
+    { id: 'pyruvate', text: 'Step 10: Pyruvate kinase (allosteric regulation)' }
   ]
 };
 

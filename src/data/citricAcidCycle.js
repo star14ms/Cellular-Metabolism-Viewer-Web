@@ -335,9 +335,9 @@ export const citricAcidCycleSummary = {
     co2: { produced: 2, consumed: 0, net: 2 }
   },
   keyRegulatorySteps: [
-    'Step 1: Citrate synthase (inhibited by ATP, NADH, succinyl-CoA)',
-    'Step 3: Isocitrate dehydrogenase (activated by ADP, Ca²⁺)',
-    'Step 4: α-Ketoglutarate dehydrogenase (inhibited by succinyl-CoA, NADH)'
+    { id: 'citrate', text: 'Step 1: Citrate synthase (inhibited by ATP, NADH, succinyl-CoA)' },
+    { id: 'alpha_ketoglutarate', text: 'Step 3: Isocitrate dehydrogenase (activated by ADP, Ca²⁺)' },
+    { id: 'succinyl_coa', text: 'Step 4: α-Ketoglutarate dehydrogenase (inhibited by succinyl-CoA, NADH)' }
   ]
 };
 

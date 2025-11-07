@@ -382,8 +382,55 @@ if (!app) {
       
       // Listen for reaction selection from pathway detail cards
       viewerContainer.addEventListener('select-reaction-by-step', (event) => {
-        const { step, skipZoom, switchToReactionTab } = event.detail
-        viewer.selectReactionByStep(step, { skipZoom: skipZoom || false })
+        const { step, reaction, reactionId, pathwayId, pathwayStartIndex, reactionIndexInPathway, skipZoom, switchToReactionTab } = event.detail
+        
+        let targetReaction = null;
+        
+        // Priority 1: If reaction ID is provided, find reaction by product ID
+        if (reactionId) {
+          targetReaction = viewer.reactions.find(r => r.product && r.product.id === reactionId);
+          if (targetReaction) {
+            console.log('Found reaction by ID:', reactionId, targetReaction.name);
+          }
+        }
+        
+        // Priority 2: If pathway info is provided (from Key Regulatory Steps), find reaction using pathway index
+        if (!targetReaction && pathwayId && pathwayStartIndex !== undefined && reactionIndexInPathway !== null) {
+          // Find the reaction in the viewer's reactions array using pathway startIndex + reaction index
+          const viewerReactionIndex = pathwayStartIndex + reactionIndexInPathway;
+          if (viewerReactionIndex >= 0 && viewerReactionIndex < viewer.reactions.length) {
+            targetReaction = viewer.reactions[viewerReactionIndex];
+            console.log('Found reaction by pathway index:', targetReaction.name);
+          }
+        }
+        
+        // Priority 3: If a reaction object is provided directly, use it
+        if (!targetReaction && reaction) {
+          targetReaction = reaction;
+        }
+        
+        // Priority 4: Fall back to step number search (for backwards compatibility)
+        if (!targetReaction) {
+          viewer.selectReactionByStep(step, { skipZoom: skipZoom || false });
+          // Switch to reaction tab if requested
+          if (switchToReactionTab) {
+            tabs.forEach(t => t.classList.remove('active'))
+            tabs[1].classList.add('active')
+            views.forEach(v => v.classList.remove('active'))
+            reactionContainer.classList.add('active')
+          }
+          return; // Early return for step-based selection
+        }
+        
+        // If we found a target reaction, select it
+        if (targetReaction) {
+          viewer.selectReaction(targetReaction, { skipTabSwitch: true });
+          if (!skipZoom) {
+            viewer.zoomToReactionArrow(targetReaction);
+          }
+        } else {
+          console.warn(`Could not find reaction: step=${step}, reactionId=${reactionId}, pathwayId=${pathwayId}, reactionIndexInPathway=${reactionIndexInPathway}`);
+        }
         
         // Switch to reaction tab if requested (from pathway tab links)
         if (switchToReactionTab) {
