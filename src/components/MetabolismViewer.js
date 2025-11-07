@@ -3047,30 +3047,72 @@ export class MetabolismViewer {
       return true;
     }
     
-    // Check byproduct
+    // Check byproduct - handle string, array, object with name, and object with molecules array formats
     if (reaction.byproduct) {
-      if (typeof reaction.byproduct === 'string' && reaction.byproduct === moleculeName) {
+      // Handle string format
+      if (typeof reaction.byproduct === 'string' && reaction.byproduct.trim() !== '' && reaction.byproduct === moleculeName) {
         return true;
       }
+      // Handle array format
+      if (Array.isArray(reaction.byproduct)) {
+        if (reaction.byproduct.some(m => 
+          m === moleculeName || 
+          (typeof m === 'string' && m.trim() === moleculeName) ||
+          (typeof m === 'object' && m.name === moleculeName) ||
+          (moleculeId && typeof m === 'object' && m.id === moleculeId)
+        )) {
+          return true;
+        }
+      }
+      // Handle object with name property
       if (reaction.byproduct.name === moleculeName || 
           (moleculeId && reaction.byproduct.id === moleculeId)) {
         return true;
       }
+      // Handle object with molecules array format
+      if (reaction.byproduct.molecules) {
+        const molecules = Array.isArray(reaction.byproduct.molecules) 
+          ? reaction.byproduct.molecules 
+          : [reaction.byproduct.molecules];
+        if (molecules.some(m => 
+          m === moleculeName || 
+          (typeof m === 'string' && m.trim() === moleculeName) ||
+          (typeof m === 'object' && m.name === moleculeName) ||
+          (moleculeId && typeof m === 'object' && m.id === moleculeId)
+        )) {
+          return true;
+        }
+      }
     }
     
-    // Check byreactant
+    // Check byreactant - handle string, array, and object with molecules array formats
     if (reaction.byreactant) {
-      if (typeof reaction.byreactant === 'string' && reaction.byreactant === moleculeName) {
+      // Handle string format
+      if (typeof reaction.byreactant === 'string' && reaction.byreactant.trim() !== '' && reaction.byreactant === moleculeName) {
         return true;
       }
-      if (Array.isArray(reaction.byreactant) && reaction.byreactant.includes(moleculeName)) {
-        return true;
+      // Handle array format
+      if (Array.isArray(reaction.byreactant)) {
+        if (reaction.byreactant.some(m => 
+          m === moleculeName || 
+          (typeof m === 'string' && m.trim() === moleculeName) ||
+          (typeof m === 'object' && m.name === moleculeName) ||
+          (moleculeId && typeof m === 'object' && m.id === moleculeId)
+        )) {
+          return true;
+        }
       }
+      // Handle object with molecules array format
       if (reaction.byreactant.molecules) {
         const molecules = Array.isArray(reaction.byreactant.molecules) 
           ? reaction.byreactant.molecules 
           : [reaction.byreactant.molecules];
-        if (molecules.includes(moleculeName)) {
+        if (molecules.some(m => 
+          m === moleculeName || 
+          (typeof m === 'string' && m.trim() === moleculeName) ||
+          (typeof m === 'object' && m.name === moleculeName) ||
+          (moleculeId && typeof m === 'object' && m.id === moleculeId)
+        )) {
           return true;
         }
       }
@@ -4182,4 +4224,5 @@ export class MetabolismViewer {
   }
   
 }
+
 
