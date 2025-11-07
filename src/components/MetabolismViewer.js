@@ -2990,12 +2990,14 @@ export class MetabolismViewer {
    * Select a reaction by step number
    * Finds the reaction in the reactions array and calls selectReaction
    */
-  selectReactionByStep(step) {
+  selectReactionByStep(step, options = {}) {
     const reaction = this.reactions.find(r => r.step === step);
     if (reaction) {
       this.selectReaction(reaction, { skipTabSwitch: true });
-      // Also zoom to the arrow representing this reaction, not the node
-      this.zoomToReactionArrow(reaction);
+      // Only zoom to the arrow if skipZoom is not set (for pathway tab links, skip zoom)
+      if (!options.skipZoom) {
+        this.zoomToReactionArrow(reaction);
+      }
     } else {
       console.warn(`Reaction with step ${step} not found`);
     }
@@ -3425,6 +3427,8 @@ export class MetabolismViewer {
     // If sourceReaction is provided, prioritize that reaction
     const sourceReaction = options.sourceReaction;
     const isByreactant = options.isByreactant;
+    // For by-molecules, always skip zoom unless explicitly overridden
+    const skipZoomForByMolecules = options.skipZoom !== undefined ? options.skipZoom : true;
     
     // If sourceReaction is provided and we're looking for a byreactant/byproduct,
     // check that reaction first for coSubstrate/byreactant/byproduct
@@ -3446,7 +3450,7 @@ export class MetabolismViewer {
         this.selectReaction(sourceReaction, { skipTabSwitch: true });
         
         // Then, update molecule tab and show it (skip zoom to prevent view movement for by-molecules)
-        this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: true });
+        this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: skipZoomForByMolecules });
         
         // Re-apply reaction highlights after selectMolecule (which resets them)
         // This ensures the map shows the same effect as clicking the main arrow
@@ -3838,7 +3842,179 @@ export class MetabolismViewer {
     
     // If not found in main molecules, search in coSubstrates and byproducts
     // If sourceReaction is provided, check it first
+    // For by-molecules without a sourceReaction, we should find all reactions where they appear
+    // rather than zooming to a specific node (since they don't have dedicated nodes)
     if (!targetReaction || !targetMolecule) {
+      // List of common by-molecules that don't have dedicated nodes
+      const commonByMolecules = ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP'];
+      const isCommonByMolecule = commonByMolecules.includes(moleculeName);
+      
+      // If this is a common by-molecule and no sourceReaction is provided, 
+      // find all reactions where it appears and highlight them instead of zooming to a node
+      if (isCommonByMolecule && !sourceReaction) {
+        const reactionsWithMolecule = [];
+        let moleculeInfo = null;
+        
+        for (const reaction of this.reactions) {
+          // Check coSubstrate
+          if (reaction.coSubstrate && 
+              (reaction.coSubstrate.name === moleculeName || 
+               (moleculeId && reaction.coSubstrate.id === moleculeId))) {
+            reactionsWithMolecule.push(reaction);
+            if (!moleculeInfo) {
+              moleculeInfo = {
+                name: reaction.coSubstrate.name,
+                formula: reaction.coSubstrate.formula || '',
+                id: reaction.coSubstrate.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+                description: `${reaction.coSubstrate.name} is a co-substrate that appears in multiple reactions.`
+              };
+            }
+          }
+          // Check byproduct
+          else if (reaction.byproduct && 
+                   (reaction.byproduct.name === moleculeName || 
+                    (moleculeId && reaction.byproduct.id === moleculeId))) {
+            reactionsWithMolecule.push(reaction);
+            if (!moleculeInfo) {
+              moleculeInfo = {
+                name: reaction.byproduct.name,
+                formula: reaction.byproduct.formula || '',
+                id: reaction.byproduct.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+                description: `${reaction.byproduct.name} is a byproduct that appears in multiple reactions.`
+              };
+            }
+          }
+          // Check byreactant
+          else if (reaction.byreactant) {
+            let matches = false;
+            if (typeof reaction.byreactant === 'string' && reaction.byreactant === moleculeName) {
+              matches = true;
+            } else if (Array.isArray(reaction.byreactant) && reaction.byreactant.includes(moleculeName)) {
+              matches = true;
+            } else if (reaction.byreactant.molecules) {
+              const molecules = Array.isArray(reaction.byreactant.molecules) 
+                ? reaction.byreactant.molecules 
+                : [reaction.byreactant.molecules];
+              if (molecules.includes(moleculeName)) {
+                matches = true;
+              }
+            }
+            if (matches) {
+              reactionsWithMolecule.push(reaction);
+              if (!moleculeInfo) {
+                moleculeInfo = {
+                  name: moleculeName,
+                  formula: '',
+                  id: moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+                  description: `${moleculeName} is a byreactant that appears in multiple reactions.`
+                };
+              }
+            }
+          }
+        }
+        
+        // If we found reactions with this by-molecule, highlight them and show molecule info
+        if (reactionsWithMolecule.length > 0 && moleculeInfo) {
+          // Highlight all reactions where this molecule appears (highlight arrows, not nodes)
+          reactionsWithMolecule.forEach(reaction => {
+            this.applyReactionHighlight(reaction);
+          });
+          
+          // Set selected molecule without highlighting any node (since by-molecules don't have dedicated nodes)
+          this.selectedMolecule = moleculeInfo;
+          this.selectedNode = null; // Don't select any node
+          this.selectedReaction = null;
+          
+          // Check if molecule belongs to currently selected pathway (if any)
+          // If so, preserve it instead of clearing
+          const currentPathwayId = this.selectedPathway;
+          if (currentPathwayId) {
+            const currentPathway = this.pathways.find(p => p.id === currentPathwayId);
+            if (currentPathway && currentPathway.reactions) {
+              const isMoleculeInCurrentPathway = currentPathway.reactions.some(reaction => 
+                this.isReactionRelatedToMolecule(
+                  reaction,
+                  moleculeInfo.name,
+                  moleculeInfo.id
+                )
+              );
+              
+              // If molecule doesn't belong to current pathway, clear it
+              if (!isMoleculeInCurrentPathway) {
+                this.selectedPathway = null;
+              }
+              // Otherwise, keep selectedPathway as is
+            } else {
+              this.selectedPathway = null;
+            }
+          }
+          
+          // Reset all node highlighting to avoid highlighting unrelated molecules
+          this.reactionGroups.selectAll('.reaction-circle')
+            .attr('stroke-width', 2)
+            .attr('stroke', '#2c5f7c')
+            .attr('fill', '#5fa8d3');
+          
+          const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+          this.reactionGroups.selectAll('.molecule-image-bg')
+            .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
+            .attr('stroke-width', 2)
+            .attr('fill', this.getImageBgColor());
+          
+          // Dispatch custom event for molecule detail view
+          const detailEvent = new CustomEvent('molecule-selected', {
+            detail: {
+              molecule: moleculeInfo,
+              skipTabSwitch: options.skipTabSwitch || false
+            }
+          });
+          this.container.dispatchEvent(detailEvent);
+          
+          // Update pathway detail panel if needed
+          // Check if molecule belongs to currently selected pathway first
+          let pathwayToShow = null;
+          
+          if (currentPathwayId) {
+            const currentPathway = this.pathways.find(p => p.id === currentPathwayId);
+            if (currentPathway && currentPathway.reactions) {
+              const isMoleculeInCurrentPathway = currentPathway.reactions.some(reaction => 
+                this.isReactionRelatedToMolecule(
+                  reaction,
+                  moleculeInfo.name,
+                  moleculeInfo.id
+                )
+              );
+              
+              // If molecule belongs to current pathway, use it
+              if (isMoleculeInCurrentPathway) {
+                pathwayToShow = currentPathway;
+              }
+            }
+          }
+          
+          // If not in current pathway, use the first pathway where it appears
+          if (!pathwayToShow && reactionsWithMolecule.length > 0) {
+            pathwayToShow = this.getPathwayForReaction(reactionsWithMolecule[0]);
+          }
+          
+          if (pathwayToShow) {
+            const pathwayEvent = new CustomEvent('pathway-updated', {
+              detail: {
+                summary: pathwayToShow.summary,
+                reactions: pathwayToShow.reactions,
+                pathway: pathwayToShow,
+                selectedReaction: null,
+                selectedMolecule: moleculeInfo,
+                selectedType: 'molecule'
+              }
+            });
+            this.container.dispatchEvent(pathwayEvent);
+          }
+          
+          return;
+        }
+      }
+      
       const reactionsToCheck = sourceReaction ? [sourceReaction, ...this.reactions.filter(r => r !== sourceReaction)] : this.reactions;
       
       for (const reaction of reactionsToCheck) {
@@ -3995,7 +4171,42 @@ export class MetabolismViewer {
     this.selectedMolecule = molecule;
     this.selectedNode = reactionNode;
     this.selectedReaction = null;
-    this.selectedPathway = null;
+    
+    // Get the pathway for this reaction node
+    const pathway = reactionNode ? this.getPathwayForReaction(reactionNode) : null;
+    
+    // Check if molecule belongs to the currently selected pathway (if any)
+    // If so, preserve the current pathway instead of clearing it
+    const currentPathwayId = this.selectedPathway;
+    let pathwayToPreserve = null;
+    
+    if (currentPathwayId && pathway) {
+      const currentPathway = this.pathways.find(p => p.id === currentPathwayId);
+      if (currentPathway && currentPathway.reactions) {
+        const isMoleculeInCurrentPathway = currentPathway.reactions.some(reaction => 
+          this.isReactionRelatedToMolecule(
+            reaction,
+            molecule.name,
+            molecule.id
+          )
+        );
+        
+        // If molecule belongs to current pathway, preserve it
+        if (isMoleculeInCurrentPathway) {
+          pathwayToPreserve = currentPathway;
+          // Don't clear selectedPathway - keep it
+        } else {
+          // Molecule doesn't belong to current pathway, clear it
+          this.selectedPathway = null;
+        }
+      } else {
+        // No current pathway found, clear it
+        this.selectedPathway = null;
+      }
+    } else {
+      // No current pathway or no reaction node, clear it
+      this.selectedPathway = null;
+    }
     
     // Reset pathway button highlighting
     this.pathways.forEach(pathway => {
@@ -4024,14 +4235,15 @@ export class MetabolismViewer {
     });
     this.container.dispatchEvent(detailEvent);
     
-    // Also update pathway detail panel with the pathway this reaction node belongs to
-    const pathway = this.getPathwayForReaction(reactionNode);
-    if (pathway) {
+    // Also update pathway detail panel
+    // Use preserved pathway if molecule belongs to it, otherwise use pathway from reaction node
+    const pathwayToShow = pathwayToPreserve || pathway;
+    if (pathwayToShow) {
       const pathwayEvent = new CustomEvent('pathway-updated', {
         detail: {
-          summary: pathway.summary,
-          reactions: pathway.reactions,
-          pathway: pathway,
+          summary: pathwayToShow.summary,
+          reactions: pathwayToShow.reactions,
+          pathway: pathwayToShow,
           selectedReaction: reactionNode, // Include the selected reaction node
           selectedMolecule: molecule, // Include the selected molecule
           selectedType: 'molecule' // Indicate this is a molecule/node selection

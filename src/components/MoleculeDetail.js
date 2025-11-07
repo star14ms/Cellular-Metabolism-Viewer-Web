@@ -184,13 +184,21 @@ export class ReactionDetail {
         }
         
         // Dispatch event to select molecule in viewer
+        // If it's a byreactant or byproduct, skip zoom to prevent frame movement
+        const isByMolecule = isByreactant !== null || 
+                            (reaction.coSubstrate && reaction.coSubstrate.name === moleculeName) ||
+                            (reaction.byproduct && reaction.byproduct.name === moleculeName) ||
+                            element.classList.contains('co-reactant') ||
+                            element.classList.contains('co-product');
+        
         if (this.viewerContainer) {
           const selectEvent = new CustomEvent('select-molecule-by-name', {
             detail: { 
               moleculeName: moleculeName,
               moleculeId: moleculeId,
               reaction: reaction,
-              isByreactant: isByreactant
+              isByreactant: isByreactant,
+              skipZoom: isByMolecule // Don't move frame for byreactants/byproducts
             }
           });
           this.viewerContainer.dispatchEvent(selectEvent);

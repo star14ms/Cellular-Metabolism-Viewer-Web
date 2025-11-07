@@ -405,6 +405,13 @@ body {
   background: var(--bg-panel);
   border-radius: 4px;
   border: 1px solid #dee2e6;
+  transition: background-color 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
+}
+
+.pathway-stat-item:hover {
+  background: var(--bg-panel-secondary);
+  transform: translateX(4px);
+  border-color: #4ecdc4;
 }
 
 .pathway-stat-item .stat-label {
@@ -430,6 +437,13 @@ body {
   background: var(--bg-panel-secondary);
   border-left: 3px solid #667eea;
   border-radius: 4px;
+  transition: background-color 0.2s ease, transform 0.1s ease, border-left-color 0.2s ease;
+}
+
+.regulatory-steps li:hover {
+  background: var(--bg-panel);
+  transform: translateX(4px);
+  border-left-color: #4ecdc4;
 }
 
 .pathway-reactions {

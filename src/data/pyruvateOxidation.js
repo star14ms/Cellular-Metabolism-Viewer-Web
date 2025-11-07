@@ -164,9 +164,9 @@ export const pyruvateOxidationSummary = {
   name: 'Pyruvate Oxidation',
   description: 'The conversion of pyruvate to acetyl-CoA, linking glycolysis to the citric acid cycle',
   netProducts: {
-    acetylCoA: { produced: 2, consumed: 0, net: 2 },
-    co2: { produced: 2, consumed: 0, net: 2 },
-    nadh: { produced: 2, consumed: 0, net: 2 }
+    acetylCoA: { produced: 1, consumed: 0, net: 1 },
+    co2: { produced: 1, consumed: 0, net: 1 },
+    nadh: { produced: 1, consumed: 0, net: 1 }
   }
 };
 

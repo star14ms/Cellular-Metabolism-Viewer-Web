@@ -362,11 +362,11 @@ if (!app) {
       
       // Listen for molecule selection from reaction detail cards
       viewerContainer.addEventListener('select-molecule-by-name', (event) => {
-        const { moleculeName, moleculeId, reaction, isByreactant } = event.detail
-        // If clicking from reaction detail tab, switch to molecule tab
-        // Pass the reaction context so we can highlight the correct reaction arrow
+        const { moleculeName, moleculeId, reaction, isByreactant, skipTabSwitch, skipZoom } = event.detail
+        // Respect skipTabSwitch and skipZoom options (for pathway tab links, keep tab active and don't zoom)
         viewer.selectMoleculeByName(moleculeName, moleculeId, { 
-          skipTabSwitch: false, // Switch to molecule tab when clicking from reaction detail
+          skipTabSwitch: skipTabSwitch !== undefined ? skipTabSwitch : false, // Default to switching tabs unless specified
+          skipZoom: skipZoom !== undefined ? skipZoom : false, // Default to zooming unless specified
           sourceReaction: reaction, // Pass reaction context for byreactants/byproducts
           isByreactant: isByreactant // Pass whether it's a byreactant or byproduct
         })
@@ -382,9 +382,17 @@ if (!app) {
       
       // Listen for reaction selection from pathway detail cards
       viewerContainer.addEventListener('select-reaction-by-step', (event) => {
-        const { step } = event.detail
-        viewer.selectReactionByStep(step)
-        // Keep pathway tab active - don't switch tabs
+        const { step, skipZoom, switchToReactionTab } = event.detail
+        viewer.selectReactionByStep(step, { skipZoom: skipZoom || false })
+        
+        // Switch to reaction tab if requested (from pathway tab links)
+        if (switchToReactionTab) {
+          tabs.forEach(t => t.classList.remove('active'))
+          tabs[1].classList.add('active')
+          views.forEach(v => v.classList.remove('active'))
+          reactionContainer.classList.add('active')
+        }
+        // Otherwise keep pathway tab active - don't switch tabs
         // Just update the pathway view to highlight the selected reaction
       })
       

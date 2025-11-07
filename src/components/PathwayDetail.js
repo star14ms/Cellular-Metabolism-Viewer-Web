@@ -67,7 +67,19 @@ export class PathwayDetail {
           <div class="detail-section">
             <h3>Key Regulatory Steps</h3>
             <ul class="regulatory-steps">
-              ${pathway.summary.keyRegulatorySteps.map(step => `<li>${step}</li>`).join('')}
+              ${pathway.summary.keyRegulatorySteps.map(step => {
+                // Extract step number from string like "Step 1: ..." or "Step 3: ..."
+                const stepMatch = step.match(/Step\s+(\d+)/i);
+                const stepNumber = stepMatch ? parseInt(stepMatch[1]) : null;
+                if (stepNumber) {
+                  // Make step number clickable (no special styling)
+                  const stepText = step.replace(/Step\s+\d+/i, (match) => {
+                    return `<span class="clickable-step" data-step="${stepNumber}">${match}</span>`;
+                  });
+                  return `<li>${stepText}</li>`;
+                }
+                return `<li>${step}</li>`;
+              }).join('')}
             </ul>
           </div>
         ` : ''}
@@ -116,22 +128,101 @@ export class PathwayDetail {
         }
       });
     });
+    
+    // Add click handlers to clickable step numbers in Key Regulatory Steps
+    // Make the entire list item clickable
+    const regulatoryStepItems = this.container.querySelectorAll('.regulatory-steps li');
+    regulatoryStepItems.forEach(liElement => {
+      const clickableStep = liElement.querySelector('.clickable-step');
+      if (clickableStep) {
+        // Make entire list item clickable
+        liElement.style.cursor = 'pointer';
+        liElement.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const stepNumber = parseInt(clickableStep.dataset.step);
+          
+          // Find the reaction index for this step
+          const reactionIndex = pathway.reactions.findIndex(r => r.step === stepNumber);
+          
+          // Dispatch event to select reaction in viewer (switch to reaction tab, zoom to reaction)
+          if (this.viewerContainer) {
+            const selectEvent = new CustomEvent('select-reaction-by-step', {
+              detail: { 
+                step: stepNumber, 
+                reactionIndex: reactionIndex >= 0 ? reactionIndex : null, 
+                pathway: pathway,
+                skipZoom: false, // Move/zoom to reaction (same as clicking in Reactions tab)
+                switchToReactionTab: true // Switch to reaction tab
+              }
+            });
+            this.viewerContainer.dispatchEvent(selectEvent);
+          }
+        });
+      }
+    });
+    
+    // Add click handlers to clickable molecule names in Net Products
+    // Make the entire stat item clickable
+    const statItems = this.container.querySelectorAll('.pathway-stat-item');
+    statItems.forEach(statItem => {
+      const clickableMolecule = statItem.querySelector('.clickable-molecule-name');
+      if (clickableMolecule) {
+        // Make entire stat item clickable
+        statItem.style.cursor = 'pointer';
+        statItem.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const moleculeName = clickableMolecule.dataset.moleculeName;
+          const moleculeId = clickableMolecule.dataset.moleculeId;
+          
+          // Dispatch event to select molecule in viewer (switch to molecule tab, zoom to molecule)
+          if (this.viewerContainer) {
+            const selectEvent = new CustomEvent('select-molecule-by-name', {
+              detail: { 
+                moleculeName: moleculeName,
+                moleculeId: moleculeId,
+                reaction: null, // No specific reaction context - this means it's NOT a by-molecule
+                isByreactant: null,
+                skipTabSwitch: false, // Switch to molecule tab
+                skipZoom: false // Move/zoom to molecule (only skip zoom for by-molecules)
+              }
+            });
+            this.viewerContainer.dispatchEvent(selectEvent);
+          }
+        });
+      }
+    });
   }
   
   renderNetProducts(netProducts) {
     if (!netProducts) return '';
     
+    // Map molecule names to their IDs for selection
+    const moleculeIdMap = {
+      'ATP': 'atp',
+      'NADH': 'nadh',
+      'FADH₂': 'fadh2',
+      'Acetyl-CoA': 'acetyl-coa',
+      'Pyruvate': 'pyruvate',
+      'CO₂': 'co2'
+    };
+    
     const products = [];
-    if (netProducts.atp) products.push({ name: 'ATP', value: netProducts.atp.net, unit: '' });
-    if (netProducts.nadh) products.push({ name: 'NADH', value: netProducts.nadh.net, unit: '' });
-    if (netProducts.fadh2) products.push({ name: 'FADH₂', value: netProducts.fadh2.net, unit: '' });
-    if (netProducts.acetylCoA) products.push({ name: 'Acetyl-CoA', value: netProducts.acetylCoA.net, unit: '' });
-    if (netProducts.pyruvate) products.push({ name: 'Pyruvate', value: netProducts.pyruvate.net, unit: '' });
-    if (netProducts.co2) products.push({ name: 'CO₂', value: netProducts.co2.net, unit: '' });
+    if (netProducts.atp) products.push({ name: 'ATP', value: netProducts.atp.net, unit: '', id: moleculeIdMap['ATP'] });
+    if (netProducts.nadh) products.push({ name: 'NADH', value: netProducts.nadh.net, unit: '', id: moleculeIdMap['NADH'] });
+    if (netProducts.fadh2) products.push({ name: 'FADH₂', value: netProducts.fadh2.net, unit: '', id: moleculeIdMap['FADH₂'] });
+    if (netProducts.acetylCoA) products.push({ name: 'Acetyl-CoA', value: netProducts.acetylCoA.net, unit: '', id: moleculeIdMap['Acetyl-CoA'] });
+    if (netProducts.pyruvate) products.push({ name: 'Pyruvate', value: netProducts.pyruvate.net, unit: '', id: moleculeIdMap['Pyruvate'] });
+    if (netProducts.co2) products.push({ name: 'CO₂', value: netProducts.co2.net, unit: '', id: moleculeIdMap['CO₂'] });
     
     return products.map(product => `
-      <div class="pathway-stat-item">
-        <span class="stat-label">${product.name}:</span>
+      <div class="pathway-stat-item" style="cursor: pointer;">
+        <span class="stat-label">
+          <span class="clickable-molecule-name" 
+                data-molecule-name="${product.name}" 
+                data-molecule-id="${product.id || ''}">
+            ${product.name}
+          </span>:
+        </span>
         <span class="stat-value">${product.value > 0 ? '+' : ''}${product.value}${product.unit}</span>
       </div>
     `).join('');

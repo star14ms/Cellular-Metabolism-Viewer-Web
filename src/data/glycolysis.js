@@ -397,7 +397,7 @@ export const glycolysisSummary = {
   description: "The metabolic pathway that converts glucose into pyruvate, releasing energy and producing ATP and NADH.",
   location: "Cytoplasm",
   netProducts: {
-    atp: { produced: 2, consumed: 2, net: 0 },
+    atp: { produced: 4, consumed: 2, net: 2 },
     nadh: { produced: 2, consumed: 0, net: 2 },
     pyruvate: { produced: 2, consumed: 0, net: 2 }
   },
