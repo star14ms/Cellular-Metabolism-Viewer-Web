@@ -226,11 +226,14 @@ if (!app) {
       
       // Listen for molecule selection from reaction detail cards
       viewerContainer.addEventListener('select-molecule-by-name', (event) => {
-        const { moleculeName, moleculeId } = event.detail
-        viewer.selectMoleculeByName(moleculeName, moleculeId, { skipTabSwitch: true })
-        // Load molecule view but keep reaction tab active (don't switch tabs)
-        // The molecule-selected event will be fired and moleculeView will be updated
-        // but tab switching will be skipped due to skipTabSwitch flag
+        const { moleculeName, moleculeId, reaction, isByreactant } = event.detail
+        // If clicking from reaction detail tab, switch to molecule tab
+        // Pass the reaction context so we can highlight the correct reaction arrow
+        viewer.selectMoleculeByName(moleculeName, moleculeId, { 
+          skipTabSwitch: false, // Switch to molecule tab when clicking from reaction detail
+          sourceReaction: reaction, // Pass reaction context for byreactants/byproducts
+          isByreactant: isByreactant // Pass whether it's a byreactant or byproduct
+        })
       })
       
       // Listen for pathway updates (when node or arrow is selected)

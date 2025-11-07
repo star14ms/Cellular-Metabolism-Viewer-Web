@@ -105,7 +105,11 @@ export class ReactionDetail {
         ${reaction.coSubstrate ? `
           <div class="detail-section">
             <h3>Co-substrate</h3>
-            <div class="cosubstrate-info" id="cosubstrate-info">
+            <div class="cosubstrate-info clickable-molecule" 
+                 id="cosubstrate-info"
+                 data-molecule-name="${reaction.coSubstrate.name}" 
+                 data-molecule-id=""
+                 style="cursor: pointer;">
               <div class="molecule-name">${reaction.coSubstrate.name}</div>
               ${reaction.coSubstrate.formula ? `<div class="molecule-formula">${reaction.coSubstrate.formula}</div>` : ''}
               ${reaction.coSubstrate.consumed ? '<div class="consumed-badge">Consumed</div>' : ''}
@@ -120,7 +124,11 @@ export class ReactionDetail {
         ${reaction.byproduct ? `
           <div class="detail-section">
             <h3>Byproduct</h3>
-            <div class="byproduct-info" id="byproduct-info">
+            <div class="byproduct-info clickable-molecule" 
+                 id="byproduct-info"
+                 data-molecule-name="${reaction.byproduct.name}" 
+                 data-molecule-id=""
+                 style="cursor: pointer;">
               <div class="molecule-name">${reaction.byproduct.name}</div>
               ${reaction.byproduct.formula ? `<div class="molecule-formula">${reaction.byproduct.formula}</div>` : ''}
               <div class="pubchem-loading" data-molecule="${reaction.byproduct.name}">
@@ -162,13 +170,26 @@ export class ReactionDetail {
         const moleculeName = element.dataset.moleculeName;
         const moleculeId = element.dataset.moleculeId;
         
+        // Determine if this is a byreactant or byproduct
+        let isByreactant = null;
+        if (reaction.coSubstrate && reaction.coSubstrate.name === moleculeName) {
+          isByreactant = true;
+        } else if (reaction.byproduct && reaction.byproduct.name === moleculeName) {
+          isByreactant = false;
+        } else if (element.classList.contains('co-reactant')) {
+          isByreactant = true;
+        } else if (element.classList.contains('co-product')) {
+          isByreactant = false;
+        }
+        
         // Dispatch event to select molecule in viewer
         if (this.viewerContainer) {
           const selectEvent = new CustomEvent('select-molecule-by-name', {
             detail: { 
               moleculeName: moleculeName,
               moleculeId: moleculeId,
-              reaction: reaction
+              reaction: reaction,
+              isByreactant: isByreactant
             }
           });
           this.viewerContainer.dispatchEvent(selectEvent);

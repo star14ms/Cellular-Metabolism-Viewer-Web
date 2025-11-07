@@ -1640,6 +1640,10 @@ export class MetabolismViewer {
     // Automatically create secondary arrows from midpoints for multi-product reactions
     // This must be called after all primary arrows are created
     this.createSecondaryArrowsFromMidpoints();
+    
+    // Draw U-shaped arrows for byreactants/byproducts
+    // This must be called after all primary arrows are created
+    this.drawByreactantByproductArrows();
   }
   
   /**
@@ -1827,6 +1831,627 @@ export class MetabolismViewer {
       });
     
     return { visibleArrow, hitArea };
+  }
+  
+  /**
+   * Draw U-shaped arrows for byreactants and byproducts
+   * These arrows are attached to the main reaction arrows
+   */
+  drawByreactantByproductArrows() {
+    // Helper function to determine pathway for a reaction
+    const getPathwayName = (reaction) => {
+      const pathway = this.getPathwayForReaction(reaction);
+      if (!pathway) return null;
+      
+      // Map pathway summary names to config pathway names
+      if (pathway.summary.name === 'Glycolysis') {
+        return 'glycolysis';
+      } else if (pathway.summary.name === 'Pyruvate Oxidation') {
+        return 'pyruvate-oxidation';
+      } else if (pathway.summary.name === 'Citric Acid Cycle (Krebs Cycle)') {
+        return 'citric-acid-cycle';
+      }
+      return null;
+    };
+    
+    // Helper function to find the main arrow for a reaction
+    const findMainArrow = (reaction) => {
+      if (!reaction || !reaction.arrowIds || reaction.arrowIds.length === 0) {
+        return null;
+      }
+      
+      // Try to find the primary arrow (not a midpoint connection)
+      for (const connectionId of reaction.arrowIds) {
+        for (const [key, arrowData] of this.arrowDataMap.entries()) {
+          if (arrowData.connectionId === connectionId && 
+              arrowData.targetReaction === reaction &&
+              !arrowData.isMidpointConnection) {
+            return arrowData;
+          }
+        }
+      }
+      
+      // Fallback: return first arrow found
+      for (const connectionId of reaction.arrowIds) {
+        for (const [key, arrowData] of this.arrowDataMap.entries()) {
+          if (arrowData.connectionId === connectionId) {
+            return arrowData;
+          }
+        }
+      }
+      
+      return null;
+    };
+    
+    // Process each reaction that has byreactant or byproduct fields
+    this.reactions.forEach((reaction) => {
+      // Skip product nodes
+      if (reaction.isProductNode) return;
+      
+      // Check if reaction has byreactant or byproduct fields for display
+      const hasByreactantField = reaction.byreactant !== undefined;
+      const hasByproductField = reaction.byproduct && reaction.byproduct.name;
+      
+      if (!hasByreactantField && !hasByproductField) {
+        return; // Skip reactions without by-molecule display fields
+      }
+      
+      // Get pathway name
+      const pathway = getPathwayName(reaction);
+      if (!pathway) {
+        console.warn(`Could not determine pathway for reaction:`, reaction.name);
+        return;
+      }
+      
+      const mainArrow = findMainArrow(reaction);
+      if (!mainArrow || !mainArrow.coords) {
+        console.warn(`Main arrow not found for reaction:`, reaction.name, 'ArrowIds:', reaction.arrowIds);
+        return;
+      }
+      
+      const coords = mainArrow.coords;
+      const dx = coords.x2 - coords.x1;
+      const dy = coords.y2 - coords.y1;
+      const arrowLength = Math.sqrt(dx * dx + dy * dy);
+      const arrowAngle = Math.atan2(dy, dx);
+      
+      // Calculate midpoint of the arrow (needed for offset calculation)
+      const midX = (coords.x1 + coords.x2) / 2;
+      const midY = (coords.y1 + coords.y2) / 2;
+      
+      // Get rotation angle from reaction data (in degrees, defaults to 0)
+      // Angle rotates the perpendicular direction: 0 = perpendicular, 90 = along arrow, -90 = opposite
+      // Positive = counterclockwise, negative = clockwise
+      let baseRotationAngle = reaction.byMoleculeAngle !== undefined 
+        ? (reaction.byMoleculeAngle * Math.PI / 180) // Convert degrees to radians
+        : 0;
+      
+      // Flip 180 degrees for pyruvate oxidation and citric acid cycle to match glycolysis shape
+      // Glycolysis uses the standard shape (above), so we flip the others
+      if (pathway === 'pyruvate-oxidation' || pathway === 'citric-acid-cycle') {
+        baseRotationAngle += Math.PI; // Add 180 degrees (π radians)
+      }
+      
+      // Calculate base perpendicular direction (90 degrees counterclockwise from arrow)
+      const basePerpAngle = arrowAngle + Math.PI / 2;
+      
+      // Apply rotation to get the final perpendicular angle
+      let perpAngle = basePerpAngle + baseRotationAngle;
+      
+      // Distance from arrow to byreactant/byproduct arrow (always use absolute distance)
+      const offset = 70; // Distance from main arrow
+      
+      // Determine offset direction based on pathway
+      // Glycolysis: above (negative), pyruvate oxidation and citric acid cycle: flipped 180 (below/opposite)
+      let offsetDirection = 1; // 1 = positive direction, -1 = negative direction
+      if (pathway === 'glycolysis') {
+        offsetDirection = -1; // Above
+      } else if (pathway === 'citric-acid-cycle') {
+        // For citric acid cycle, arrows should face outward (away from cycle center)
+        // After 180 flip, choose the direction that points outward
+        const cacReactions = this.reactions.filter(r => {
+          const rPathway = this.getPathwayForReaction(r);
+          return rPathway && rPathway.summary.name === 'Citric Acid Cycle (Krebs Cycle)';
+        });
+        if (cacReactions.length > 0) {
+          const centerX = cacReactions.reduce((sum, r) => sum + r.position.x, 0) / cacReactions.length;
+          const centerY = cacReactions.reduce((sum, r) => sum + r.position.y, 0) / cacReactions.length;
+          
+          // Calculate direction from center to arrow midpoint
+          const centerToMidX = midX - centerX;
+          const centerToMidY = midY - centerY;
+          const centerToMidAngle = Math.atan2(centerToMidY, centerToMidX);
+          
+          // Choose the perpendicular direction that points outward (after 180 flip)
+          const perpAngle1 = basePerpAngle + Math.PI;
+          const perpAngle2 = basePerpAngle;
+          
+          const diff1 = Math.abs(centerToMidAngle - perpAngle1);
+          const diff2 = Math.abs(centerToMidAngle - perpAngle2);
+          const wrappedDiff1 = Math.min(diff1, 2 * Math.PI - diff1);
+          const wrappedDiff2 = Math.min(diff2, 2 * Math.PI - diff2);
+          
+          perpAngle = wrappedDiff1 < wrappedDiff2 ? perpAngle1 : perpAngle2;
+        }
+        offsetDirection = 1; // Below/outward (after 180 flip)
+      } else {
+        // Pyruvate oxidation: below (after 180 flip)
+        offsetDirection = 1;
+      }
+      
+      const finalOffset = offset * offsetDirection;
+      
+      // Normalize byreactant and byproduct to arrays
+      // Handle string, array, or object formats
+      let byreactants = [];
+      if (reaction.byreactant) {
+        if (typeof reaction.byreactant === 'string') {
+          byreactants = reaction.byreactant.trim() !== '' ? [reaction.byreactant] : [];
+        } else if (Array.isArray(reaction.byreactant)) {
+          byreactants = reaction.byreactant.filter(m => m && m.trim && m.trim() !== '');
+        } else if (reaction.byreactant.molecules) {
+          // Object format: { molecules: string|array, angle?: number }
+          const molecules = Array.isArray(reaction.byreactant.molecules) 
+            ? reaction.byreactant.molecules 
+            : [reaction.byreactant.molecules];
+          byreactants = molecules.filter(m => m && m.trim && m.trim() !== '');
+        }
+      }
+      
+      let byproducts = [];
+      if (reaction.byproduct) {
+        if (typeof reaction.byproduct === 'string') {
+          byproducts = reaction.byproduct.trim() !== '' ? [reaction.byproduct] : [];
+        } else if (Array.isArray(reaction.byproduct)) {
+          byproducts = reaction.byproduct.filter(m => m && m.trim && m.trim() !== '');
+        } else if (reaction.byproduct.name) {
+          // Object format with name property
+          byproducts = [reaction.byproduct.name];
+        } else if (reaction.byproduct.molecules) {
+          // Object format: { molecules: string|array, angle?: number }
+          const molecules = Array.isArray(reaction.byproduct.molecules) 
+            ? reaction.byproduct.molecules 
+            : [reaction.byproduct.molecules];
+          byproducts = molecules.filter(m => m && m.trim && m.trim() !== '');
+        }
+      }
+      
+      const hasByreactant = byreactants.length > 0;
+      const hasByproduct = byproducts.length > 0;
+      
+      if (!hasByreactant && !hasByproduct) {
+        return; // Skip if neither is provided
+      }
+      
+      // Generalized approach: 
+      // 1. Define curve path with turning point at midpoint of main arrow
+      // 2. Position by-molecules at start and end of the curve path
+      
+      // Distance along the main arrow for start/end points (spacing from midpoint)
+      const curveSpacing = arrowLength / 2.5;
+      
+      // Calculate start and end points of the curve along the rotated perpendicular direction
+      // These points are offset from the midpoint along the main arrow direction and perpendicular direction
+      let curveStartX, curveStartY, curveEndX, curveEndY;
+      
+      if (hasByreactant && hasByproduct) {
+        // Both exist: curve goes from start point to end point, touching midpoint
+        curveStartX = midX - curveSpacing * Math.cos(arrowAngle) + finalOffset * Math.cos(perpAngle);
+        curveStartY = midY - curveSpacing * Math.sin(arrowAngle) + finalOffset * Math.sin(perpAngle);
+        curveEndX = midX + curveSpacing * Math.cos(arrowAngle) + finalOffset * Math.cos(perpAngle);
+        curveEndY = midY + curveSpacing * Math.sin(arrowAngle) + finalOffset * Math.sin(perpAngle);
+      } else if (hasByreactant) {
+        // Only byreactant: curve from start point to midpoint
+        curveStartX = midX - curveSpacing * Math.cos(arrowAngle) + finalOffset * Math.cos(perpAngle);
+        curveStartY = midY - curveSpacing * Math.sin(arrowAngle) + finalOffset * Math.sin(perpAngle);
+        curveEndX = midX;
+        curveEndY = midY;
+      } else {
+        // Only byproduct: curve from midpoint to end point
+        curveStartX = midX;
+        curveStartY = midY;
+        curveEndX = midX + curveSpacing * Math.cos(arrowAngle) + finalOffset * Math.cos(perpAngle);
+        curveEndY = midY + curveSpacing * Math.sin(arrowAngle) + finalOffset * Math.sin(perpAngle);
+      }
+      
+      // Step 1: Draw arrows from midpoint
+      // Byreactant arrow: half parabola starting at turning point (midpoint)
+      // Byproduct arrow: straight line in same direction as main arrow
+      
+      const byArrowLength = 66; // Length of the arrows (shortened by 66%)
+      
+      // Get heading angle parameter for each reaction (in degrees)
+      // This determines where the endpoint heads to
+      const headingAngle = reaction.byMoleculeAngle !== undefined 
+        ? (reaction.byMoleculeAngle * Math.PI / 180) // Convert degrees to radians
+        : 0;
+      
+      // Determine pathway for this reaction
+      const reactionPathway = this.getPathwayForReaction(reaction);
+      const isGlycolysis = reactionPathway && reactionPathway.summary && reactionPathway.summary.name === 'Glycolysis';
+      
+      // Endpoint positions will be calculated when drawing the arrows
+      let byreactantEndX, byreactantEndY, byproductEndX, byproductEndY;
+      let byreactantControlX, byreactantControlY;
+      
+      // Create the arrow group
+      const uArrowGroup = this.g.append('g')
+        .attr('class', 'byreactant-byproduct-arrow')
+        .attr('data-reaction-step', reaction.step);
+      
+      // Draw arrows from midpoint
+      const arrowColor = '#8b9dc3';
+      const arrowStrokeWidth = 3;
+      const arrowOpacity = 0.8;
+      
+      // Draw byreactant arrow: half of x^2 parabola
+      // Simple, basic parabola y = x^2
+      let byreactantArrow = null;
+      let byreactantPath = null;
+      if (hasByreactant) {
+        // Draw basic parabola y = x^2
+        // Turning point at (0, 0) with horizontal tangent
+        // We'll draw the right half: from (0, 0) to (x, x^2) where x > 0
+        
+        // For a quadratic Bezier Q(P0, P1, P2) to approximate y = x^2:
+        // P0 = (0, 0) - turning point
+        // P2 = (x, x^2) - endpoint
+        // P1 = (x/2, 0) - control point to ensure horizontal tangent at P0
+        
+        // Simple coordinate system: 
+        // - x-axis: opposite to main arrow direction (flipped horizontally)
+        // - y-axis: perpendicular downward (flipped vertically)
+        const x = -byArrowLength * 0.75; // Distance along x-axis (negative = left/opposite)
+        const y = -byArrowLength * 1.0; // Height (y = x^2, scaled, negative = downward)
+        
+        // Control point at (x/2, 0) - ensures horizontal tangent at start
+        // x is negative, so x/2 is also negative (left/opposite to main arrow direction)
+        byreactantControlX = midX + (x / 2) * Math.cos(arrowAngle);
+        byreactantControlY = midY + (x / 2) * Math.sin(arrowAngle);
+        
+        // Endpoint at (x, y) - follows parabola y = x^2
+        // x is negative (left/opposite to main arrow), y is negative (downward)
+        byreactantEndX = midX + x * Math.cos(arrowAngle) - y * Math.sin(arrowAngle);
+        byreactantEndY = midY + x * Math.sin(arrowAngle) + y * Math.cos(arrowAngle);
+        
+        // Create quadratic Bezier path representing half of x^2
+        byreactantPath = `M ${midX} ${midY} Q ${byreactantControlX} ${byreactantControlY}, ${byreactantEndX} ${byreactantEndY}`;
+        
+        byreactantArrow = uArrowGroup.append('path')
+          .attr('d', byreactantPath)
+          .attr('fill', 'none')
+          .attr('stroke', arrowColor)
+          .attr('stroke-width', arrowStrokeWidth)
+          .attr('stroke-opacity', arrowOpacity)
+          .style('pointer-events', 'none');
+      }
+      
+      // Draw byproduct arrow: half parabola starting at turning point (midpoint)
+      // Similar to byreactant but curving in forward direction
+      let byproductArrow = null;
+      let byproductPath = null;
+      let byproductControlX, byproductControlY;
+      let arrowhead = null;
+      if (hasByproduct) {
+        // Draw basic parabola y = x^2
+        // Turning point at (0, 0) with horizontal tangent
+        // We'll draw the right half: from (0, 0) to (x, x^2) where x > 0
+        
+        // For a quadratic Bezier Q(P0, P1, P2) to approximate y = x^2:
+        // P0 = (0, 0) - turning point
+        // P2 = (x, x^2) - endpoint
+        // P1 = (x/2, 0) - control point to ensure horizontal tangent at P0
+        
+        // Simple coordinate system: 
+        // - x-axis: same as main arrow direction (forward)
+        // - y-axis: perpendicular downward (flipped vertically)
+        const x = byArrowLength * 0.75; // Distance along x-axis (positive = forward/same as main arrow)
+        const y = -byArrowLength * 1.0; // Height (y = x^2, scaled, negative = downward)
+        
+        // Control point at (x/2, 0) - ensures horizontal tangent at start
+        // x is positive, so x/2 is also positive (forward/same as main arrow direction)
+        byproductControlX = midX + (x / 2) * Math.cos(arrowAngle);
+        byproductControlY = midY + (x / 2) * Math.sin(arrowAngle);
+        
+        // Endpoint at (x, y) - follows parabola y = x^2
+        // x is positive (forward/same as main arrow), y is negative (downward)
+        byproductEndX = midX + x * Math.cos(arrowAngle) - y * Math.sin(arrowAngle);
+        byproductEndY = midY + x * Math.sin(arrowAngle) + y * Math.cos(arrowAngle);
+        
+        // Create quadratic Bezier path representing half of x^2
+        byproductPath = `M ${midX} ${midY} Q ${byproductControlX} ${byproductControlY}, ${byproductEndX} ${byproductEndY}`;
+        
+        byproductArrow = uArrowGroup.append('path')
+          .attr('d', byproductPath)
+          .attr('fill', 'none')
+          .attr('stroke', arrowColor)
+          .attr('stroke-width', arrowStrokeWidth)
+          .attr('stroke-opacity', arrowOpacity)
+          .style('pointer-events', 'none');
+      }
+      
+      // Calculate label positions based on arrow endpoints and tangent angles
+      const baseLabelOffset = 10; // Base distance from arrow end to label
+      
+      // Helper function to estimate label width from molecules
+      const estimateLabelWidth = (molecules) => {
+        const fontSize = 12;
+        const charWidth = 7;
+        const plusText = ' + ';
+        const plusTextWidth = plusText.length * charWidth;
+        
+        let totalWidth = 0;
+        molecules.forEach((mol, idx) => {
+          totalWidth += mol.length * charWidth;
+          if (idx < molecules.length - 1) {
+            totalWidth += plusTextWidth;
+          }
+        });
+        
+        return totalWidth;
+      };
+      
+      // Helper function to calculate label offset with extra spacing for horizontal arrows
+      const calculateLabelOffset = (tangentAngle, molecules) => {
+        // Convert angle from radians to degrees
+        const angleDegrees = tangentAngle * (180 / Math.PI);
+        // Normalize to 0-360 range
+        const normalizedAngle = ((angleDegrees % 360) + 360) % 360;
+        
+        // Check if arrow is facing horizontal-ish directions
+        // -20 to 20 degrees (around 0 degrees, rightward)
+        // 160 to 200 degrees (around 180 degrees, leftward)
+        const isHorizontal = (normalizedAngle >= 0 && normalizedAngle <= 20) || 
+                            (normalizedAngle >= 160 && normalizedAngle <= 200) ||
+                            (normalizedAngle >= 340 && normalizedAngle <= 360); // Also handle -20 to 0 range
+        
+        // For horizontal arrows, add half of text length as extra offset
+        const newOffset = isHorizontal ? estimateLabelWidth(molecules) / 2 + 2 : baseLabelOffset;
+        
+        return newOffset;
+      };
+      
+      let byreactantLabelX, byreactantLabelY, byproductLabelX, byproductLabelY;
+      
+      // Calculate effective end positions for labels (accounting for stroke width)
+      // For arrows with stroke, the visible end is offset by stroke width along the tangent
+      let byreactantTipX = byreactantEndX;
+      let byreactantTipY = byreactantEndY;
+      let byreactantTangentAngle = 0;
+      if (hasByreactant) {
+        byreactantTangentAngle = Math.atan2(byreactantEndY - byreactantControlY, byreactantEndX - byreactantControlX);
+        const strokeOffset = arrowStrokeWidth;
+        byreactantTipX = byreactantEndX + strokeOffset * Math.cos(byreactantTangentAngle);
+        byreactantTipY = byreactantEndY + strokeOffset * Math.sin(byreactantTangentAngle);
+      }
+      
+      let byproductTipX = byproductEndX;
+      let byproductTipY = byproductEndY;
+      let byproductTangentAngle = 0;
+      if (hasByproduct) {
+        byproductTangentAngle = Math.atan2(byproductEndY - byproductControlY, byproductEndX - byproductControlX);
+        const strokeOffset = arrowStrokeWidth;
+        byproductTipX = byproductEndX + strokeOffset * Math.cos(byproductTangentAngle);
+        byproductTipY = byproductEndY + strokeOffset * Math.sin(byproductTangentAngle);
+      }
+      
+      // Calculate label offsets for each arrow
+      const byreactantLabelOffset = hasByreactant ? calculateLabelOffset(byreactantTangentAngle, byreactants) : baseLabelOffset;
+      const byproductLabelOffset = hasByproduct ? calculateLabelOffset(byproductTangentAngle, byproducts) : baseLabelOffset;
+      
+      if (hasByreactant && hasByproduct) {
+        // Both exist: position labels at the effective end of each arrow along tangent direction
+        byreactantLabelX = byreactantTipX + byreactantLabelOffset * Math.cos(byreactantTangentAngle);
+        byreactantLabelY = byreactantTipY + byreactantLabelOffset * Math.sin(byreactantTangentAngle);
+        byproductLabelX = byproductTipX + byproductLabelOffset * Math.cos(byproductTangentAngle);
+        byproductLabelY = byproductTipY + byproductLabelOffset * Math.sin(byproductTangentAngle);
+      } else if (hasByreactant) {
+        // Only byreactant
+        byreactantLabelX = byreactantTipX + byreactantLabelOffset * Math.cos(byreactantTangentAngle);
+        byreactantLabelY = byreactantTipY + byreactantLabelOffset * Math.sin(byreactantTangentAngle);
+        byproductLabelX = midX;
+        byproductLabelY = midY;
+      } else {
+        // Only byproduct
+        byreactantLabelX = midX;
+        byreactantLabelY = midY;
+        byproductLabelX = byproductTipX + byproductLabelOffset * Math.cos(byproductTangentAngle);
+        byproductLabelY = byproductTipY + byproductLabelOffset * Math.sin(byproductTangentAngle);
+      }
+      
+      // Add triangle arrowhead at the end of the byproduct arrow
+      if (hasByproduct) {
+        const arrowheadSize = 12; // Increased size
+        
+        const arrowheadPoints = [
+          [byproductTipX, byproductTipY],
+          [
+            byproductTipX - arrowheadSize * Math.cos(byproductTangentAngle - Math.PI / 6),
+            byproductTipY - arrowheadSize * Math.sin(byproductTangentAngle - Math.PI / 6)
+          ],
+          [
+            byproductTipX - arrowheadSize * Math.cos(byproductTangentAngle + Math.PI / 6),
+            byproductTipY - arrowheadSize * Math.sin(byproductTangentAngle + Math.PI / 6)
+          ]
+        ];
+        
+        arrowhead = uArrowGroup.append('polygon')
+          .attr('points', arrowheadPoints.map(p => p.join(',')).join(' '))
+          .attr('fill', arrowColor)
+          .attr('fill-opacity', 1)
+          .style('pointer-events', 'none');
+      }
+      
+      // Create invisible hit area for clicking
+      const hitAreaPaths = [];
+      if (hasByreactant && byreactantPath) {
+        hitAreaPaths.push(byreactantPath);
+      }
+      if (hasByproduct && byproductPath) {
+        hitAreaPaths.push(byproductPath);
+      }
+      
+      if (hitAreaPaths.length > 0) {
+        const hitArea = uArrowGroup.append('path')
+          .attr('d', hitAreaPaths.join(' '))
+          .attr('fill', 'none')
+          .attr('stroke', 'transparent')
+          .attr('stroke-width', 20)
+          .attr('stroke-opacity', 0)
+          .style('cursor', 'pointer')
+          .style('pointer-events', 'all')
+          .lower() // Put hit area behind labels so labels can be clicked
+          .on('click', (event) => {
+            event.stopPropagation();
+            // Select the reaction when clicking the arrow
+            this.selectReaction(reaction);
+          })
+          .on('mouseenter', () => {
+            if (byreactantArrow) byreactantArrow.attr('stroke-width', 4).attr('stroke-opacity', 1);
+            if (byproductArrow) byproductArrow.attr('stroke-width', 4).attr('stroke-opacity', 1);
+          })
+          .on('mouseleave', () => {
+            if (byreactantArrow) byreactantArrow.attr('stroke-width', arrowStrokeWidth).attr('stroke-opacity', arrowOpacity);
+            if (byproductArrow) byproductArrow.attr('stroke-width', arrowStrokeWidth).attr('stroke-opacity', arrowOpacity);
+          });
+      }
+      
+      // Helper function to create clickable multi-molecule label
+      const createMultiMoleculeLabel = (molecules, labelX, labelY, isByreactant) => {
+        if (molecules.length === 0) return;
+        
+        const textBgPadding = 0; // Minimal padding for tight fit
+        const fontSize = 12;
+        const plusText = ' + '; // Plus sign with spaces
+        
+        // Create label group first (temporarily positioned to measure text)
+        const labelGroup = uArrowGroup.append('g')
+          .attr('class', isByreactant ? 'byreactant-label-group' : 'byproduct-label-group')
+          .attr('transform', `translate(${labelX}, ${labelY})`);
+        
+        // Create text elements first to measure actual dimensions
+        const textElements = [];
+        let currentX = 0;
+        const textY = 0;
+        
+        molecules.forEach((molecule, idx) => {
+          // Add molecule text (clickable)
+          const moleculeText = labelGroup.append('text')
+            .attr('x', currentX)
+            .attr('y', textY)
+            .attr('font-size', `${fontSize}px`)
+            .attr('font-weight', 'bold')
+            .attr('fill', '#8b9dc3')
+            .attr('text-anchor', 'start')
+            .attr('dominant-baseline', 'central')
+            .style('cursor', 'pointer')
+            .style('pointer-events', 'all')
+            .text(molecule)
+            .on('click', (event) => {
+              event.stopPropagation();
+              console.log(`Clicking ${isByreactant ? 'byreactant' : 'byproduct'}:`, molecule);
+              // Pass the reaction context and whether it's byreactant or byproduct
+              this.selectMoleculeByName(molecule, null, { 
+                skipTabSwitch: false,
+                sourceReaction: reaction, // Pass the specific reaction where this molecule is used
+                isByreactant: isByreactant // Indicate if this is a byreactant or byproduct
+              });
+            });
+          
+          textElements.push(moleculeText);
+          
+          // Get actual text width
+          const moleculeBBox = moleculeText.node().getBBox();
+          const moleculeWidth = moleculeBBox.width;
+          currentX += moleculeWidth;
+          
+          // Add "+" separator if not last molecule
+          if (idx < molecules.length - 1) {
+            const plusTextElement = labelGroup.append('text')
+              .attr('x', currentX)
+              .attr('y', textY)
+              .attr('font-size', `${fontSize}px`)
+              .attr('font-weight', 'bold')
+              .attr('fill', '#8b9dc3')
+              .attr('text-anchor', 'start')
+              .attr('dominant-baseline', 'central')
+              .style('pointer-events', 'none')
+              .text(plusText);
+            
+            textElements.push(plusTextElement);
+            const plusBBox = plusTextElement.node().getBBox();
+            currentX += plusBBox.width;
+          }
+        });
+        
+        // Get bounding box of the entire label group to measure all text
+        const groupBBox = labelGroup.node().getBBox();
+        const centerX = groupBBox.x + groupBBox.width / 2;
+        const centerY = groupBBox.y + groupBBox.height / 2;
+        
+        // Reposition all text elements to be centered
+        textElements.forEach(textEl => {
+          const currentX = parseFloat(textEl.attr('x'));
+          const currentY = parseFloat(textEl.attr('y'));
+          textEl.attr('x', currentX - centerX);
+          textEl.attr('y', currentY - centerY);
+        });
+        
+        // Remeasure bounding box from individual text elements after repositioning
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        textElements.forEach(textEl => {
+          const bbox = textEl.node().getBBox();
+          minX = Math.min(minX, bbox.x);
+          maxX = Math.max(maxX, bbox.x + bbox.width);
+          minY = Math.min(minY, bbox.y);
+          maxY = Math.max(maxY, bbox.y + bbox.height);
+        });
+        
+        const actualWidth = maxX - minX;
+        const actualHeight = maxY - minY;
+        
+        // Create background rectangle based on actual text dimensions
+        const bgRect = labelGroup.insert('rect', ':first-child') // Insert before text elements
+          .attr('x', minX - textBgPadding)
+          .attr('y', minY - textBgPadding)
+          .attr('width', actualWidth + textBgPadding * 2)
+          .attr('height', actualHeight + textBgPadding * 2)
+          .attr('fill', this.getImageBgColor())
+          .attr('fill-opacity', 0.9)
+          .attr('rx', 3)
+          .style('pointer-events', 'none');
+        
+        // Add hover effects to text elements
+        textElements.forEach(textEl => {
+          if (textEl.style('pointer-events') === 'all') {
+            textEl
+              .on('mouseenter', function() {
+                d3.select(this).attr('fill', '#5fa8d3');
+                bgRect.attr('fill-opacity', 1);
+              })
+              .on('mouseleave', function() {
+                d3.select(this).attr('fill', '#8b9dc3');
+                bgRect.attr('fill-opacity', 0.9);
+              });
+          }
+        });
+      };
+      
+      // Add byreactant label(s) if they exist
+      if (hasByreactant) {
+        createMultiMoleculeLabel(byreactants, byreactantLabelX, byreactantLabelY, true);
+      }
+      
+      // Add byproduct label(s) if they exist
+      if (hasByproduct) {
+        createMultiMoleculeLabel(byproducts, byproductLabelX, byproductLabelY, false);
+      }
+      
+      // Raise arrows above labels so arrows appear in front
+      if (byreactantArrow) byreactantArrow.raise();
+      if (byproductArrow) byproductArrow.raise();
+      if (arrowhead) arrowhead.raise();
+    });
   }
   
   drawReactions() {
@@ -2577,6 +3202,138 @@ export class MetabolismViewer {
    * For CAC reactions, nodes display the previous reaction's product, not the substrate
    */
   selectMoleculeByName(moleculeName, moleculeId, options = {}) {
+    // If sourceReaction is provided, prioritize that reaction
+    const sourceReaction = options.sourceReaction;
+    const isByreactant = options.isByreactant;
+    
+    // If sourceReaction is provided and we're looking for a byreactant/byproduct,
+    // check that reaction first for coSubstrate/byproduct
+    if (sourceReaction) {
+      // Check if molecule is a coSubstrate or byproduct of the source reaction
+      if (sourceReaction.coSubstrate && 
+          (sourceReaction.coSubstrate.name === moleculeName || 
+           (moleculeId && sourceReaction.coSubstrate.id === moleculeId))) {
+          const targetMolecule = {
+            name: sourceReaction.coSubstrate.name,
+            formula: sourceReaction.coSubstrate.formula || '',
+            id: sourceReaction.coSubstrate.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+            description: sourceReaction.coSubstrate.description || 
+              `${sourceReaction.coSubstrate.name} is a co-substrate in ${sourceReaction.name || 'reaction'} (Step ${sourceReaction.step || 'N/A'}). ` +
+              (sourceReaction.coSubstrate.consumed ? 'It is consumed during the reaction.' : '') +
+              (sourceReaction.coSubstrate.reduced ? ' It is reduced during the reaction.' : '')
+          };
+        // First, do the same as clicking the curved arrow - update reaction tab completely
+        this.selectReaction(sourceReaction, { skipTabSwitch: true });
+        
+        // Then, update molecule tab and show it
+        this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false });
+        
+        // Re-apply reaction highlights after selectMolecule (which resets them)
+        // This ensures the map shows the same effect as clicking the main arrow
+        this.applyReactionHighlight(sourceReaction);
+        
+        // Re-highlight the reaction arrows (selectMolecule resets them)
+        const reactionNodeId = sourceReaction.nodeId;
+        for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
+          const targetReactionNodeId = arrowData.targetReaction?.nodeId;
+          if (targetReactionNodeId === reactionNodeId) {
+            const arrowElement = this.g.select(`.connection[data-connection-id="${arrowData.connectionId}"]`);
+            if (!arrowElement.empty()) {
+              arrowElement
+                .attr('stroke-width', 4) // Keep same size, don't make bigger
+                .attr('stroke-opacity', 1)
+                .attr('stroke', '#ff6b6b')
+                .attr('marker-end', 'url(#arrowhead-highlighted)');
+            }
+          }
+        }
+        
+        return;
+      }
+      
+      if (sourceReaction.byproduct && 
+          (sourceReaction.byproduct.name === moleculeName || 
+           (moleculeId && sourceReaction.byproduct.id === moleculeId))) {
+          const targetMolecule = {
+            name: sourceReaction.byproduct.name,
+            formula: sourceReaction.byproduct.formula || '',
+            id: sourceReaction.byproduct.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+            description: sourceReaction.byproduct.description || 
+              `${sourceReaction.byproduct.name} is a byproduct of ${sourceReaction.name || 'reaction'} (Step ${sourceReaction.step || 'N/A'}). ` +
+              (sourceReaction.enzyme ? `Catalyzed by ${sourceReaction.enzyme.name}.` : '')
+          };
+        // First, do the same as clicking the curved arrow - update reaction tab completely
+        this.selectReaction(sourceReaction, { skipTabSwitch: true });
+        
+        // Then, update molecule tab and show it
+        this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false });
+        
+        // Re-apply reaction highlights after selectMolecule (which resets them)
+        // This ensures the map shows the same effect as clicking the main arrow
+        this.applyReactionHighlight(sourceReaction);
+        
+        // Re-highlight the reaction arrows (selectMolecule resets them)
+        const reactionNodeId = sourceReaction.nodeId;
+        for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
+          const targetReactionNodeId = arrowData.targetReaction?.nodeId;
+          if (targetReactionNodeId === reactionNodeId) {
+            const arrowElement = this.g.select(`.connection[data-connection-id="${arrowData.connectionId}"]`);
+            if (!arrowElement.empty()) {
+              arrowElement
+                .attr('stroke-width', 4) // Keep same size, don't make bigger
+                .attr('stroke-opacity', 1)
+                .attr('stroke', '#ff6b6b')
+                .attr('marker-end', 'url(#arrowhead-highlighted)');
+            }
+          }
+        }
+        
+        return;
+      }
+      
+      // Check cofactors for Pi (inorganic phosphate)
+      if (moleculeName === 'Pi' && sourceReaction.enzyme && sourceReaction.enzyme.cofactors) {
+        const hasPi = sourceReaction.enzyme.cofactors.some(cf => 
+          cf && (cf.includes('Pi') || cf.includes('inorganic phosphate') || cf === 'Pi')
+        );
+        if (hasPi) {
+          const targetMolecule = {
+            name: 'Pi',
+            formula: 'H₃PO₄',
+            id: 'pi',
+            description: `Inorganic phosphate (cofactor in ${sourceReaction.name || 'reaction'})`
+          };
+          // First, do the same as clicking the curved arrow - update reaction tab completely
+          this.selectReaction(sourceReaction, { skipTabSwitch: true });
+          
+          // Then, update molecule tab and show it
+          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false });
+          
+          // Re-apply reaction highlights after selectMolecule (which resets them)
+          // This ensures the map shows the same effect as clicking the main arrow
+          this.applyReactionHighlight(sourceReaction);
+          
+          // Re-highlight the reaction arrows (selectMolecule resets them)
+          const reactionNodeId = sourceReaction.nodeId;
+          for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
+            const targetReactionNodeId = arrowData.targetReaction?.nodeId;
+            if (targetReactionNodeId === reactionNodeId) {
+              const arrowElement = this.g.select(`.connection[data-connection-id="${arrowData.connectionId}"]`);
+              if (!arrowElement.empty()) {
+                arrowElement
+                  .attr('stroke-width', 6)
+                  .attr('stroke-opacity', 1)
+                  .attr('stroke', '#ff6b6b')
+                  .attr('marker-end', 'url(#arrowhead-highlighted)');
+              }
+            }
+          }
+          
+          return;
+        }
+      }
+    }
+    
     // First check product nodes (like Acetyl-CoA, Lipoamide) - these have their own nodes
     let targetReaction = null;
     let targetMolecule = null;
@@ -2752,12 +3509,74 @@ export class MetabolismViewer {
       }
     }
     
+    // If not found in main molecules, search in coSubstrates and byproducts
+    // If sourceReaction is provided, check it first
+    if (!targetReaction || !targetMolecule) {
+      const reactionsToCheck = sourceReaction ? [sourceReaction, ...this.reactions.filter(r => r !== sourceReaction)] : this.reactions;
+      
+      for (const reaction of reactionsToCheck) {
+        // Check coSubstrate
+        if (reaction.coSubstrate && 
+            (reaction.coSubstrate.name === moleculeName || 
+             (moleculeId && reaction.coSubstrate.id === moleculeId))) {
+          // Create a molecule object from coSubstrate data
+          targetMolecule = {
+            name: reaction.coSubstrate.name,
+            formula: reaction.coSubstrate.formula || '',
+            id: reaction.coSubstrate.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+            description: reaction.coSubstrate.description || 
+              `${reaction.coSubstrate.name} is a co-substrate in ${reaction.name || 'reaction'} (Step ${reaction.step || 'N/A'}). ` +
+              (reaction.coSubstrate.consumed ? 'It is consumed during the reaction.' : '') +
+              (reaction.coSubstrate.reduced ? ' It is reduced during the reaction.' : '')
+          };
+          targetReaction = reaction;
+          break;
+        }
+        
+        // Check byproduct
+        if (reaction.byproduct && 
+            (reaction.byproduct.name === moleculeName || 
+             (moleculeId && reaction.byproduct.id === moleculeId))) {
+          // Create a molecule object from byproduct data
+          targetMolecule = {
+            name: reaction.byproduct.name,
+            formula: reaction.byproduct.formula || '',
+            id: reaction.byproduct.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+            description: reaction.byproduct.description || 
+              `${reaction.byproduct.name} is a byproduct of ${reaction.name || 'reaction'} (Step ${reaction.step || 'N/A'}). ` +
+              (reaction.enzyme ? `Catalyzed by ${reaction.enzyme.name}.` : '')
+          };
+          targetReaction = reaction;
+          break;
+        }
+        
+        // Check cofactors for Pi (inorganic phosphate)
+        // Pi is mentioned in cofactors but not always as coSubstrate
+        if (moleculeName === 'Pi' && reaction.enzyme && reaction.enzyme.cofactors) {
+          const hasPi = reaction.enzyme.cofactors.some(cf => 
+            cf && (cf.includes('Pi') || cf.includes('inorganic phosphate') || cf === 'Pi')
+          );
+          if (hasPi) {
+            // Create a molecule object for Pi
+            targetMolecule = {
+              name: 'Pi',
+              formula: 'H₃PO₄',
+              id: 'pi',
+              description: `Inorganic phosphate (cofactor in ${reaction.name || 'reaction'})`
+            };
+            targetReaction = reaction;
+            break;
+          }
+        }
+      }
+    }
+    
     if (targetReaction && targetMolecule) {
       this.selectMolecule(targetMolecule, targetReaction, options);
       // Zoom to the molecule node (not the arrow/reaction)
       this.zoomToNode(targetReaction);
     } else {
-      console.warn(`Molecule "${moleculeName}" not found in reactions`);
+      console.warn(`Molecule "${moleculeName}" not found in reactions, coSubstrates, or byproducts`);
     }
   }
   

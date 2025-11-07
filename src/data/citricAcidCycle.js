@@ -32,10 +32,14 @@ export const citricAcidCycleReactions = [
       name: 'Acetyl-CoA',
       formula: 'C₂₃H₃₈N₇O₁₇P₃S'
     },
+    byproduct: {
+      name: 'CoA',
+      formula: 'C₂₁H₃₆N₇O₁₆P₃S'
+    },
     conditions: {
       location: 'Mitochondrial matrix',
       requirement: 'Aerobic conditions',
-      notes: 'First step of the cycle, highly regulated'
+      notes: 'First step of the cycle, highly regulated. Releases CoA when citrate is formed.'
     },
     position: {
       x: 2041,  // Shifted back - Step 1 should be at Step 8's previous position (shows Malate from step 7)
@@ -101,9 +105,9 @@ export const citricAcidCycleReactions = [
     coSubstrate: {
       name: 'NAD⁺'
     },
+    byreactant: 'NAD⁺', // For display on map
     byproduct: {
-      name: 'NADH',
-      formula: 'C₂₁H₂₇N₇O₁₄P₂'
+      molecules: ['NADH', 'CO₂']
     },
     conditions: {
       location: 'Mitochondrial matrix',
@@ -142,6 +146,7 @@ export const citricAcidCycleReactions = [
       name: 'CoA',
       formula: 'C₂₁H₃₆N₇O₁₆P₃S'
     },
+    byreactant: 'CoA', // For display on map
     byproduct: {
       name: 'CO₂',
       formula: 'CO₂'
@@ -183,14 +188,14 @@ export const citricAcidCycleReactions = [
       name: 'GDP',
       formula: 'C₁₀H₁₅N₅O₁₁P₂'
     },
+    byreactant: 'GDP', // For display on map
     byproduct: {
-      name: 'GTP',
-      formula: 'C₁₀H₁₆N₅O₁₄P₃'
+      molecules: ['GTP', 'CoA']
     },
     conditions: {
       location: 'Mitochondrial matrix',
       requirement: 'Aerobic conditions',
-      notes: 'Substrate-level phosphorylation producing GTP'
+      notes: 'Substrate-level phosphorylation producing GTP and releasing CoA'
     },
     position: {
       x: 2359,  // Shifted back - Step 5 should be at previous Step 4's position (shows α-Ketoglutarate from step 3)
@@ -223,6 +228,7 @@ export const citricAcidCycleReactions = [
     coSubstrate: {
       name: 'FAD'
     },
+    byreactant: 'FAD', // For display on map
     byproduct: {
       name: 'FADH₂',
       formula: 'C₂₇H₃₃N₉O₁₅P₂'
@@ -264,6 +270,7 @@ export const citricAcidCycleReactions = [
       name: 'H₂O',
       formula: 'H₂O'
     },
+    byreactant: 'H₂O', // For display on map
     conditions: {
       location: 'Mitochondrial matrix',
       requirement: 'Aerobic conditions',
@@ -300,6 +307,7 @@ export const citricAcidCycleReactions = [
     coSubstrate: {
       name: 'NAD⁺'
     },
+    byreactant: 'NAD⁺', // For display on map
     byproduct: {
       name: 'NADH',
       formula: 'C₂₁H₂₇N₇O₁₄P₂'

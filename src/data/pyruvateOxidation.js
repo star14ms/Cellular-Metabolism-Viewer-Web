@@ -30,6 +30,7 @@ export const pyruvateOxidationReactions = [
       description: 'Decarboxylates pyruvate and attaches it to thiamine pyrophosphate (TPP)',
       cofactors: ['Thiamine pyrophosphate (TPP)', 'Mg²⁺']
     },
+    byreactant: '', // Empty - only byproduct shown
     byproduct: {
       name: 'CO₂',
       formula: 'CO₂',
@@ -105,6 +106,7 @@ export const pyruvateOxidationReactions = [
       name: 'CoA',
       formula: 'C₂₁H₃₆N₇O₁₆P₃S'
     },
+    byreactant: 'CoA', // For display on map
     conditions: {
       location: 'Mitochondrial matrix',
       requirement: 'Aerobic conditions',
@@ -141,6 +143,7 @@ export const pyruvateOxidationReactions = [
     coSubstrate: {
       name: 'NAD⁺'
     },
+    byreactant: 'NAD⁺', // For display on map
     byproduct: {
       name: 'NADH',
       formula: 'C₂₁H₂₇N₇O₁₄P₂'

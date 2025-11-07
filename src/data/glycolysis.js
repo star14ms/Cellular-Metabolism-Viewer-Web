@@ -35,6 +35,7 @@ export const glycolysisReactions = [
       consumed: true,
       formula: "C₁₀H₁₆N₅O₁₃P₃"
     },
+    byreactant: "ATP", // For display on map
     byproduct: {
       name: "ADP",
       formula: "C₁₀H₁₅N₅O₁₀P₂"
@@ -108,6 +109,7 @@ export const glycolysisReactions = [
       consumed: true,
       formula: "C₁₀H₁₆N₅O₁₃P₃"
     },
+    byreactant: "ATP", // For display on map
     byproduct: {
       name: "ADP",
       formula: "C₁₀H₁₅N₅O₁₀P₂"
@@ -222,6 +224,7 @@ export const glycolysisReactions = [
       consumed: true,
       reduced: true
     },
+    byreactant: ["NAD⁺", "Pi"], // For display on map
     byproduct: {
       name: "NADH",
       formula: "C₂₁H₂₇N₇O₁₄P₂"
@@ -262,6 +265,7 @@ export const glycolysisReactions = [
       name: "ADP",
       consumed: true
     },
+    byreactant: "ADP", // For display on map
     byproduct: {
       name: "ATP",
       formula: "C₁₀H₁₆N₅O₁₃P₃"
@@ -330,6 +334,7 @@ export const glycolysisReactions = [
       smiles: "C(=C(OP(=O)(O)O)C(=O)O)O",
       structure: "linear"
     },
+    byreactant: "", // Empty - only byproduct shown
     byproduct: {
       name: "H₂O",
       formula: "H₂O"
@@ -370,6 +375,7 @@ export const glycolysisReactions = [
       name: "ADP",
       consumed: true
     },
+    byreactant: "ADP", // For display on map
     byproduct: {
       name: "ATP",
       formula: "C₁₀H₁₆N₅O₁₃P₃"
