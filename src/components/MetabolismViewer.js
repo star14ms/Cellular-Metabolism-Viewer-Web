@@ -845,6 +845,33 @@ export class MetabolismViewer {
         .attr('fill', '#fff5f5');
     });
     
+    // Also highlight the last product (target node of arrows from the last reaction)
+    // This ensures the final product of the pathway is highlighted
+    if (pathwayReactions.length > 0) {
+      const lastReaction = pathwayReactions[pathwayReactions.length - 1];
+      // Find arrows from the last reaction (these lead to the product)
+      const lastReactionArrows = Array.from(this.arrowDataMap.values()).filter(
+        arrow => arrow.fromNodeId === lastReaction.nodeId
+      );
+      // Highlight the target nodes of these arrows (the products)
+      lastReactionArrows.forEach(arrow => {
+        if (arrow.toNodeId) {
+          const targetReaction = this.reactions.find(r => r.nodeId === arrow.toNodeId);
+          if (targetReaction) {
+            const targetGroup = this.reactionGroups.filter(d => d === targetReaction);
+            targetGroup.select('.reaction-circle')
+              .attr('stroke-width', 4)
+              .attr('stroke', '#ff6b6b')
+              .attr('fill', '#ff8787');
+            targetGroup.select('.molecule-image-bg')
+              .attr('stroke', '#ff6b6b')
+              .attr('stroke-width', 4)
+              .attr('fill', '#fff5f5');
+          }
+        }
+      });
+    }
+    
     this.selectedPathway = pathway.id;
     this.selectedReaction = null;
     this.selectedMolecule = null;
@@ -896,6 +923,25 @@ export class MetabolismViewer {
     
     // Calculate bounding box for the pathway
     const positions = pathwayReactions.map(r => r.position);
+    
+    // Include the position of the last product (endpoint of arrows from the last reaction)
+    // This ensures the final product of the pathway is included in the view
+    if (pathwayReactions.length > 0) {
+      const lastReaction = pathwayReactions[pathwayReactions.length - 1];
+      // Find arrows that start from the last reaction (these lead to the product)
+      const lastReactionArrows = Array.from(this.arrowDataMap.values()).filter(
+        arrow => arrow.fromNodeId === lastReaction.nodeId
+      );
+      // Include arrow endpoints (where products are displayed)
+      if (lastReactionArrows.length > 0) {
+        lastReactionArrows.forEach(arrow => {
+          if (arrow.coords) {
+            positions.push({ x: arrow.coords.x2, y: arrow.coords.y2 });
+          }
+        });
+      }
+    }
+    
     const minX = Math.min(...positions.map(p => p.x));
     const maxX = Math.max(...positions.map(p => p.x));
     const minY = Math.min(...positions.map(p => p.y));
@@ -1890,7 +1936,13 @@ export class MetabolismViewer {
       
       // Check if reaction has byreactant or byproduct fields for display
       const hasByreactantField = reaction.byreactant !== undefined;
-      const hasByproductField = reaction.byproduct && reaction.byproduct.name;
+      // Check for byproduct in various formats: name, molecules array, string, or array
+      const hasByproductField = reaction.byproduct && (
+        reaction.byproduct.name || 
+        reaction.byproduct.molecules ||
+        typeof reaction.byproduct === 'string' ||
+        Array.isArray(reaction.byproduct)
+      );
       
       if (!hasByreactantField && !hasByproductField) {
         return; // Skip reactions without by-molecule display fields
