@@ -8,7 +8,7 @@ import * as d3 from 'd3';
 import { glycolysisReactions, glycolysisSummary } from '../data/glycolysis.js';
 import { pyruvateOxidationReactions, pyruvateOxidationSummary } from '../data/pyruvateOxidation.js';
 import { citricAcidCycleReactions, citricAcidCycleSummary } from '../data/citricAcidCycle.js';
-import { fetchCompoundWithFallback } from '../services/pubchemService.js';
+import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
   calculateArrowMidpoint,
@@ -173,7 +173,8 @@ export class MetabolismViewer {
     this.selectedReaction = null;
     this.selectedPathway = null;
     this.currentZoom = 1;
-    this.moleculeImages = new Map(); // Cache for molecule 2D images
+    this.moleculeImages = new Map(); // Cache for molecule 2D images (id -> imageUrl)
+    this.pubchemDataCache = new Map(); // Cache for PubChem data (moleculeName -> pubchemData)
     
     // Helper to get image background color based on theme
     this.getImageBgColor = () => {
@@ -3000,6 +3001,59 @@ export class MetabolismViewer {
     }
   }
   
+  /**
+   * Find the reaction node that visually displays a given molecule
+   * @param {string} moleculeName - Name of the molecule
+   * @param {string} moleculeId - ID of the molecule (optional)
+   * @returns {Object|null} The reaction node that displays this molecule, or null if not found
+   */
+  findReactionNodeForMolecule(moleculeName, moleculeId = null) {
+    // First check product nodes (like Acetyl-CoA, Lipoamide) - these have their own nodes
+    for (const reaction of this.reactions) {
+      if (reaction.isProductNode && reaction.substrate &&
+          (reaction.substrate.name === moleculeName || 
+           (moleculeId && reaction.substrate.id === moleculeId))) {
+        return reaction;
+      }
+    }
+    
+    // If not found in product nodes, find where the molecule is visually displayed
+    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 2; // +2 for Acetyl-CoA and Lipoamide nodes
+    
+    for (let i = 0; i < this.reactions.length; i++) {
+      const reaction = this.reactions[i];
+      
+      // Skip product nodes - already checked
+      if (reaction.isProductNode) continue;
+      
+      const isCACReaction = i >= cacStartIndex;
+      let displayedMolecule = null;
+      
+      // Determine which molecule is visually displayed on this node
+      if (isCACReaction) {
+        // CAC nodes display the previous reaction's product
+        const cacLength = citricAcidCycleReactions.length;
+        const relativeIndex = i - cacStartIndex;
+        const prevRelativeIndex = (relativeIndex - 1 + cacLength) % cacLength;
+        const prevCACIndex = cacStartIndex + prevRelativeIndex;
+        const prevReaction = this.reactions[prevCACIndex];
+        displayedMolecule = prevReaction && prevReaction.product ? prevReaction.product : reaction.substrate;
+      } else {
+        // For glycolysis and pyruvate oxidation, nodes display the substrate
+        displayedMolecule = reaction.substrate;
+      }
+      
+      // Check if this is the molecule we're looking for
+      if (displayedMolecule && 
+          (displayedMolecule.name === moleculeName || 
+           (moleculeId && displayedMolecule.id === moleculeId))) {
+        return reaction;
+      }
+    }
+    
+    return null;
+  }
+  
   selectReaction(reaction, options = {}) {
     this.selectedReaction = reaction;
     this.selectedMolecule = null;
@@ -4021,10 +4075,10 @@ export class MetabolismViewer {
     // Fetch images for each unique molecule
     for (const [id, molecule] of uniqueMolecules) {
       try {
-        const alternativeNames = this.getAlternativeNames(molecule.name);
-        const pubchemData = await fetchCompoundWithFallback(molecule.name, alternativeNames);
+        // Use shared utility that handles normalization and alternatives
+        const pubchemData = await fetchPubChemData(molecule.name, this.pubchemDataCache);
         
-        if (pubchemData.image2DUrlSmall) {
+        if (pubchemData && pubchemData.image2DUrlSmall) {
           this.moleculeImages.set(id, pubchemData.image2DUrlSmall);
           
           // Update all nodes that use this molecule
@@ -4055,34 +4109,5 @@ export class MetabolismViewer {
     }
   }
   
-  getAlternativeNames(moleculeName) {
-    const alternatives = {
-      'D-Glucose': ['Glucose', 'D-Glucose', 'Dextrose', 'alpha-D-glucose'],
-      'Glucose-6-phosphate': ['Glucose 6-phosphate', 'G6P', 'D-Glucose 6-phosphate'],
-      'Fructose-6-phosphate': ['Fructose 6-phosphate', 'F6P', 'D-Fructose 6-phosphate'],
-      'Fructose-1,6-bisphosphate': ['Fructose 1,6-bisphosphate', 'F1,6BP', 'Fructose-1,6-diphosphate'],
-      'Glyceraldehyde-3-phosphate': ['Glyceraldehyde 3-phosphate', 'GAP', 'D-Glyceraldehyde 3-phosphate'],
-      'Dihydroxyacetone phosphate': ['Dihydroxyacetone phosphate', 'DHAP', 'Dihydroxyacetone-P'],
-      '1,3-Bisphosphoglycerate': ['1,3-Bisphosphoglycerate', '1,3-BPG', '1,3-Diphosphoglycerate', '1,3-diphosphoglycerate', 'glycerate-1,3-bisphosphate', '1,3-bisphosphoglycerate', '1,3-Bisphosphoglyceric acid', 'Glycerate 1,3-bisphosphate'],
-      '3-Phosphoglycerate': ['3-Phosphoglycerate', '3PG', 'D-3-Phosphoglycerate'],
-      '2-Phosphoglycerate': ['2-Phosphoglycerate', '2PG', 'D-2-Phosphoglycerate'],
-      'Phosphoenolpyruvate': ['Phosphoenolpyruvate', 'PEP', 'Phosphoenolpyruvic acid'],
-      'Pyruvate': ['Pyruvic acid', 'Pyruvate', '2-Oxopropanoic acid'],
-      // Citric Acid Cycle compounds
-      'Succinate': ['Succinic acid', 'Succinate', 'Butanedioic acid', 'Ethylene succinic acid'],
-      'Oxaloacetate': ['Oxaloacetic acid', 'Oxaloacetate', 'Oxalacetic acid'],
-      'Citrate': ['Citric acid', 'Citrate', '2-Hydroxy-1,2,3-propanetricarboxylic acid'],
-      'Isocitrate': ['Isocitric acid', 'Isocitrate'],
-      'α-Ketoglutarate': ['alpha-Ketoglutarate', 'α-Ketoglutarate', '2-Oxoglutarate', '2-Oxoglutaric acid', 'Alpha-ketoglutarate'],
-      'Succinyl-CoA': ['Succinyl coenzyme A', 'Succinyl-CoA', 'Succinyl CoA'],
-      'Fumarate': ['Fumaric acid', 'Fumarate', 'trans-Butenedioic acid'],
-      'Malate': ['Malic acid', 'Malate', 'Hydroxybutanedioic acid'],
-      // Pyruvate Oxidation intermediates
-      'Hydroxyethyl-TPP': ['2-(1-Hydroxyethyl)thiamine pyrophosphate', '2-(1-Hydroxyethyl)thiamine diphosphate', '2-(alpha-Hydroxyethyl)thiamine pyrophosphate', 'Hydroxyethyl thiamine pyrophosphate', '2-(1-Hydroxyethyl)TPP'],
-      'Acetyl-lipoamide': ['S-Acetyldihydrolipoamide', 'Acetyldihydrolipoamide', 'S-Acetyl dihydrolipoamide', 'Acetyl dihydrolipoamide', 'Acetyl-lipoic acid']
-    };
-    
-    return alternatives[moleculeName] || [];
-  }
 }
 
