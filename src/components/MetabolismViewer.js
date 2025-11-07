@@ -276,6 +276,8 @@ export class MetabolismViewer {
         this.svg.selectAll('g.molecule-image-group')
           .style('background-color', '#ffffff');
       }
+      
+      // Label colors are now handled by CSS variables, no need to update here
     };
     
     // Listen for theme changes
@@ -2394,7 +2396,7 @@ export class MetabolismViewer {
             .attr('y', textY)
             .attr('font-size', `${fontSize}px`)
             .attr('font-weight', 'bold')
-            .attr('fill', '#8b9dc3')
+            .attr('class', 'by-molecule-label')
             .attr('text-anchor', 'start')
             .attr('dominant-baseline', 'central')
             .style('cursor', 'pointer')
@@ -2425,7 +2427,7 @@ export class MetabolismViewer {
               .attr('y', textY)
               .attr('font-size', `${fontSize}px`)
               .attr('font-weight', 'bold')
-              .attr('fill', '#8b9dc3')
+              .attr('class', 'by-molecule-label')
               .attr('text-anchor', 'start')
               .attr('dominant-baseline', 'central')
               .style('pointer-events', 'none')
@@ -2470,21 +2472,20 @@ export class MetabolismViewer {
           .attr('width', actualWidth + textBgPadding * 2)
           .attr('height', actualHeight + textBgPadding * 2)
           .attr('fill', this.getImageBgColor())
-          .attr('fill-opacity', 0.9)
+          .attr('fill-opacity', 0) // Transparent background for by-molecules
           .attr('rx', 3)
           .style('pointer-events', 'none');
         
-        // Add hover effects to text elements
+        // Add hover effects to text elements - background opacity only (colors handled by CSS)
         textElements.forEach(textEl => {
           if (textEl.style('pointer-events') === 'all') {
             textEl
               .on('mouseenter', function() {
-                d3.select(this).attr('fill', '#5fa8d3');
-                bgRect.attr('fill-opacity', 1);
+                const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+                bgRect.attr('fill-opacity', currentIsDarkMode ? 0.3 : 0.1); // Slight background on hover
               })
               .on('mouseleave', function() {
-                d3.select(this).attr('fill', '#8b9dc3');
-                bgRect.attr('fill-opacity', 0.9);
+                bgRect.attr('fill-opacity', 0); // Transparent background
               });
           }
         });
@@ -2587,7 +2588,7 @@ export class MetabolismViewer {
     const labels = nodes.append('text')
       .attr('text-anchor', 'middle')
       .attr('x', 0) // Center horizontally
-      .attr('fill', '#e0e0e0')
+      .attr('class', 'node-label')
       .attr('font-size', '16px')
       .attr('font-weight', '500')
       .text(d => {

@@ -18,6 +18,9 @@
   --text-primary: #2c3e50;
   --text-secondary: #6c757d;
   --text-tertiary: #495057;
+  --label-node: #000000; /* Node labels (molecule names below nodes) */
+  --label-by-molecule: #000000; /* By-molecule labels (byreactants/byproducts) */
+  --label-by-molecule-hover: #4a90e2; /* Hover color for by-molecules */
   --border-color: #dee2e6;
   --border-color-light: #e9ecef;
   --shadow: rgba(0, 0, 0, 0.1);
@@ -38,6 +41,9 @@
   --text-primary: #e0e0e0;
   --text-secondary: #b0b0b0;
   --text-tertiary: #909090;
+  --label-node: #f0f0f0; /* Node labels (molecule names below nodes) */
+  --label-by-molecule: #b8c5d9; /* By-molecule labels (byreactants/byproducts) */
+  --label-by-molecule-hover: #7db8d9; /* Hover color for by-molecules */
   --border-color: #404040;
   --border-color-light: #353535;
   --shadow: rgba(0, 0, 0, 0.3);
@@ -893,6 +899,20 @@ body {
 
 .detail-panel::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
+}
+
+/* SVG Label Styles */
+.node-label {
+  fill: var(--label-node);
+}
+
+.by-molecule-label {
+  fill: var(--label-by-molecule);
+  transition: fill 0.2s ease;
+}
+
+.by-molecule-label:hover {
+  fill: var(--label-by-molecule-hover);
 }
 
 /* Responsive design */
