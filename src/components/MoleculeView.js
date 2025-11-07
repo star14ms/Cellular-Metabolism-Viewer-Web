@@ -16,6 +16,7 @@ export class MoleculeView {
   render(molecule) {
     if (!molecule) {
       this.container.innerHTML = '<div class="detail-placeholder">Click a compound node to view molecule details</div>';
+      this.currentMolecule = null; // Clear the current molecule
       return;
     }
     

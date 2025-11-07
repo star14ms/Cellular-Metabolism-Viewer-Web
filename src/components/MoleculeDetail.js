@@ -22,6 +22,7 @@ export class ReactionDetail {
   render(reaction) {
     if (!reaction) {
       this.container.innerHTML = '<div class="detail-placeholder">Click a reaction arrow to view reaction details</div>';
+      this.currentReaction = null; // Clear the current reaction
       return;
     }
     

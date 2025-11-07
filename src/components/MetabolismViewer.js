@@ -3007,6 +3007,78 @@ export class MetabolismViewer {
    * @param {string} moleculeId - ID of the molecule (optional)
    * @returns {Object|null} The reaction node that displays this molecule, or null if not found
    */
+  /**
+   * Check if a reaction is related to a molecule
+   * @param {Object} reaction - The reaction to check
+   * @param {string} moleculeName - Name of the molecule
+   * @param {string} moleculeId - ID of the molecule (optional)
+   * @returns {boolean} True if the reaction involves this molecule
+   */
+  isReactionRelatedToMolecule(reaction, moleculeName, moleculeId = null) {
+    if (!reaction || !moleculeName) return false;
+    
+    // Check substrate
+    if (reaction.substrate && 
+        (reaction.substrate.name === moleculeName || 
+         (moleculeId && reaction.substrate.id === moleculeId))) {
+      return true;
+    }
+    
+    // Check product
+    if (reaction.product && 
+        (reaction.product.name === moleculeName || 
+         (moleculeId && reaction.product.id === moleculeId))) {
+      return true;
+    }
+    
+    // Check products array
+    if (reaction.products && Array.isArray(reaction.products)) {
+      if (reaction.products.some(p => 
+          p.name === moleculeName || 
+          (moleculeId && p.id === moleculeId))) {
+        return true;
+      }
+    }
+    
+    // Check coSubstrate
+    if (reaction.coSubstrate && 
+        (reaction.coSubstrate.name === moleculeName || 
+         (moleculeId && reaction.coSubstrate.id === moleculeId))) {
+      return true;
+    }
+    
+    // Check byproduct
+    if (reaction.byproduct) {
+      if (typeof reaction.byproduct === 'string' && reaction.byproduct === moleculeName) {
+        return true;
+      }
+      if (reaction.byproduct.name === moleculeName || 
+          (moleculeId && reaction.byproduct.id === moleculeId)) {
+        return true;
+      }
+    }
+    
+    // Check byreactant
+    if (reaction.byreactant) {
+      if (typeof reaction.byreactant === 'string' && reaction.byreactant === moleculeName) {
+        return true;
+      }
+      if (Array.isArray(reaction.byreactant) && reaction.byreactant.includes(moleculeName)) {
+        return true;
+      }
+      if (reaction.byreactant.molecules) {
+        const molecules = Array.isArray(reaction.byreactant.molecules) 
+          ? reaction.byreactant.molecules 
+          : [reaction.byreactant.molecules];
+        if (molecules.includes(moleculeName)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
   findReactionNodeForMolecule(moleculeName, moleculeId = null) {
     // First check product nodes (like Acetyl-CoA, Lipoamide) - these have their own nodes
     for (const reaction of this.reactions) {

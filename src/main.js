@@ -157,10 +157,42 @@ if (!app) {
           views.forEach(v => v.classList.remove('active'))
           if (tabName === 'molecule') {
             moleculeContainer.classList.add('active')
+            // If molecule view has content, trigger the same effect as clicking the molecule
+            if (moleculeView.currentMolecule) {
+              const molecule = moleculeView.currentMolecule
+              // Find the reaction node that displays this molecule
+              const moleculeNode = viewer.findReactionNodeForMolecule(molecule.name, molecule.id)
+              if (moleculeNode) {
+                // Select the molecule (this handles highlighting)
+                viewer.selectMoleculeByName(molecule.name, molecule.id, { skipTabSwitch: true })
+                // Zoom to the node
+                viewer.zoomToNode(moleculeNode)
+              }
+            }
           } else if (tabName === 'reaction') {
             reactionContainer.classList.add('active')
+            // If reaction view has content, trigger the same effect as clicking the reaction arrow
+            if (reactionView.currentReaction) {
+              viewer.selectReaction(reactionView.currentReaction, { skipTabSwitch: true })
+              viewer.zoomToReactionArrow(reactionView.currentReaction)
+            }
           } else if (tabName === 'pathway') {
             pathwayContainer.classList.add('active')
+            // If pathway view has content, trigger the same effect as clicking a pathway button
+            if (pathwayView.currentPathway) {
+              // The pathway object may be nested in a pathway property, or be the pathway itself
+              const pathwayObj = pathwayView.currentPathway.pathway || pathwayView.currentPathway
+              // Find the pathway from viewer's pathways array by matching id or name
+              const pathway = viewer.pathways.find(p => 
+                p.id === pathwayObj.id || 
+                p.name === pathwayObj.name ||
+                (pathwayObj.summary && p.summary.name === pathwayObj.summary.name)
+              )
+              if (pathway) {
+                // selectPathway handles highlighting and zooming internally
+                viewer.selectPathway(pathway)
+              }
+            }
           }
           
           // Scroll to top when switching tabs
@@ -173,9 +205,61 @@ if (!app) {
       // Listen for pathway selection
       viewerContainer.addEventListener('pathway-selected', (event) => {
         pathwayView.render(event.detail)
-        // Clear molecule and reaction views when pathway is selected
-        moleculeView.render(null)
-        reactionView.render(null)
+        const selectedPathway = event.detail.pathway
+        
+        // Check if current reaction belongs to the selected pathway
+        // If so, keep the reaction tab open
+        if (reactionView.currentReaction) {
+          const currentReaction = reactionView.currentReaction
+          const reactionPathway = viewer.getPathwayForReaction(currentReaction)
+          
+          // Keep reaction if it belongs to the selected pathway
+          if (reactionPathway && selectedPathway && reactionPathway.id === selectedPathway.id) {
+            // Keep the reaction tab - don't clear it
+          } else {
+            // Clear reaction view if it doesn't belong to the selected pathway
+            reactionView.render(null)
+            reactionView.currentReaction = null
+            viewer.selectedReaction = null
+            // Reset reaction arrow highlighting
+            viewer.g.selectAll('.connection')
+              .attr('stroke-width', 4)
+              .attr('stroke-opacity', 0.7)
+              .attr('stroke', '#2c5f7c')
+              .attr('marker-end', 'url(#arrowhead)')
+          }
+        } else {
+          // No current reaction, so clear it anyway
+          reactionView.render(null)
+        }
+        
+        // Check if current molecule is involved in the selected pathway
+        // If so, keep the molecule tab open
+        if (moleculeView.currentMolecule && selectedPathway) {
+          const currentMolecule = moleculeView.currentMolecule
+          const pathwayReactions = selectedPathway.reactions || []
+          
+          // Check if the molecule is involved in any reaction in the pathway
+          const isMoleculeInPathway = pathwayReactions.length > 0 && pathwayReactions.some(reaction => 
+            viewer.isReactionRelatedToMolecule(
+              reaction,
+              currentMolecule.name,
+              currentMolecule.id
+            )
+          )
+          
+          // Keep molecule if it's involved in the selected pathway
+          if (isMoleculeInPathway) {
+            // Keep the molecule tab - don't clear it
+          } else {
+            // Clear molecule view if it's not involved in the selected pathway
+            moleculeView.render(null)
+          }
+        } else {
+          // No current molecule or no selected pathway, so clear it anyway
+          moleculeView.render(null)
+        }
+        
         // Switch to pathway tab
         tabs.forEach(t => t.classList.remove('active'))
         tabs[2].classList.add('active')
@@ -193,8 +277,26 @@ if (!app) {
         const skipTabSwitch = reactionData.skipTabSwitch || false;
         
         reactionView.render(reaction)
-        // Clear molecule view when reaction is selected
-        moleculeView.render(null)
+        
+        // Check if current molecule is involved in the selected reaction
+        // If so, keep the molecule tab open
+        if (moleculeView.currentMolecule) {
+          const currentMolecule = moleculeView.currentMolecule
+          const isRelated = viewer.isReactionRelatedToMolecule(
+            reaction,
+            currentMolecule.name,
+            currentMolecule.id
+          )
+          
+          // Keep molecule if it's involved in the selected reaction
+          if (!isRelated) {
+            // Clear molecule view if it's not involved in the selected reaction
+            moleculeView.render(null)
+          }
+        } else {
+          // No current molecule, so clear it anyway
+          moleculeView.render(null)
+        }
         
         // Only switch to reaction tab if not skipping tab switch (i.e., clicked from pathway card)
         if (!skipTabSwitch) {
@@ -213,6 +315,40 @@ if (!app) {
         const skipTabSwitch = moleculeData.skipTabSwitch || false;
         
         moleculeView.render(molecule)
+        
+        // Clear reaction tab by default when selecting a molecule
+        // Only keep it if the molecule is directly related to the current reaction
+        if (reactionView.currentReaction) {
+          const currentReaction = reactionView.currentReaction;
+          
+          // Check if the molecule is related to the current reaction
+          const isRelated = viewer.isReactionRelatedToMolecule(
+            currentReaction,
+            molecule.name,
+            molecule.id
+          );
+          
+          // Only keep the reaction if the molecule is directly related to it
+          // Otherwise, clear the reaction tab and reset reaction selection in viewer
+          if (!isRelated) {
+            // Clear the reaction view - use both render(null) and direct container clear
+            reactionView.render(null)
+            // Also directly clear the container to ensure it's emptied
+            if (reactionContainer) {
+              reactionContainer.innerHTML = '<div class="detail-placeholder">Click a reaction arrow to view reaction details</div>'
+            }
+            // Ensure currentReaction is cleared
+            reactionView.currentReaction = null
+            // Also clear the reaction selection in the viewer and reset visual highlighting
+            viewer.selectedReaction = null
+            // Reset reaction arrow highlighting
+            viewer.g.selectAll('.connection')
+              .attr('stroke-width', 4)
+              .attr('stroke-opacity', 0.7)
+              .attr('stroke', '#2c5f7c')
+              .attr('marker-end', 'url(#arrowhead)')
+          }
+        }
         
         // Only switch to molecule tab if not skipping tab switch (i.e., clicked from reaction detail)
         if (!skipTabSwitch) {
