@@ -79,7 +79,7 @@ export const glycolysisReactions = [
       regulation: "Near equilibrium reaction",
       isReversible: true
     },
-    position: { x: 250, y: 100 }
+    position: { x: 100, y: 250 }
   },
   {
     step: 3,
@@ -121,7 +121,7 @@ export const glycolysisReactions = [
       regulation: "Allosterically inhibited by ATP and citrate; activated by AMP and fructose-2,6-bisphosphate",
       isReversible: false
     },
-    position: { x: 400, y: 100 }
+    position: { x: 100, y: 400 }
   },
   {
     step: 4,
@@ -162,7 +162,7 @@ export const glycolysisReactions = [
       regulation: "Near equilibrium reaction",
       isReversible: true
     },
-    position: { x: 550, y: 100 }
+    position: { x: 100, y: 550 }
   },
   {
     step: 5,
@@ -194,7 +194,7 @@ export const glycolysisReactions = [
       regulation: "Near equilibrium, very fast reaction",
       isReversible: true
     },
-    position: { x: 550, y: 250 } // Increased distance from node 4 to match 4-6 distance (150px)
+    position: { x: 250, y: 550 } // Swapped: old (550, 250) → new (250, 550)
   },
   {
     step: 6,
@@ -236,7 +236,7 @@ export const glycolysisReactions = [
       regulation: "Requires NAD⁺ and inorganic phosphate",
       isReversible: true
     },
-    position: { x: 700, y: 100 }
+    position: { x: 100, y: 700 }
   },
   {
     step: 7,
@@ -277,7 +277,7 @@ export const glycolysisReactions = [
       regulation: "Substrate-level phosphorylation",
       isReversible: true
     },
-    position: { x: 850, y: 100 }
+    position: { x: 100, y: 850 }
   },
   {
     step: 8,
@@ -309,7 +309,7 @@ export const glycolysisReactions = [
       regulation: "Near equilibrium reaction",
       isReversible: true
     },
-    position: { x: 1000, y: 100 }
+    position: { x: 100, y: 1000 }
   },
   {
     step: 9,
@@ -346,7 +346,7 @@ export const glycolysisReactions = [
       regulation: "Inhibited by fluoride",
       isReversible: true
     },
-    position: { x: 1150, y: 100 }
+    position: { x: 100, y: 1150 }
   },
   {
     step: 10,
@@ -387,7 +387,7 @@ export const glycolysisReactions = [
       regulation: "Allosterically activated by fructose-1,6-bisphosphate; inhibited by ATP and alanine",
       isReversible: false
     },
-    position: { x: 1300, y: 100 }
+    position: { x: 100, y: 1300 }
   }
 ];
 

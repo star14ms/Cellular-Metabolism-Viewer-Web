@@ -42,8 +42,8 @@ export const pyruvateOxidationReactions = [
       notes: 'First step of pyruvate dehydrogenase complex'
     },
     position: {
-      x: 1450,
-      y: 100
+      x: 100,  // Swapped: old y becomes new x
+      y: 1450  // Swapped: old x becomes new y
     }
   },
   {
@@ -75,8 +75,8 @@ export const pyruvateOxidationReactions = [
       notes: 'Second step: oxidation and transfer to lipoamide'
     },
     position: {
-      x: 1600,
-      y: 100
+      x: 100,  // Swapped: old y becomes new x
+      y: 1600  // Swapped: old x becomes new y
     }
   },
   {
@@ -113,8 +113,8 @@ export const pyruvateOxidationReactions = [
       notes: 'Third step: formation of acetyl-CoA and reduced lipoamide'
     },
     position: {
-      x: 1750,
-      y: 100
+      x: 100,  // Swapped: old y becomes new x
+      y: 1750  // Swapped: old x becomes new y
     }
   },
   {
@@ -148,14 +148,15 @@ export const pyruvateOxidationReactions = [
       name: 'NADH',
       formula: 'C₂₁H₂₇N₇O₁₄P₂'
     },
+    byMoleculeAngle: 0, // Adjust arrow direction: adds 180° to perpAngle to flip direction (curves to the right)
     conditions: {
       location: 'Mitochondrial matrix',
       requirement: 'Aerobic conditions',
       notes: 'Final step: regenerates lipoamide and produces NADH'
     },
     position: {
-      x: 1825, // Aligned with midpoint of Step 3 → Acetyl-CoA arrow ((1750 + 1900) / 2 = 1825) for vertical connection
-      y: 250 // Same y as Lipoamide, forming bottom row of square
+      x: 250,  // Swapped: old y becomes new x
+      y: 1825  // Swapped: old x becomes new y
     }
   }
 ];

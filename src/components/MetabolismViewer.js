@@ -57,8 +57,8 @@ export class MetabolismViewer {
         cofactors: []
       },
       position: {
-        x: 1900, // 150px from step 3 (1750) for consistent arrow length
-        y: 100
+        x: 100,  // Swapped: old y becomes new x
+        y: 1900  // Swapped: old x becomes new y
       },
       isProductNode: true // Flag to identify this as a product node
     };
@@ -88,8 +88,8 @@ export class MetabolismViewer {
         cofactors: []
       },
       position: {
-        x: 1675, // Aligned with midpoint of Step 2 → Step 3 arrow for vertical connection
-        y: 250 // Same y as Step 4, forming bottom row of square
+        x: 250,  // Swapped: old y becomes new x
+        y: 1675  // Swapped: old x becomes new y
       },
       isProductNode: true // Flag to identify this as a product node
     };
@@ -1351,13 +1351,17 @@ export class MetabolismViewer {
     const glyceraldehydeId = step6Node.substrate?.id; // "glyceraldehyde_3_phosphate"
     
     // Step 4 branching: create multiple arrows at once
+    // Calculate coordinates dynamically from node positions
+    const step4ToStep5Coords = calculateArrowCoords(step4Node, step5Node);
+    const step4ToStep6Coords = calculateArrowCoords(step4Node, step6Node);
     createArrowWithData(step4Node, [
-      { toNode: step5Node, connectionId: 'step4-to-5', customCoords: { x1: 550, y1: 130, x2: 550, y2: 220 }, reactantId: fructoseBisphosphateId, productId: dihydroxyacetoneId },
-      { toNode: step6Node, connectionId: 'step4-to-6', customCoords: { x1: 580, y1: 100, x2: 670, y2: 100 }, reactantId: fructoseBisphosphateId, productId: glyceraldehydeId }
+      { toNode: step5Node, connectionId: 'step4-to-5', customCoords: step4ToStep5Coords, reactantId: fructoseBisphosphateId, productId: dihydroxyacetoneId },
+      { toNode: step6Node, connectionId: 'step4-to-6', customCoords: step4ToStep6Coords, reactantId: fructoseBisphosphateId, productId: glyceraldehydeId }
     ], null, null, 'connection-special', step4Node);
     
-    // Step 5 to Step 6
-    createArrowWithData(step5Node, step6Node, { x1: 580, y1: 250, x2: 670, y2: 100 }, 'step5-to-6', 'connection-special', step5Node, dihydroxyacetoneId, glyceraldehydeId);
+    // Step 5 to Step 6 - calculate coordinates dynamically
+    const step5ToStep6Coords = calculateArrowCoords(step5Node, step6Node);
+    createArrowWithData(step5Node, step6Node, step5ToStep6Coords, 'step5-to-6', 'connection-special', step5Node, dihydroxyacetoneId, glyceraldehydeId);
     
     // Glycolysis to Pyruvate oxidation
     const glycolysisEndNode = this.reactions[glycolysisLength - 1];
@@ -1385,16 +1389,14 @@ export class MetabolismViewer {
     
     // Connection from pyruvate oxidation step 3 to Acetyl-CoA node
     // Step 3 produces Acetyl-CoA (one of two products)
-    const step3X = 1750;
-    const step3Y = 100;
-    const acetylCoaX = 1900;
-    const acetylCoaY = 100;
     const step3Node = this.reactions[glycolysisLength + 2];
     const acetylCoaNode = this.reactions[glycolysisLength + 3];
+    // Calculate coordinates dynamically from node positions
+    const step3ToAcetylCoaCoords = calculateArrowCoords(step3Node, acetylCoaNode);
     createArrowWithData(
       step3Node.nodeId,
       acetylCoaNode.nodeId,
-      { x1: step3X + 30, y1: step3Y, x2: acetylCoaX - 30, y2: acetylCoaY },
+      step3ToAcetylCoaCoords,
       'step3-to-acetyl-coa',
       'connection-special',
       step3Node, // Pyruvate oxidation step 3
@@ -1406,12 +1408,12 @@ export class MetabolismViewer {
     // This arrow shows Step 12's product (Acetyl-lipoamide) flowing to Step 3
     // This arrow is needed because Step 3 is skipped in the automatic loop
     const step2Node_pyruvate_explicit = this.reactions[glycolysisLength + 1]; // Step 2 (Step 12)
-    const step2X_pyruvate_explicit = 1600;
-    const step2Y_pyruvate_explicit = 100;
+    // Calculate coordinates dynamically from node positions
+    const step2ToStep3Coords = calculateArrowCoords(step2Node_pyruvate_explicit, step3Node);
     createArrowWithData(
       step2Node_pyruvate_explicit.nodeId,
       step3Node.nodeId,
-      { x1: step2X_pyruvate_explicit + 30, y1: step2Y_pyruvate_explicit, x2: step3X - 30, y2: step3Y },
+      step2ToStep3Coords,
       'step2-to-step3',
       'connection-normal',
       step2Node_pyruvate_explicit, // This arrow represents Step 12 (Oxidation and Transfer)
@@ -1449,31 +1451,21 @@ export class MetabolismViewer {
     // Calculate midpoint coordinates - either from arrow data or directly from node positions
     let midpoint;
     if (step1ToStep2Arrow && step1ToStep2Arrow.coords) {
-      midpoint = {
-        x: (step1ToStep2Arrow.coords.x1 + step1ToStep2Arrow.coords.x2) / 2,
-        y: (step1ToStep2Arrow.coords.y1 + step1ToStep2Arrow.coords.y2) / 2
-      };
+      midpoint = calculateArrowMidpoint(step1ToStep2Arrow.coords);
     } else {
       // Fallback: calculate midpoint directly from node positions
-      const step1X = step1Node.position.x;
-      const step1Y = step1Node.position.y;
-      const step2X = step2Node.position.x;
-      const step2Y = step2Node.position.y;
-      const angle_step1_to_step2 = Math.atan2(step2Y - step1Y, step2X - step1X);
-      const startX = step1X + 30 * Math.cos(angle_step1_to_step2);
-      const startY = step1Y + 30 * Math.sin(angle_step1_to_step2);
-      const endX_temp = step2X - 30 * Math.cos(angle_step1_to_step2);
-      const endY_temp = step2Y - 30 * Math.sin(angle_step1_to_step2);
-      midpoint = {
-        x: (startX + endX_temp) / 2,
-        y: (startY + endY_temp) / 2
-      };
+      const step1ToStep2TempCoords = calculateArrowCoords(step1Node, step2Node);
+      midpoint = calculateArrowMidpoint(step1ToStep2TempCoords);
     }
     
     if (midpoint && !isNaN(midpoint.x) && !isNaN(midpoint.y)) {
-      const dx = midpoint.x - (acetylCoaX + 30);
-      const dy = midpoint.y - acetylCoaY;
+      // Calculate arrow from Acetyl-CoA to midpoint
+      const acetylCoaPos = acetylCoaNode.position;
+      const dx = midpoint.x - acetylCoaPos.x;
+      const dy = midpoint.y - acetylCoaPos.y;
       const angle = Math.atan2(dy, dx);
+      const startX = acetylCoaPos.x + 30 * Math.cos(angle);
+      const startY = acetylCoaPos.y + 30 * Math.sin(angle);
       const endX = midpoint.x - 10 * Math.cos(angle);
       const endY = midpoint.y - 10 * Math.sin(angle);
       
@@ -1485,14 +1477,14 @@ export class MetabolismViewer {
         fromReaction: acetylCoaNode,
         toReaction: step1Node,
         targetReaction: step1Node, // Step 1
-        coords: { x1: acetylCoaX + 30, y1: acetylCoaY, x2: endX, y2: endY },
+        coords: { x1: startX, y1: startY, x2: endX, y2: endY },
         connectionId: 'acetyl-coa-to-cac-step1',
         isMidpointConnection: true
       });
       
       // Only create arrow if coordinates are valid
       if (!isNaN(endX) && !isNaN(endY)) {
-        const arrowCoords = { x1: acetylCoaX + 30, y1: acetylCoaY, x2: endX, y2: endY };
+        const arrowCoords = { x1: startX, y1: startY, x2: endX, y2: endY };
         const arrowResult = createArrow(
           arrowCoords,
           'acetyl-coa-to-cac-step1',
@@ -1518,17 +1510,14 @@ export class MetabolismViewer {
     
     // Connection from pyruvate oxidation step 4 to Lipoamide node
     // This arrow represents Step 4 (Step 14): Dihydrolipoamide → Lipoamide
-    // Horizontal connection on bottom row: Step 4 (right) → Lipoamide (left), both at y: 250
     const step4Node_pyruvate = this.reactions[glycolysisLength + 4]; // Step 4 is at index glycolysisLength + 4
-    const step4X = 1825; // Aligned with midpoint of Step 3 → Acetyl-CoA arrow
-    const step4Y = 250; // Same y as Lipoamide, forming bottom row of square
     const lipoamideNode = this.reactions[glycolysisLength + 5]; // Lipoamide node is at index glycolysisLength + 5
-    const lipoamideX = 1675; // Aligned with midpoint of Step 2 → Step 3 arrow
-    const lipoamideY = 250; // Same y as Step 4, forming bottom row of square
+    // Calculate coordinates dynamically from node positions
+    const step4ToLipoamideCoords = calculateArrowCoords(step4Node_pyruvate, lipoamideNode);
     createArrowWithData(
       step4Node_pyruvate.nodeId,
       lipoamideNode.nodeId,
-      { x1: step4X - 30, y1: step4Y, x2: lipoamideX + 30, y2: lipoamideY }, // Horizontal connection on bottom row (right to left)
+      step4ToLipoamideCoords,
       'step4-to-lipoamide',
       'connection-special',
       step4Node_pyruvate, // Pyruvate oxidation step 4
@@ -1539,11 +1528,7 @@ export class MetabolismViewer {
     // Connection from Lipoamide node to midpoint of Step 2 → Step 3 arrow
     // Lipoamide is a cofactor/reactant in Step 2, so arrow should point to midpoint, not the node
     const step2Node_pyruvate = this.reactions[glycolysisLength + 1]; // Step 2 (Step 12)
-    const step2X_pyruvate = 1600;
-    const step2Y_pyruvate = 100;
     const step3Node_pyruvate_for_lipoamide = this.reactions[glycolysisLength + 2]; // Step 3
-    const step3X_pyruvate_for_lipoamide = 1750;
-    const step3Y_pyruvate_for_lipoamide = 100;
     
     // Find the arrow from Step 2 to Step 3
     const step2ToStep3Key = getArrowKey(step2Node_pyruvate.nodeId, step3Node_pyruvate_for_lipoamide.nodeId);
@@ -1566,29 +1551,21 @@ export class MetabolismViewer {
     // Calculate midpoint of Step 2 → Step 3 arrow
     let midpoint_step2_step3;
     if (step2ToStep3Arrow && step2ToStep3Arrow.coords) {
-      midpoint_step2_step3 = {
-        x: (step2ToStep3Arrow.coords.x1 + step2ToStep3Arrow.coords.x2) / 2,
-        y: (step2ToStep3Arrow.coords.y1 + step2ToStep3Arrow.coords.y2) / 2
-      };
+      midpoint_step2_step3 = calculateArrowMidpoint(step2ToStep3Arrow.coords);
     } else {
       // Fallback: calculate directly from node positions
-      const angle_step2_to_step3 = Math.atan2(step3Y_pyruvate_for_lipoamide - step2Y_pyruvate, step3X_pyruvate_for_lipoamide - step2X_pyruvate);
-      const startX = step2X_pyruvate + 30 * Math.cos(angle_step2_to_step3);
-      const startY = step2Y_pyruvate + 30 * Math.sin(angle_step2_to_step3);
-      const endX = step3X_pyruvate_for_lipoamide - 30 * Math.cos(angle_step2_to_step3);
-      const endY = step3Y_pyruvate_for_lipoamide - 30 * Math.sin(angle_step2_to_step3);
-      midpoint_step2_step3 = {
-        x: (startX + endX) / 2,
-        y: (startY + endY) / 2
-      };
+      const step2ToStep3TempCoords = calculateArrowCoords(step2Node_pyruvate, step3Node_pyruvate_for_lipoamide);
+      midpoint_step2_step3 = calculateArrowMidpoint(step2ToStep3TempCoords);
     }
     
     if (midpoint_step2_step3 && !isNaN(midpoint_step2_step3.x)) {
-      const dx = midpoint_step2_step3.x - lipoamideX;
-      const dy = midpoint_step2_step3.y - (lipoamideY - 30); // Connect from top of Lipoamide node
+      // Calculate arrow from Lipoamide to midpoint
+      const lipoamidePos = lipoamideNode.position;
+      const dx = midpoint_step2_step3.x - lipoamidePos.x;
+      const dy = midpoint_step2_step3.y - lipoamidePos.y;
       const angle = Math.atan2(dy, dx);
-      const startX = lipoamideX;
-      const startY = lipoamideY - 30; // Start from top of Lipoamide node
+      const startX = lipoamidePos.x + 30 * Math.cos(angle);
+      const startY = lipoamidePos.y + 30 * Math.sin(angle);
       const endX = midpoint_step2_step3.x - 10 * Math.cos(angle);
       const endY = midpoint_step2_step3.y - 10 * Math.sin(angle);
       
@@ -1619,17 +1596,8 @@ export class MetabolismViewer {
     
     // Connection from citric acid cycle end (step 8) back to start (step 1)
     const step8Node = this.reactions[cacStartIndex + citricAcidCycleLength - 1];
-    const step8X = 1975;
-    const step8Y = 425;
-    const step1X_cycle = 2041;
-    const step1Y_cycle = 266;
-    const cycleAngle = Math.atan2(step1Y_cycle - step8Y, step1X_cycle - step8X);
-    const cycleCoords = {
-      x1: step8X + 30 * Math.cos(cycleAngle),
-      y1: step8Y + 30 * Math.sin(cycleAngle),
-      x2: step1X_cycle - 30 * Math.cos(cycleAngle),
-      y2: step1Y_cycle - 30 * Math.sin(cycleAngle)
-    };
+    // Calculate coordinates dynamically from node positions
+    const cycleCoords = calculateArrowCoords(step8Node, step1Node);
     
     // Store cycle arrow data
     const cycleKey = getArrowKey(step8Node.nodeId, step1Node.nodeId);
@@ -1648,6 +1616,13 @@ export class MetabolismViewer {
     if (!step8Node.arrowIds.includes('cac-cycle')) {
       step8Node.arrowIds.push('cac-cycle');
     }
+    
+    // Calculate curve control point and end point from node positions for hit area
+    const step8Pos = step8Node.position;
+    const step1Pos = step1Node.position;
+    const cycleAngle = Math.atan2(step1Pos.y - step8Pos.y, step1Pos.x - step8Pos.x);
+    const curveEndX = step1Pos.x - 80 * Math.cos(cycleAngle);
+    const curveEndY = step1Pos.y - 80 * Math.sin(cycleAngle);
     
     // Draw cycle arrow with narrower hit area
     const cycleArrow = this.g.append('line')
@@ -1668,8 +1643,8 @@ export class MetabolismViewer {
       .attr('data-connection-id', 'cac-cycle')
       .attr('x1', cycleCoords.x1)
       .attr('y1', cycleCoords.y1)
-      .attr('x2', step1X_cycle - 80 * Math.cos(cycleAngle))
-      .attr('y2', step1Y_cycle - 80 * Math.sin(cycleAngle))
+      .attr('x2', curveEndX)
+      .attr('y2', curveEndY)
       .attr('stroke', 'transparent')
       .attr('stroke-width', 10)
       .attr('stroke-opacity', 0)
@@ -1685,6 +1660,20 @@ export class MetabolismViewer {
         event.stopPropagation();
         this.selectReaction(step8Node);
       });
+    
+    // Create curved path for cycle arrow (visual enhancement)
+    const curveControlX = step8Pos.x + 50;
+    const curveControlY = step8Pos.y - 50;
+    const cycleCurve = this.g.append('path')
+      .attr('class', 'connection connection-special connection-curve')
+      .attr('data-connection-id', 'cac-cycle-curve')
+      .attr('d', `M ${cycleCoords.x1} ${cycleCoords.y1} Q ${curveControlX} ${curveControlY}, ${curveEndX} ${curveEndY}`)
+      .attr('fill', 'none')
+      .attr('stroke', '#2c5f7c')
+      .attr('stroke-width', 2)
+      .attr('stroke-opacity', 0.3)
+      .attr('marker-end', 'url(#arrowhead)')
+      .style('pointer-events', 'none');
     
     // Automatically create secondary arrows from midpoints for multi-product reactions
     // This must be called after all primary arrows are created
@@ -1784,7 +1773,7 @@ export class MetabolismViewer {
           reactantId: 'acetyl-lipoamide',
           productId: 'dihydrolipoamide',
           targetReaction: this.reactions[glycolysisReactions.length + 2], // Step 3
-          toNodePosition: { x: 1825, y: 250 } // Step 4 position
+          // toNodePosition removed - will use toNode.position dynamically
         }]
       }
     ];
@@ -1977,14 +1966,12 @@ export class MetabolismViewer {
       // Get rotation angle from reaction data (in degrees, defaults to 0)
       // Angle rotates the perpendicular direction: 0 = perpendicular, 90 = along arrow, -90 = opposite
       // Positive = counterclockwise, negative = clockwise
-      let baseRotationAngle = reaction.byMoleculeAngle !== undefined 
-        ? (reaction.byMoleculeAngle * Math.PI / 180) // Convert degrees to radians
-        : 0;
+      let baseRotationAngle = 0;
       
       // Flip 180 degrees for pyruvate oxidation and citric acid cycle to match glycolysis shape
       // Glycolysis uses the standard shape (above), so we flip the others
-      if (pathway === 'pyruvate-oxidation' || pathway === 'citric-acid-cycle') {
-        baseRotationAngle += Math.PI; // Add 180 degrees (π radians)
+      if (pathway === 'glycolysis') {
+        baseRotationAngle = Math.PI; // Add 180 degrees (π radians)
       }
       
       // Calculate base perpendicular direction (90 degrees counterclockwise from arrow)
@@ -1992,6 +1979,12 @@ export class MetabolismViewer {
       
       // Apply rotation to get the final perpendicular angle
       let perpAngle = basePerpAngle + baseRotationAngle;
+      
+      // If byMoleculeAngle is set, use it to adjust perpAngle (in degrees, converted to radians)
+      // This allows fine-tuning the arrow direction from the data file
+      if (reaction.byMoleculeAngle !== undefined) {
+        perpAngle += reaction.byMoleculeAngle * Math.PI / 180; // Convert degrees to radians and add
+      }
       
       // Distance from arrow to byreactant/byproduct arrow (always use absolute distance)
       const offset = 70; // Distance from main arrow
@@ -2115,12 +2108,6 @@ export class MetabolismViewer {
       
       const byArrowLength = 66; // Length of the arrows (shortened by 66%)
       
-      // Get heading angle parameter for each reaction (in degrees)
-      // This determines where the endpoint heads to
-      const headingAngle = reaction.byMoleculeAngle !== undefined 
-        ? (reaction.byMoleculeAngle * Math.PI / 180) // Convert degrees to radians
-        : 0;
-      
       // Determine pathway for this reaction
       const reactionPathway = this.getPathwayForReaction(reaction);
       const isGlycolysis = reactionPathway && reactionPathway.summary && reactionPathway.summary.name === 'Glycolysis';
@@ -2155,19 +2142,21 @@ export class MetabolismViewer {
         
         // Simple coordinate system: 
         // - x-axis: opposite to main arrow direction (flipped horizontally)
-        // - y-axis: perpendicular downward (flipped vertically)
+        // - y-axis: perpendicular direction based on perpAngle (like citric acid cycle)
+        const perpDirX = Math.cos(perpAngle);
+        const perpDirY = Math.sin(perpAngle);
         const x = -byArrowLength * 0.75; // Distance along x-axis (negative = left/opposite)
-        const y = -byArrowLength * 1.0; // Height (y = x^2, scaled, negative = downward)
+        const y = byArrowLength * 1.0; // Height (y = x^2, scaled)
         
         // Control point at (x/2, 0) - ensures horizontal tangent at start
         // x is negative, so x/2 is also negative (left/opposite to main arrow direction)
         byreactantControlX = midX + (x / 2) * Math.cos(arrowAngle);
         byreactantControlY = midY + (x / 2) * Math.sin(arrowAngle);
         
-        // Endpoint at (x, y) - follows parabola y = x^2
-        // x is negative (left/opposite to main arrow), y is negative (downward)
-        byreactantEndX = midX + x * Math.cos(arrowAngle) - y * Math.sin(arrowAngle);
-        byreactantEndY = midY + x * Math.sin(arrowAngle) + y * Math.cos(arrowAngle);
+        // Endpoint at (x, y) - follows parabola y = x^2, direction follows perpAngle
+        // x is negative (left/opposite to main arrow), y direction follows perpAngle
+        byreactantEndX = midX + x * Math.cos(arrowAngle) + y * perpDirX;
+        byreactantEndY = midY + x * Math.sin(arrowAngle) + y * perpDirY;
         
         // Create quadratic Bezier path representing half of x^2
         byreactantPath = `M ${midX} ${midY} Q ${byreactantControlX} ${byreactantControlY}, ${byreactantEndX} ${byreactantEndY}`;
@@ -2199,19 +2188,21 @@ export class MetabolismViewer {
         
         // Simple coordinate system: 
         // - x-axis: same as main arrow direction (forward)
-        // - y-axis: perpendicular downward (flipped vertically)
+        // - y-axis: perpendicular direction based on perpAngle (like citric acid cycle)
+        const perpDirX = Math.cos(perpAngle);
+        const perpDirY = Math.sin(perpAngle);
         const x = byArrowLength * 0.75; // Distance along x-axis (positive = forward/same as main arrow)
-        const y = -byArrowLength * 1.0; // Height (y = x^2, scaled, negative = downward)
+        const y = byArrowLength * 1.0; // Height (y = x^2, scaled)
         
         // Control point at (x/2, 0) - ensures horizontal tangent at start
         // x is positive, so x/2 is also positive (forward/same as main arrow direction)
         byproductControlX = midX + (x / 2) * Math.cos(arrowAngle);
         byproductControlY = midY + (x / 2) * Math.sin(arrowAngle);
         
-        // Endpoint at (x, y) - follows parabola y = x^2
-        // x is positive (forward/same as main arrow), y is negative (downward)
-        byproductEndX = midX + x * Math.cos(arrowAngle) - y * Math.sin(arrowAngle);
-        byproductEndY = midY + x * Math.sin(arrowAngle) + y * Math.cos(arrowAngle);
+        // Endpoint at (x, y) - follows parabola y = x^2, direction follows perpAngle
+        // x is positive (forward/same as main arrow), y direction follows perpAngle
+        byproductEndX = midX + x * Math.cos(arrowAngle) + y * perpDirX;
+        byproductEndY = midY + x * Math.sin(arrowAngle) + y * perpDirY;
         
         // Create quadratic Bezier path representing half of x^2
         byproductPath = `M ${midX} ${midY} Q ${byproductControlX} ${byproductControlY}, ${byproductEndX} ${byproductEndY}`;
