@@ -917,6 +917,130 @@ body {
   fill: var(--label-by-molecule-hover);
 }
 
+/* H+ label styles for ETC arrows */
+.h-plus-label {
+  font-size: 11px;
+  font-weight: 500;
+  fill: #4a90e2;
+  cursor: pointer;
+  pointer-events: all;
+  transition: fill 0.2s ease;
+}
+
+.h-plus-label:hover {
+  fill: #2c5aa0;
+}
+
+/* SVG container styles */
+svg.metabolism-viewer {
+  background: var(--bg-tertiary, #fafafa);
+  cursor: grab;
+  display: block;
+}
+
+svg.metabolism-viewer:active {
+  cursor: grabbing;
+}
+
+/* Connection arrow styles */
+.connection {
+  pointer-events: none;
+}
+
+.connection-hit {
+  cursor: pointer;
+  pointer-events: all;
+}
+
+/* ETC sub-arrow styles */
+.etc-sub-arrow {
+  cursor: pointer;
+  pointer-events: all;
+  stroke-opacity: 0.8;
+  stroke-width: 3;
+  transition: stroke-width 0.2s ease, stroke-opacity 0.2s ease;
+}
+
+.etc-sub-arrow:hover {
+  stroke-width: 4;
+  stroke-opacity: 1;
+}
+
+/* Molecule image group styles */
+.molecule-image-group {
+  display: none;
+}
+
+.molecule-image-group.visible {
+  display: block;
+}
+
+.molecule-structure-image {
+  filter: none;
+}
+
+[data-theme="dark"] .molecule-structure-image {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Background click area */
+.background-click-area {
+  cursor: grab;
+  pointer-events: all;
+}
+
+/* By-molecule label styles */
+.by-molecule-label {
+  cursor: pointer;
+  pointer-events: all;
+}
+
+.by-molecule-label-separator {
+  pointer-events: none;
+}
+
+/* Byreactant/byproduct arrow hit area */
+.byreactant-byproduct-arrow path {
+  pointer-events: none;
+}
+
+.byreactant-byproduct-arrow .hit-area {
+  cursor: pointer;
+  pointer-events: all;
+}
+
+/* Reaction node styles */
+.reaction-node {
+  cursor: pointer;
+}
+
+/* Help button and tooltip */
+.help-button {
+  cursor: pointer;
+}
+
+.help-tooltip {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.help-button:hover .help-tooltip {
+  opacity: 1;
+}
+
+/* Pathway button styles */
+.pathway-button {
+  cursor: pointer;
+}
+
+/* Reaction circle display toggle */
+.reaction-circle.hidden {
+  display: none !important;
+}
+
+/* Note: SVG elements need display:none via class, not style */
+
 /* Responsive design */
 @media (max-width: 1024px) {
   .main-content {

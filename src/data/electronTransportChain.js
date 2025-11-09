@@ -21,10 +21,10 @@ export const electronTransportChainReactions = [
       imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/NADH_Dehydrogenase_Mechanism_%28Fixed%29.png/1000px-NADH_Dehydrogenase_Mechanism_%28Fixed%29.png'
     },
     product: {
-      id: 'ubiquinol',
-      name: 'Ubiquinol (QH₂)',
+      id: 'coenzyme_q',
+      name: 'Coenzyme Q (Ubiquinone/Ubiquinol)',
       formula: 'C₅₉H₉₂O₄',
-      description: 'Reduced form of ubiquinone',
+      description: 'Coenzyme Q (CoQ), also known as ubiquinone, is a mobile electron carrier embedded in the inner mitochondrial membrane. It exists in oxidized (ubiquinone, Q) and reduced (ubiquinol, QH₂) forms.',
       smiles: 'CC1=C(C(=O)C(=C(C1=O)OC)OC)CC=C(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCC'
     },
     enzyme: {
@@ -32,10 +32,6 @@ export const electronTransportChainReactions = [
       ecNumber: 'EC 1.6.5.3',
       description: 'Transfers electrons from NADH to ubiquinone, pumps 4 H⁺ across membrane',
       cofactors: ['FMN', 'Iron-sulfur clusters', 'Ubiquinone (CoQ)']
-    },
-    coSubstrate: {
-      name: 'H⁺ (matrix)',
-      consumed: true
     },
     byreactant: 'NADH', // For display on map
     byproduct: 'NAD⁺', // For display on map
@@ -80,10 +76,10 @@ export const electronTransportChainReactions = [
       imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Succinate_Dehydrogenase_1YQ3_and_Membrane.png/500px-Succinate_Dehydrogenase_1YQ3_and_Membrane.png'
     },
     product: {
-      id: 'ubiquinol',
-      name: 'Ubiquinol (QH₂)',
+      id: 'coenzyme_q',
+      name: 'Coenzyme Q (Ubiquinone/Ubiquinol)',
       formula: 'C₅₉H₉₂O₄',
-      description: 'Reduced form of ubiquinone',
+      description: 'Coenzyme Q (CoQ), also known as ubiquinone, is a mobile electron carrier embedded in the inner mitochondrial membrane. It exists in oxidized (ubiquinone, Q) and reduced (ubiquinol, QH₂) forms.',
       smiles: 'CC1=C(C(=O)C(=C(C1=O)OC)OC)CC=C(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCC'
     },
     enzyme: {
@@ -127,11 +123,12 @@ export const electronTransportChainReactions = [
       smiles: 'CC1=C(C(=O)C(=C(C1=O)OC)OC)CC=C(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCC'
     },
     product: {
-      id: 'ubiquinol',
-      name: 'Ubiquinol (QH₂)',
-      formula: 'C₅₉H₉₂O₄',
-      description: 'Mobile electron carrier',
-      smiles: 'CC1=C(C(=O)C(=C(C1=O)OC)OC)CC=C(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCC'
+      id: 'complex_iii',
+      name: 'Complex III: Cytochrome bc₁ Complex',
+      formula: '',
+      description: 'Complex III (Cytochrome bc₁ Complex) transfers electrons from ubiquinol (QH₂) to cytochrome c. It uses the Q cycle mechanism to pump 4 protons across the inner mitochondrial membrane per pair of electrons transferred, contributing to the proton gradient.',
+      smiles: '',
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Cytochrome1ntz.PNG/500px-Cytochrome1ntz.PNG'
     },
     enzyme: {
       name: 'Coenzyme Q (Ubiquinone)',
@@ -166,10 +163,10 @@ export const electronTransportChainReactions = [
       imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Cytochrome1ntz.PNG/500px-Cytochrome1ntz.PNG'
     },
     product: {
-      id: 'cytochrome_c_reduced',
-      name: 'Cytochrome c (reduced)',
+      id: 'cytochrome_c',
+      name: 'Cytochrome c',
       formula: 'C₄₂H₅₆FeN₈O₆S₂',
-      description: 'Reduced cytochrome c',
+      description: 'Cytochrome c',
       smiles: '[Fe+2]'
     },
     enzyme: {
@@ -177,10 +174,6 @@ export const electronTransportChainReactions = [
       ecNumber: 'EC 1.10.2.2',
       description: 'Transfers electrons from ubiquinol to cytochrome c, pumps 4 H⁺ across membrane',
       cofactors: ['Cytochrome b', 'Cytochrome c₁', 'Rieske iron-sulfur protein']
-    },
-    coSubstrate: {
-      name: 'H⁺ (matrix)',
-      consumed: true
     },
     // Special subarrows for ETC
     etcSubArrows: {
@@ -222,11 +215,12 @@ export const electronTransportChainReactions = [
       smiles: '[Fe+2]'
     },
     product: {
-      id: 'cytochrome_c_reduced',
-      name: 'Cytochrome c (oxidized)',
-      formula: 'C₄₂H₅₆FeN₈O₆S₂',
-      description: 'Mobile electron carrier',
-      smiles: '[Fe+2]'
+      id: 'complex_iv',
+      name: 'Complex IV: Cytochrome c Oxidase',
+      formula: '',
+      description: 'Complex IV (Cytochrome c Oxidase) is the final protein complex in the electron transport chain. It receives electrons from cytochrome c and transfers them to molecular oxygen (O₂), reducing it to water (H₂O). Complex IV pumps 2 protons across the membrane per pair of electrons, completing the electron transport process.',
+      smiles: '',
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Cytochrome_C_Oxidase_1OCC_in_Membrane_2.png/1600px-Cytochrome_C_Oxidase_1OCC_in_Membrane_2.png?20070214103010'
     },
     enzyme: {
       name: 'Cytochrome c',
@@ -261,22 +255,18 @@ export const electronTransportChainReactions = [
       imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Cytochrome_C_Oxidase_1OCC_in_Membrane_2.png/1600px-Cytochrome_C_Oxidase_1OCC_in_Membrane_2.png?20070214103010'
     },
     product: {
-      id: 'water',
-      name: 'H₂O',
-      formula: 'H₂O',
-      description: 'Water produced from reduction of oxygen',
-      smiles: 'O'
+      id: 'complex_v',
+      name: 'Complex V: ATP Synthase',
+      formula: '',
+      description: 'Complex V (ATP Synthase) is the enzyme complex that synthesizes ATP from ADP and inorganic phosphate (Pi). It uses the proton gradient created by Complexes I, III, and IV to drive ATP synthesis. As protons flow back from the intermembrane space to the matrix through the F₀ subunit, the F₁ subunit catalyzes ATP formation. This process is called oxidative phosphorylation.',
+      smiles: '',
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/00/Atp_synthase.PNG'
     },
     enzyme: {
       name: 'Cytochrome c Oxidase (Complex IV)',
       ecNumber: 'EC 1.9.3.1',
       description: 'Final electron acceptor, reduces O₂ to H₂O, pumps 2 H⁺ across membrane',
       cofactors: ['Cytochrome a', 'Cytochrome a₃', 'CuA', 'CuB']
-    },
-    coSubstrate: {
-      name: 'O₂',
-      formula: 'O₂',
-      consumed: true
     },
     byreactant: ['1/2 O₂', '2 H⁺'],
     byproduct: {
@@ -335,11 +325,6 @@ export const electronTransportChainReactions = [
       description: 'Uses proton gradient to synthesize ATP from ADP and Pi',
       cofactors: ['F₀ subunit (proton channel)', 'F₁ subunit (ATP synthesis)']
     },
-    coSubstrate: {
-      name: 'ADP + Pi',
-      formula: 'ADP + PO₄³⁻',
-      consumed: true
-    },
     byreactant: ['ADP', 'Pi'],
     byproduct: {
       molecules: ['ATP']
@@ -347,11 +332,12 @@ export const electronTransportChainReactions = [
     // Special subarrows for ETC
     etcSubArrows: {
       // H+ flow arrow (downward, showing H+ flowing back to matrix)
-      hPlusFlow: {
+      hPlusPump: {
         type: 'proton-flow',
         from: 'H⁺ (intermembrane space)',
         to: 'H⁺ (matrix)',
         direction: 'down', // Downward arrow
+        count: 3,
         offset: { x: 0, y: 0 }
       }
     },

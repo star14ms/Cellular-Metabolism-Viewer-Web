@@ -256,9 +256,8 @@ export class MetabolismViewer {
       .append('svg')
       .attr('width', this.options.width)
       .attr('height', this.options.height)
-      .style('background', bgColor)
-      .style('cursor', 'grab')
-      .style('display', 'block');
+      .attr('class', 'metabolism-viewer')
+      .style('background', bgColor); // Keep dynamic background color in JS
     
     // Update SVG background and image backgrounds when theme changes
     const updateSVGBackground = () => {
@@ -275,10 +274,7 @@ export class MetabolismViewer {
           .attr('fill', imageBgColor)
           .attr('stroke', isDarkMode ? '#000000' : '#dee2e6');
         
-        // Apply filter to images in dark mode
-        const imageFilter = isDarkMode ? 'invert(1) hue-rotate(180deg)' : 'none';
-        this.reactionGroups.selectAll('image.molecule-structure-image')
-          .style('filter', imageFilter);
+        // Filter is now handled by CSS based on data-theme attribute
       }
       
       // Update all rect elements that should be black in dark mode
@@ -372,8 +368,7 @@ export class MetabolismViewer {
       .enter()
       .append('g')
       .attr('class', 'reaction-group')
-      .attr('transform', d => `translate(${d.position.x}, ${d.position.y})`)
-      .style('cursor', 'pointer');
+      .attr('transform', d => `translate(${d.position.x}, ${d.position.y})`);
     
     // Draw connections between reactions
     this.drawConnections();
@@ -407,9 +402,7 @@ export class MetabolismViewer {
       .attr('y', -10000)
       .attr('width', 20000)
       .attr('height', 20000)
-      .attr('fill', 'transparent')
-      .style('pointer-events', 'all')
-      .style('cursor', 'grab'); // Match the cursor for consistency
+      .attr('fill', 'transparent');
     
     backgroundRect.on('click', (event) => {
       // Always clear selections when clicking background (empty space)
@@ -616,8 +609,7 @@ export class MetabolismViewer {
     
     const helpGroup = this.overlay.append('g')
       .attr('class', 'help-button btn')
-      .attr('transform', `translate(${buttonX}, ${buttonY})`)
-      .style('cursor', 'pointer');
+      .attr('transform', `translate(${buttonX}, ${buttonY})`);
     
     // Button circle
     const circle = helpGroup.append('circle')
@@ -648,9 +640,7 @@ export class MetabolismViewer {
     
     const tooltipGroup = helpGroup.append('g')
       .attr('class', 'help-tooltip btn')
-      .attr('transform', `translate(${adjustedX}, 25)`) // Position below button, adjusted for right edge
-      .style('opacity', 0)
-      .style('pointer-events', 'none');
+      .attr('transform', `translate(${adjustedX}, 25)`); // Position below button, adjusted for right edge
     
     const tooltipRect = tooltipGroup.append('rect')
       .attr('x', 0)
@@ -700,16 +690,12 @@ export class MetabolismViewer {
         .transition().duration(200)
         .attr('fill', '#5568d3')
         .attr('stroke-width', 3);
-      
-      tooltipGroup.transition().duration(200).style('opacity', 1);
     })
     .on('mouseleave', function() {
       d3.select(this).select('circle')
         .transition().duration(200)
         .attr('fill', '#667eea')
         .attr('stroke-width', 2);
-      
-      tooltipGroup.transition().duration(200).style('opacity', 0);
     });
   }
   
@@ -734,8 +720,7 @@ export class MetabolismViewer {
     // Add "Show All" button first (replaces reset zoom)
     const showAllButton = buttonGroup.append('g')
       .attr('class', 'pathway-button btn')
-      .attr('transform', `translate(${50}, ${buttonY})`)
-      .style('cursor', 'pointer');
+      .attr('transform', `translate(${50}, ${buttonY})`);
     
     const showAllText = 'Show All';
     const showAllWidth = calculateButtonWidth(showAllText);
@@ -780,8 +765,7 @@ export class MetabolismViewer {
       
       const button = buttonGroup.append('g')
         .attr('class', 'pathway-button btn')
-        .attr('transform', `translate(${currentX}, ${buttonY})`)
-        .style('cursor', 'pointer');
+        .attr('transform', `translate(${currentX}, ${buttonY})`);
       
       // Button background
       button.append('rect')
@@ -1250,8 +1234,7 @@ export class MetabolismViewer {
         .attr('stroke', '#2c5f7c')
         .attr('stroke-width', 4)
         .attr('stroke-opacity', 0.7)
-        .attr('marker-end', 'url(#arrowhead)')
-        .style('pointer-events', 'none'); // Let hit area handle events
+        .attr('marker-end', 'url(#arrowhead)');
       
       // Create invisible hit area (wider, transparent) - larger for easier interaction
       const hitArea = this.g.append('line')
@@ -1264,8 +1247,6 @@ export class MetabolismViewer {
         .attr('stroke', 'transparent')
         .attr('stroke-width', 40) // Wider invisible hit area for easier hovering (increased from 20)
         .attr('stroke-opacity', 0)
-        .style('cursor', 'pointer')
-        .style('pointer-events', 'all')
         .on('mouseenter', () => {
           // Make arrow bigger on hover (visual only, hit area stays the same)
           visibleArrow
@@ -1677,8 +1658,7 @@ export class MetabolismViewer {
       .attr('stroke', '#2c5f7c')
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('pointer-events', 'none');
+      .attr('marker-end', 'url(#arrowhead)');
     
     const cycleHitArea = this.g.append('line')
       .attr('class', 'connection-hit connection-hit-special')
@@ -1690,8 +1670,6 @@ export class MetabolismViewer {
       .attr('stroke', 'transparent')
       .attr('stroke-width', 10)
       .attr('stroke-opacity', 0)
-      .style('cursor', 'pointer')
-      .style('pointer-events', 'all')
       .on('mouseenter', () => {
         cycleArrow.attr('stroke-width', 6).attr('stroke-opacity', 1);
       })
@@ -1915,8 +1893,7 @@ export class MetabolismViewer {
       .attr('stroke', '#2c5f7c')
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('pointer-events', 'none');
+      .attr('marker-end', 'url(#arrowhead)');
     
     // Create invisible hit area
     const hitArea = this.g.append('line')
@@ -1926,11 +1903,9 @@ export class MetabolismViewer {
       .attr('y1', coords.y1)
       .attr('x2', coords.x2)
       .attr('y2', coords.y2)
-      .attr('stroke', 'transparent')
-      .attr('stroke-width', 40)
-      .attr('stroke-opacity', 0)
-      .style('cursor', 'pointer')
-      .style('pointer-events', 'all')
+        .attr('stroke', 'transparent')
+        .attr('stroke-width', 40)
+        .attr('stroke-opacity', 0)
       .on('mouseenter', () => {
         visibleArrow
           .attr('stroke-width', 6)
@@ -2326,8 +2301,7 @@ export class MetabolismViewer {
           .attr('fill', 'none')
           .attr('stroke', arrowColor)
           .attr('stroke-width', arrowStrokeWidth)
-          .attr('stroke-opacity', arrowOpacity)
-          .style('pointer-events', 'none');
+          .attr('stroke-opacity', arrowOpacity);
       }
       
       // Draw byproduct arrow: half parabola starting at turning point (midpoint)
@@ -2381,8 +2355,7 @@ export class MetabolismViewer {
           .attr('fill', 'none')
           .attr('stroke', arrowColor)
           .attr('stroke-width', arrowStrokeWidth)
-          .attr('stroke-opacity', arrowOpacity)
-          .style('pointer-events', 'none');
+          .attr('stroke-opacity', arrowOpacity);
       }
       
       // Calculate label positions based on arrow endpoints and tangent angles
@@ -2518,8 +2491,7 @@ export class MetabolismViewer {
         return uArrowGroup.append('polygon')
           .attr('points', arrowheadPoints.map(p => p.join(',')).join(' '))
           .attr('fill', arrowColor)
-          .attr('fill-opacity', 1)
-          .style('pointer-events', 'none');
+          .attr('fill-opacity', 1);
       };
       
       // Calculate label offsets for each arrow
@@ -2592,8 +2564,7 @@ export class MetabolismViewer {
           .attr('stroke', 'transparent')
           .attr('stroke-width', 20)
           .attr('stroke-opacity', 0)
-          .style('cursor', 'pointer')
-          .style('pointer-events', 'all')
+          .attr('class', 'hit-area')
           .lower() // Put hit area behind labels so labels can be clicked
           .on('click', (event) => {
             event.stopPropagation();
@@ -2649,8 +2620,6 @@ export class MetabolismViewer {
             .attr('class', 'by-molecule-label')
             .attr('text-anchor', 'start')
             .attr('dominant-baseline', 'central')
-            .style('cursor', 'pointer')
-            .style('pointer-events', 'all')
             .text(molecule)
             .on('click', (event) => {
               event.stopPropagation();
@@ -2687,10 +2656,9 @@ export class MetabolismViewer {
               .attr('y', textY)
               .attr('font-size', `${fontSize}px`)
               .attr('font-weight', 'bold')
-              .attr('class', 'by-molecule-label')
+              .attr('class', 'by-molecule-label by-molecule-label-separator')
               .attr('text-anchor', 'start')
               .attr('dominant-baseline', 'central')
-              .style('pointer-events', 'none')
               .text(plusText);
             
             textElements.push(plusTextElement);
@@ -2733,12 +2701,11 @@ export class MetabolismViewer {
           .attr('height', actualHeight + textBgPadding * 2)
           .attr('fill', this.getImageBgColor())
           .attr('fill-opacity', 0) // Transparent background for by-molecules
-          .attr('rx', 3)
-          .style('pointer-events', 'none');
+          .attr('rx', 3);
         
         // Add hover effects to text elements - background opacity only (colors handled by CSS)
         textElements.forEach(textEl => {
-          if (textEl.style('pointer-events') === 'all') {
+          if (!textEl.classed('by-molecule-label-separator')) {
             textEl
               .on('mouseenter', function() {
                 const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -2833,8 +2800,7 @@ export class MetabolismViewer {
     
     // Create image group for 2D structure (initially hidden)
     const imageGroups = nodes.append('g')
-      .attr('class', 'molecule-image-group')
-      .style('display', 'none');
+      .attr('class', 'molecule-image-group');
     
     // Create image placeholder that will be updated when PubChem data is fetched
     // Add background rectangle for better visibility
@@ -2859,8 +2825,7 @@ export class MetabolismViewer {
       .attr('y', -50)
       .attr('width', 100)
       .attr('height', 100)
-      .attr('preserveAspectRatio', 'xMidYMid meet')
-      .style('filter', imageFilter);
+      .attr('preserveAspectRatio', 'xMidYMid meet');
     
     // Fetch PubChem image URLs for all molecules
     this.fetchMoleculeImages();
@@ -2989,41 +2954,41 @@ export class MetabolismViewer {
         const offsetX = subArrow.offset?.x || 0;
         const arrowLength = 100; // Increased arrow length for better visibility
         
-        if (subArrow.type === 'proton-pump') {
-          // Blue straight arrow for H+ pumping - passes through the CENTER of the complex
+        if (subArrow.type === 'proton-pump' || subArrow.type === 'proton-flow') {
+          // Blue straight arrow for H+ - passes through the CENTER of the complex
           // Always centered, not influenced by offsetX (which is for oxidation arrows)
-          // Direction: top to bottom (reversed from original)
+          // Direction determined by subArrow.direction ('up' or 'down')
           const centerX = complexX; // Always use complex center, ignore offsetX
           const centerY = complexY; // Center of complex
           
-          // Start point: above the complex (intermembrane space side) - symmetric extension
-          const startX = centerX;
-          const startY = complexY - complexHeight / 2 - arrowLength;
+          // Determine arrow direction based on data
+          const isUp = subArrow.direction === 'up';
           
-          // End point: below the complex (matrix side) - symmetric extension
-          const endX = centerX;
-          const endY = complexY + complexHeight / 2 + arrowLength;
+          // Start and end points based on direction
+          let startX, startY, endX, endY;
+          if (isUp) {
+            // Upward: start below (matrix), end above (intermembrane space)
+            startX = centerX;
+            startY = complexY + complexHeight / 2 + arrowLength;
+            endX = centerX;
+            endY = complexY - complexHeight / 2 - arrowLength;
+          } else {
+            // Downward: start above (intermembrane space), end below (matrix)
+            startX = centerX;
+            startY = complexY - complexHeight / 2 - arrowLength;
+            endX = centerX;
+            endY = complexY + complexHeight / 2 + arrowLength;
+          }
           
           // Draw straight arrow passing through the center of the complex
           const arrowPath = `M ${startX} ${startY} L ${endX} ${endY}`;
           const arrow = etcSubArrowGroup.append('path')
             .attr('d', arrowPath)
             .attr('fill', 'none')
-            .attr('stroke', '#4a90e2') // Blue for H+ pumping
+            .attr('stroke', '#4a90e2') // Blue for H+
             .attr('stroke-width', 3)
             .attr('marker-end', 'url(#arrowhead-normal)')
             .attr('class', 'etc-sub-arrow etc-proton-pump')
-            .style('cursor', 'pointer')
-            .style('pointer-events', 'all')
-            .style('stroke-opacity', 0.8)
-            .on('mouseenter', () => {
-              // Make arrow thicker and more opaque on hover
-              arrow.style('stroke-width', 4).style('stroke-opacity', 1);
-            })
-            .on('mouseleave', () => {
-              // Reset to normal size and opacity
-              arrow.style('stroke-width', 3).style('stroke-opacity', 0.8);
-            })
             .on('click', (event) => {
               event.stopPropagation();
               // Highlight the node when clicking H+ arrow
@@ -3039,11 +3004,7 @@ export class MetabolismViewer {
               .attr('x', x)
               .attr('y', y)
               .attr('text-anchor', 'middle')
-              .attr('font-size', '11px')
-              .attr('font-weight', '500')
-              .attr('fill', '#4a90e2')
-              .style('cursor', 'pointer')
-              .style('pointer-events', 'all')
+              .attr('class', 'h-plus-label')
               .text(text)
               .on('click', (event) => {
                 event.stopPropagation();
@@ -3059,90 +3020,18 @@ export class MetabolismViewer {
             return label;
           };
           
-          // Add label on both sides
+          // Add label on both sides - use count from data file
           const labelText = `${subArrow.count || ''} H⁺`;
-          // Label at top (start)
-          createHPlusLabel(centerX, startY - 12, labelText);
-          // Label at bottom (end)
-          createHPlusLabel(centerX, endY + 20, labelText);
-            
-        } else if (subArrow.type === 'proton-flow') {
-          // Blue arrow for H+ flow back to matrix through ATP Synthase
-          // Passes through the CENTER of the complex
-          // Direction: bottom to top (reversed from original)
-          // Always centered, not influenced by offsetX (which is for oxidation arrows)
-          const centerX = complexX; // Always use complex center, ignore offsetX
-          const centerY = complexY; // Center of complex
-          
-          // Start point: below the complex (matrix) - symmetric extension
-          const startX = centerX;
-          const startY = complexY + complexHeight / 2 + arrowLength;
-          
-          // End point: above the complex (intermembrane space) - symmetric extension
-          const endX = centerX;
-          const endY = complexY - complexHeight / 2 - arrowLength;
-          
-          // Draw straight arrow passing through the center of the complex
-          const arrowPath = `M ${startX} ${startY} L ${endX} ${endY}`;
-          const arrow = etcSubArrowGroup.append('path')
-            .attr('d', arrowPath)
-            .attr('fill', 'none')
-            .attr('stroke', '#4a90e2') // Blue for H+ flow
-            .attr('stroke-width', 3)
-            .attr('marker-end', 'url(#arrowhead-normal)')
-            .attr('class', 'etc-sub-arrow etc-proton-flow')
-            .style('cursor', 'pointer')
-            .style('pointer-events', 'all')
-            .style('stroke-opacity', 0.8)
-            .on('mouseenter', () => {
-              // Make arrow thicker and more opaque on hover
-              arrow.style('stroke-width', 4).style('stroke-opacity', 1);
-            })
-            .on('mouseleave', () => {
-              // Reset to normal size and opacity
-              arrow.style('stroke-width', 3).style('stroke-opacity', 0.8);
-            })
-            .on('click', (event) => {
-              event.stopPropagation();
-              // Highlight the node when clicking H+ arrow
-              const targetMolecule = reaction.substrate;
-              if (targetMolecule) {
-                this.selectMolecule(targetMolecule, reaction, { skipTabSwitch: false });
-              }
-            });
-          
-          // Helper function to create clickable H+ label
-          const createHPlusLabel = (x, y, text) => {
-            const label = etcSubArrowGroup.append('text')
-              .attr('x', x)
-              .attr('y', y)
-              .attr('text-anchor', 'middle')
-              .attr('font-size', '11px')
-              .attr('font-weight', '500')
-              .attr('fill', '#4a90e2')
-              .style('cursor', 'pointer')
-              .style('pointer-events', 'all')
-              .text(text)
-              .on('click', (event) => {
-                event.stopPropagation();
-                // Select H+ molecule to show detail
-                const hPlusMolecule = {
-                  name: 'H⁺',
-                  formula: 'H⁺',
-                  id: 'h-plus',
-                  description: 'Hydrogen ion (proton). In the electron transport chain, protons flow back through ATP Synthase to drive ATP synthesis.'
-                };
-                this.selectMolecule(hPlusMolecule, reaction, { skipTabSwitch: false });
-              });
-            return label;
-          };
-          
-          // Add label on both sides - text is "3H+"
-          const labelText = '3H⁺';
-          // Label at bottom (start)
-          createHPlusLabel(centerX, startY + 20, labelText);
-          // Label at top (end)
-          createHPlusLabel(centerX, endY - 12, labelText);
+          // Label positions based on direction
+          if (isUp) {
+            // Upward: label at start (bottom) and end (top)
+            createHPlusLabel(centerX, startY + 20, labelText);
+            createHPlusLabel(centerX, endY - 12, labelText);
+          } else {
+            // Downward: label at start (top) and end (bottom)
+            createHPlusLabel(centerX, startY - 12, labelText);
+            createHPlusLabel(centerX, endY + 20, labelText);
+          }
         }
       });
     });
@@ -3227,12 +3116,7 @@ export class MetabolismViewer {
     // Update node display based on zoom level
     this.updateNodeDisplay(event.transform.k);
     
-    // Update cursor style
-    if (event.transform.k === 1) {
-      this.svg.style('cursor', 'grab');
-    } else {
-      this.svg.style('cursor', 'grab');
-    }
+    // Cursor style is now handled by CSS
   }
   
   updateNodeDisplay(zoomLevel) {
@@ -3250,17 +3134,17 @@ export class MetabolismViewer {
       
       if (zoomLevel >= zoomThreshold) {
         // Show image, hide circle
-        circle.style('display', 'none');
+        circle.classed('hidden', true);
         
         // Show image if it exists
         if (!imageGroup.empty()) {
-          imageGroup.style('display', 'block');
+          imageGroup.classed('visible', true);
         }
       } else {
         // Show circle, hide image
-        circle.style('display', 'block');
+        circle.classed('hidden', false);
         if (!imageGroup.empty()) {
-          imageGroup.style('display', 'none');
+          imageGroup.classed('visible', false);
         }
       }
     });
@@ -3453,14 +3337,7 @@ export class MetabolismViewer {
         this.zoomToReaction(d);
       });
     
-    // Prevent text selection during drag
-    this.svg.on('mousedown', () => {
-      this.svg.style('cursor', 'grabbing');
-    });
-    
-    this.svg.on('mouseup', () => {
-      this.svg.style('cursor', 'grab');
-    });
+    // Cursor style is now handled by CSS (:active pseudo-class)
     
     // Prevent detail window from showing when clicking background (SVG or g element)
     // Add a transparent background rectangle to catch clicks on empty space
@@ -4305,8 +4182,10 @@ export class MetabolismViewer {
     
     // If not found in product nodes, find where the molecule is visually displayed
     if (!targetReaction) {
-      // Calculate CAC start index
+      // Calculate CAC start index and ETC start index
       const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
+      const etcStartIndex = cacStartIndex + citricAcidCycleReactions.length;
+      const etcEndIndex = etcStartIndex + electronTransportChainReactions.length;
       
       for (let i = 0; i < this.reactions.length; i++) {
         const reaction = this.reactions[i];
@@ -4314,7 +4193,8 @@ export class MetabolismViewer {
         // Skip product nodes - already checked
         if (reaction.isProductNode) continue;
         
-        const isCACReaction = i >= cacStartIndex;
+        const isCACReaction = i >= cacStartIndex && i < etcStartIndex;
+        const isETCReaction = i >= etcStartIndex && i < etcEndIndex;
         let displayedMolecule = null;
         
         // Determine which molecule is visually displayed on this node
@@ -4326,6 +4206,9 @@ export class MetabolismViewer {
           const prevCACIndex = cacStartIndex + prevRelativeIndex;
           const prevReaction = this.reactions[prevCACIndex];
           displayedMolecule = prevReaction && prevReaction.product ? prevReaction.product : reaction.substrate;
+        } else if (isETCReaction) {
+          // ETC reactions (protein complexes and mobile carriers) display the substrate
+          displayedMolecule = reaction.substrate;
         } else {
           // For glycolysis and pyruvate oxidation, nodes display the substrate
           displayedMolecule = reaction.substrate;
@@ -4351,7 +4234,8 @@ export class MetabolismViewer {
           const nextReaction = this.reactions.slice(i + 1).find(r => {
             if (r.isProductNode) return false;
             const nextIndex = this.reactions.indexOf(r);
-            const isNextCAC = nextIndex >= cacStartIndex;
+            const isNextCAC = nextIndex >= cacStartIndex && nextIndex < etcStartIndex;
+            const isNextETC = nextIndex >= etcStartIndex && nextIndex < etcEndIndex;
             
             // For CAC, check if previous reaction's product matches
             if (isNextCAC) {
@@ -4362,15 +4246,19 @@ export class MetabolismViewer {
               const nextPrevReaction = this.reactions[nextPrevCACIndex];
               const nextDisplayedMolecule = nextPrevReaction && nextPrevReaction.product ? nextPrevReaction.product : r.substrate;
               return nextDisplayedMolecule && (nextDisplayedMolecule.id === productId || nextDisplayedMolecule.name === moleculeName);
+            } else if (isNextETC) {
+              // For ETC, check substrate (ETC reactions display substrate on node)
+              return r.substrate && (r.substrate.id === productId || r.substrate.name === moleculeName);
             } else {
-              // For non-CAC, check substrate
+              // For non-CAC, non-ETC, check substrate
               return r.substrate && (r.substrate.id === productId || r.substrate.name === moleculeName);
             }
           });
           
           if (nextReaction) {
             const nextIndex = this.reactions.indexOf(nextReaction);
-            const isNextCAC = nextIndex >= cacStartIndex;
+            const isNextCAC = nextIndex >= cacStartIndex && nextIndex < etcStartIndex;
+            const isNextETC = nextIndex >= etcStartIndex && nextIndex < etcEndIndex;
             
             if (isNextCAC) {
               // CAC nodes display previous reaction's product
@@ -4381,6 +4269,10 @@ export class MetabolismViewer {
               const nextPrevReaction = this.reactions[nextPrevCACIndex];
               targetReaction = nextReaction;
               targetMolecule = nextPrevReaction && nextPrevReaction.product ? nextPrevReaction.product : nextReaction.substrate;
+            } else if (isNextETC) {
+              // ETC reactions display substrate on node
+              targetReaction = nextReaction;
+              targetMolecule = nextReaction.substrate;
             } else {
               targetReaction = nextReaction;
               targetMolecule = nextReaction.substrate;

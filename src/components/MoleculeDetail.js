@@ -41,6 +41,11 @@ export class ReactionDetail {
     
     this.currentReaction = reaction;
     
+    // Check if by-molecule arrows start from node (not from midpoint)
+    // This happens for ETC complexes where arrows attach directly to the complex
+    // We can detect this by checking if it's a protein complex with ETC-specific properties
+    const arrowsStartFromNode = reaction.isProteinComplex && (reaction.complexNumber || reaction.etcSubArrows);
+    
     const html = `
       <div class="reaction-detail">
         <div class="detail-header">
@@ -67,6 +72,57 @@ export class ReactionDetail {
                   ${reaction.coSubstrate.formula ? `<div class="molecule-formula">${reaction.coSubstrate.formula}</div>` : ''}
                 </div>
               ` : ''}
+              ${reaction.byreactant && !arrowsStartFromNode ? (() => {
+                // Handle different byreactant formats: string, array, or object with molecules array
+                // Hide byreactants if arrows start from node (ETC complexes)
+                if (typeof reaction.byreactant === 'string') {
+                  const displayName = removeCoefficients(reaction.byreactant);
+                  return `
+                    <div class="reaction-molecule clickable-molecule co-reactant" 
+                         data-molecule-name="${reaction.byreactant}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                } else if (Array.isArray(reaction.byreactant)) {
+                  return reaction.byreactant.map(mol => {
+                    const displayName = removeCoefficients(mol);
+                    return `
+                    <div class="reaction-molecule clickable-molecule co-reactant" 
+                         data-molecule-name="${mol}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                  }).join('');
+                } else if (reaction.byreactant.molecules && Array.isArray(reaction.byreactant.molecules)) {
+                  return reaction.byreactant.molecules.map(mol => {
+                    const displayName = removeCoefficients(mol);
+                    return `
+                    <div class="reaction-molecule clickable-molecule co-reactant" 
+                         data-molecule-name="${mol}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                  }).join('');
+                } else if (reaction.byreactant.name) {
+                  const displayName = removeCoefficients(reaction.byreactant.name);
+                  return `
+                    <div class="reaction-molecule clickable-molecule co-reactant" 
+                         data-molecule-name="${reaction.byreactant.name}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                      ${reaction.byreactant.formula ? `<div class="molecule-formula">${reaction.byreactant.formula}</div>` : ''}
+                    </div>
+                  `;
+                }
+                return '';
+              })() : ''}
             </div>
             <div class="reaction-arrow">→</div>
             <div class="reaction-products">
@@ -89,8 +145,9 @@ export class ReactionDetail {
                   ${reaction.product.formula ? `<div class="molecule-formula">${reaction.product.formula}</div>` : ''}
                 </div>
               `}
-              ${reaction.byproduct ? (() => {
+              ${reaction.byproduct && !arrowsStartFromNode ? (() => {
                 // Handle different byproduct formats: string, object with name, or object with molecules array
+                // Hide byproducts if arrows start from node (ETC complexes)
                 if (typeof reaction.byproduct === 'string') {
                   const displayName = removeCoefficients(reaction.byproduct);
                   return `
@@ -294,6 +351,13 @@ export class ReactionDetail {
           isByreactant = false;
         }
         
+        // Check if this is a substrate or product (main molecules, not by-molecules)
+        // Substrate and product molecules should find their actual nodes, not be treated as by-molecules
+        const isSubstrate = reaction.substrate && (reaction.substrate.name === moleculeName || (moleculeId && reaction.substrate.id === moleculeId));
+        const isProduct = (reaction.product && (reaction.product.name === moleculeName || (moleculeId && reaction.product.id === moleculeId))) ||
+                         (reaction.products && Array.isArray(reaction.products) && reaction.products.some(p => p.name === moleculeName || (moleculeId && p.id === moleculeId)));
+        const isMainMolecule = isSubstrate || isProduct;
+        
         // Dispatch event to select molecule in viewer
         // If it's a byreactant or byproduct, skip zoom to prevent frame movement
         // Check if molecule is a byproduct (handle different formats)
@@ -313,8 +377,10 @@ export class ReactionDetail {
             detail: { 
               moleculeName: moleculeName,
               moleculeId: moleculeId,
-              reaction: reaction,
-              isByreactant: isByreactant,
+              // For substrate/product (main molecules), don't pass reaction context so it finds the correct node
+              // For by-molecules, pass reaction context
+              reaction: isMainMolecule ? null : reaction,
+              isByreactant: isMainMolecule ? null : isByreactant,
               skipZoom: isByMolecule // Don't move frame for byreactants/byproducts
             }
           });
