@@ -44,7 +44,14 @@ export function getAlternativeNames(moleculeName) {
     'H₂O': ['Water', 'H2O'],
     'Pi': ['Inorganic phosphate', 'Phosphate', 'PO4'],
     'CO₂': ['Carbon dioxide', 'CO2'],
-    'CO2': ['Carbon dioxide', 'CO₂']
+    'CO2': ['Carbon dioxide', 'CO₂'],
+    // Electron Transport Chain compounds
+    'Ubiquinol (QH₂)': ['Ubiquinol', 'QH2', 'Reduced ubiquinone', 'Coenzyme Q (reduced)', 'CoQ (reduced)'],
+    'Ubiquinone': ['Coenzyme Q', 'CoQ', 'Q', 'Ubiquinone (oxidized)'],
+    'H⁺': ['Proton', 'H+', 'Hydrogen ion'],
+    'O₂': ['Oxygen', 'O2', 'Molecular oxygen'],
+    'Coenzyme Q (Ubiquinone/Ubiquinol)': ['Coenzyme Q', 'CoQ', 'Ubiquinone', 'Ubiquinol', 'Q'],
+    'Cytochrome c': ['Cyt c', 'Cytochrome c'],
   };
   
   return alternatives[moleculeName] || [];

@@ -6,6 +6,7 @@ import { PathwayDetail } from './components/PathwayDetail.js'
 import { glycolysisReactions, glycolysisSummary } from './data/glycolysis.js'
 import { pyruvateOxidationReactions, pyruvateOxidationSummary } from './data/pyruvateOxidation.js'
 import { citricAcidCycleReactions, citricAcidCycleSummary } from './data/citricAcidCycle.js'
+import { electronTransportChainReactions, electronTransportChainSummary } from './data/electronTransportChain.js'
 
 // Initialize theme IMMEDIATELY before anything else to prevent flash
 const initTheme = () => {
@@ -386,21 +387,33 @@ if (!app) {
         
         let targetReaction = null;
         
-        // Priority 1: If reaction ID is provided, find reaction by product ID
-        if (reactionId) {
-          targetReaction = viewer.reactions.find(r => r.product && r.product.id === reactionId);
-          if (targetReaction) {
-            console.log('Found reaction by ID:', reactionId, targetReaction.name);
-          }
-        }
-        
-        // Priority 2: If pathway info is provided (from Key Regulatory Steps), find reaction using pathway index
-        if (!targetReaction && pathwayId && pathwayStartIndex !== undefined && reactionIndexInPathway !== null) {
+        // Priority 1: If pathway info is provided (from Key Regulatory Steps), find reaction using pathway index
+        // This should be checked first to avoid matching wrong reactions with same product ID
+        if (pathwayId && pathwayStartIndex !== undefined && reactionIndexInPathway !== null) {
           // Find the reaction in the viewer's reactions array using pathway startIndex + reaction index
           const viewerReactionIndex = pathwayStartIndex + reactionIndexInPathway;
           if (viewerReactionIndex >= 0 && viewerReactionIndex < viewer.reactions.length) {
             targetReaction = viewer.reactions[viewerReactionIndex];
             console.log('Found reaction by pathway index:', targetReaction.name);
+          }
+        }
+        
+        // Priority 2: If reaction ID is provided, find reaction by product ID
+        // Only use this if pathway index didn't work, and prefer reactions from the specified pathway
+        if (!targetReaction && reactionId) {
+          if (pathwayId && pathwayStartIndex !== undefined) {
+            // Try to find within the specified pathway first
+            const pathwayEndIndex = pathwayStartIndex + (viewer.getPathwayForReaction ? 
+              (viewer.getPathwayForReaction(viewer.reactions[pathwayStartIndex])?.reactions?.length || 0) : 0);
+            targetReaction = viewer.reactions.slice(pathwayStartIndex, pathwayEndIndex)
+              .find(r => r.product && r.product.id === reactionId);
+          }
+          // Fall back to searching all reactions if pathway search didn't work
+          if (!targetReaction) {
+            targetReaction = viewer.reactions.find(r => r.product && r.product.id === reactionId);
+          }
+          if (targetReaction) {
+            console.log('Found reaction by ID:', reactionId, targetReaction.name);
           }
         }
         

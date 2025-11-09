@@ -8,6 +8,7 @@ import * as d3 from 'd3';
 import { glycolysisReactions, glycolysisSummary } from '../data/glycolysis.js';
 import { pyruvateOxidationReactions, pyruvateOxidationSummary } from '../data/pyruvateOxidation.js';
 import { citricAcidCycleReactions, citricAcidCycleSummary } from '../data/citricAcidCycle.js';
+import { electronTransportChainReactions, electronTransportChainSummary } from '../data/electronTransportChain.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
@@ -57,8 +58,8 @@ export class MetabolismViewer {
         cofactors: []
       },
       position: {
-        x: 100,  // Swapped: old y becomes new x
-        y: 1900  // Swapped: old x becomes new y
+        x: 100,
+        y: 1900
       },
       isProductNode: true // Flag to identify this as a product node
     };
@@ -88,8 +89,8 @@ export class MetabolismViewer {
         cofactors: []
       },
       position: {
-        x: 250,  // Swapped: old y becomes new x
-        y: 1675  // Swapped: old x becomes new y
+        x: 250,
+        y: 1675
       },
       isProductNode: true // Flag to identify this as a product node
     };
@@ -102,7 +103,8 @@ export class MetabolismViewer {
       acetylCoaNode, // Acetyl-CoA product node
       ...pyruvateOxidationReactions.slice(3), // Step 4
       lipoamideNode, // Lipoamide product node
-      ...citricAcidCycleReactions
+      ...citricAcidCycleReactions,
+      ...electronTransportChainReactions
     ];
     
     // Add unique node IDs to all reactions/nodes
@@ -118,8 +120,12 @@ export class MetabolismViewer {
       this.nodeMap.set(reaction.nodeId, reaction);
     });
     
+    // Product node offset (Acetyl-CoA and Lipoamide nodes inserted in pyruvate oxidation)
+    this.productNodeOffset = 2;
+    
     // Adjust step numbers for continuity
     let stepCounter = glycolysisReactions.length + 1;
+    
     // Step through pyruvate oxidation reactions (skip the Acetyl-CoA and Lipoamide nodes)
     for (let i = 0; i < pyruvateOxidationReactions.length; i++) {
       const reactionIndex = glycolysisReactions.length + i;
@@ -130,11 +136,19 @@ export class MetabolismViewer {
         this.reactions[reactionIndex + 1].step = stepCounter++;
       }
     }
-    // Continue numbering for citric acid cycle (Step 15 onwards)
-    stepCounter = glycolysisReactions.length + pyruvateOxidationReactions.length + 1; // Start at 15 (10 glycolysis + 4 pyruvate + 1)
-    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 2; // +2 for Acetyl-CoA and Lipoamide nodes
+    
+    // Continue numbering for citric acid cycle
+    stepCounter = glycolysisReactions.length + pyruvateOxidationReactions.length + 1;
+    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
     citricAcidCycleReactions.forEach((reaction, i) => {
       this.reactions[cacStartIndex + i].step = stepCounter++;
+    });
+    
+    // Continue numbering for electron transport chain
+    stepCounter = glycolysisReactions.length + pyruvateOxidationReactions.length + citricAcidCycleReactions.length + 1;
+    const etcStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset + citricAcidCycleReactions.length;
+    electronTransportChainReactions.forEach((reaction, i) => {
+      this.reactions[etcStartIndex + i].step = stepCounter++;
     });
     
     // Create arrow data dictionary: key = "fromNodeId-toNodeId", value = arrow data
@@ -156,15 +170,23 @@ export class MetabolismViewer {
         reactions: pyruvateOxidationReactions,
         summary: pyruvateOxidationSummary,
         startIndex: glycolysisReactions.length,
-        endIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + 2 // +2 for Acetyl-CoA and Lipoamide nodes
+        endIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset
       },
       {
         id: 'citric-acid-cycle',
         name: 'Citric Acid Cycle',
         reactions: citricAcidCycleReactions,
         summary: citricAcidCycleSummary,
-        startIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + 2, // +2 for Acetyl-CoA and Lipoamide nodes
-        endIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + 2 + citricAcidCycleReactions.length
+        startIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset,
+        endIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset + citricAcidCycleReactions.length
+      },
+      {
+        id: 'electron-transport-chain',
+        name: 'Electron Transport Chain',
+        reactions: electronTransportChainReactions,
+        summary: electronTransportChainSummary,
+        startIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset + citricAcidCycleReactions.length,
+        endIndex: glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset + citricAcidCycleReactions.length + electronTransportChainReactions.length
       }
     ];
     
@@ -176,15 +198,23 @@ export class MetabolismViewer {
     this.moleculeImages = new Map(); // Cache for molecule 2D images (id -> imageUrl)
     this.pubchemDataCache = new Map(); // Cache for PubChem data (moleculeName -> pubchemData)
     
+    // Helper to get computed style (cached for performance)
+    this.getComputedStyle = () => window.getComputedStyle(document.documentElement);
+    
     // Helper to get image background color based on theme
     this.getImageBgColor = () => {
-      const computedStyle = window.getComputedStyle(document.documentElement);
+      const computedStyle = this.getComputedStyle();
       return computedStyle.getPropertyValue('--bg-image').trim() || 
              computedStyle.getPropertyValue('--bg-panel').trim() || 
              'white';
     };
     
-    console.log('MetabolismViewer initialized with', this.reactions.length, 'reactions')
+    // Helper to get highlighted image background color based on theme
+    this.getHighlightImageBgColor = () => {
+      const computedStyle = this.getComputedStyle();
+      return computedStyle.getPropertyValue('--highlight-image-bg').trim() || 
+             this.getImageBgColor();
+    };
     
     this.init();
   }
@@ -292,8 +322,6 @@ export class MetabolismViewer {
     // Store observer for cleanup if needed
     this.themeObserver = observer;
     
-    console.log('SVG created with dimensions:', this.options.width, this.options.height)
-    
     // Create zoom behavior (for dragging/panning)
     this.zoom = d3.zoom()
       .scaleExtent([0.1, 5])
@@ -350,16 +378,22 @@ export class MetabolismViewer {
     // Draw connections between reactions
     this.drawConnections();
     
+    // Draw H+ arrows first (behind complexes) - will be moved behind nodes after drawing
+    this.drawETCSubArrows();
+    
     // Draw reaction nodes
     this.drawReactions();
+    
+    // Move H+ arrows behind reaction nodes
+    if (this.g.select('.etc-sub-arrows').node()) {
+      this.g.select('.etc-sub-arrows').lower();
+    }
     
     // Draw pathway buttons (in zoomable group)
     this.drawPathwayButtons();
     
     // Add help button in upper right (in fixed overlay)
     this.drawHelpButton();
-    
-    console.log('Reaction groups created:', this.reactionGroups.size())
     
     // Add click handlers
     this.setupInteractions();
@@ -812,17 +846,8 @@ export class MetabolismViewer {
         .attr('stroke-width', 3);
     }
     
-    // Reset all node highlighting
-    this.reactionGroups.selectAll('.reaction-circle')
-      .attr('stroke-width', 2)
-      .attr('stroke', '#2c5f7c')
-      .attr('fill', '#5fa8d3');
-    
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    this.reactionGroups.selectAll('.molecule-image-bg')
-      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
-      .attr('stroke-width', 2)
-      .attr('fill', this.getImageBgColor());
+    // Reset all node highlighting using unified function
+    this.resetAllNodeHighlights();
     
     // Reset all arrow highlighting
     this.g.selectAll('.connection')
@@ -830,22 +855,12 @@ export class MetabolismViewer {
       .attr('stroke-opacity', 0.7)
       .attr('stroke', '#2c5f7c');
     
-    // Highlight all nodes in this pathway
+    // Highlight all nodes in this pathway using unified function
     const pathwayReactions = this.reactions.slice(pathway.startIndex, pathway.endIndex);
     pathwayReactions.forEach(reaction => {
       const reactionGroup = this.reactionGroups.filter(d => d === reaction);
-      
-      // Highlight circle (if visible)
-      reactionGroup.select('.reaction-circle')
-        .attr('stroke-width', 4)
-        .attr('stroke', '#ff6b6b')
-        .attr('fill', '#ff8787');
-      
-      // Highlight image background (if visible)
-      reactionGroup.select('.molecule-image-bg')
-        .attr('stroke', '#ff6b6b')
-        .attr('stroke-width', 4)
-        .attr('fill', '#fff5f5');
+      // Use 'product' color type for pathway highlighting (red color)
+      this.applyNodeHighlightStyle(reactionGroup, 'product');
     });
     
     // Also highlight the last product (target node of arrows from the last reaction)
@@ -862,14 +877,7 @@ export class MetabolismViewer {
           const targetReaction = this.reactions.find(r => r.nodeId === arrow.toNodeId);
           if (targetReaction) {
             const targetGroup = this.reactionGroups.filter(d => d === targetReaction);
-            targetGroup.select('.reaction-circle')
-              .attr('stroke-width', 4)
-              .attr('stroke', '#ff6b6b')
-              .attr('fill', '#ff8787');
-            targetGroup.select('.molecule-image-bg')
-              .attr('stroke', '#ff6b6b')
-              .attr('stroke-width', 4)
-              .attr('fill', '#fff5f5');
+            this.applyNodeHighlightStyle(targetGroup, 'product');
           }
         }
       });
@@ -1033,17 +1041,8 @@ export class MetabolismViewer {
       this.selectedPathway = null;
     }
     
-    // Reset all node highlighting
-    this.reactionGroups.selectAll('.reaction-circle')
-      .attr('stroke-width', 2)
-      .attr('stroke', '#2c5f7c')
-      .attr('fill', '#5fa8d3');
-    
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    this.reactionGroups.selectAll('.molecule-image-bg')
-      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
-      .attr('stroke-width', 2)
-      .attr('fill', this.getImageBgColor());
+    // Reset all node highlighting using unified function
+    this.resetAllNodeHighlights();
     
     // Update current zoom level
     this.currentZoom = scale;
@@ -1091,6 +1090,19 @@ export class MetabolismViewer {
       .attr('d', 'M0,-5L10,0L0,5')
       .attr('fill', '#ff6b6b');
     
+    // Add arrow marker for ETC H+ arrows (normal size, blue color)
+    defs.append('marker')
+      .attr('id', 'arrowhead-normal')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 8)
+      .attr('refY', 0)
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('fill', '#4a90e2');
+    
     // Draw arrows between reactions
     // Filter out special cases:
     // - Glycolysis step 4 (aldolase) has special connections
@@ -1099,8 +1111,9 @@ export class MetabolismViewer {
     const glycolysisLength = glycolysisReactions.length;
     const pyruvateOxidationLength = pyruvateOxidationReactions.length;
     const citricAcidCycleLength = citricAcidCycleReactions.length;
-    const cacStartIndex = glycolysisLength + pyruvateOxidationLength + 2; // +2 for Acetyl-CoA and Lipoamide nodes
-    
+    const cacStartIndex = glycolysisLength + pyruvateOxidationLength + this.productNodeOffset;
+    const etcStartIndex = glycolysisLength + pyruvateOxidationLength + this.productNodeOffset + citricAcidCycleLength;
+    const etcEndIndex = etcStartIndex + electronTransportChainReactions.length;
     const connectionsData = this.reactions
       .slice(0, -1)
       .map((d, i) => ({ current: d, next: this.reactions[i + 1], index: i }))
@@ -1118,8 +1131,15 @@ export class MetabolismViewer {
         // Skip connection from pyruvate oxidation step 4 to Lipoamide node (handled separately)
         if (index === glycolysisLength + pyruvateOxidationLength) return false;
         // Skip citric acid cycle last step (it connects back to first, handled separately)
-        const cacStartIndex = glycolysisLength + pyruvateOxidationLength + 2; // +2 for Acetyl-CoA and Lipoamide nodes
-        if (index === cacStartIndex + citricAcidCycleLength - 1) return false;
+        const cacStartIndex = glycolysisLength + pyruvateOxidationLength + this.productNodeOffset;
+        const cacEndIndex = cacStartIndex + citricAcidCycleLength;
+        if (index === cacEndIndex - 1) return false; // Skip step 8 (last CAC step) - it connects back to step 1 via cycle arrow
+        // Skip connection from CAC step 8 to ETC Complex I (pathway-transition, handled separately if needed)
+        if (index === cacEndIndex - 1 && next && next.isProteinComplex) return false;
+        // Skip arrow from Complex I to Complex II in ETC (they don't connect directly)
+        if (index === etcStartIndex) return false; // Complex I (step 1) → Complex II (step 2)
+        // Skip arrow from Complex II to CoQ in ETC (handled explicitly, avoid duplicate)
+        if (index === etcStartIndex + 1) return false; // Complex II (step 2) → CoQ (step 3)
         return true;
       });
     
@@ -1133,14 +1153,36 @@ export class MetabolismViewer {
       const dy = d.next.position.y - d.current.position.y;
       const angle = Math.atan2(dy, dx);
       
-      let x1 = d.current.position.x + 30 * Math.cos(angle);
-      let y1 = d.current.position.y + 30 * Math.sin(angle);
+      // For ETC complexes, start from right edge (x + 40 for 80px width)
+      // For ETC mobile carriers, use standard radius (20)
+      // For other nodes, use standard radius (30)
+      const currentIndex = this.reactions.indexOf(d.current);
+      let startRadius = 30;
+      if (d.current.isProteinComplex && currentIndex >= etcStartIndex && currentIndex < etcEndIndex) {
+        startRadius = 40; // Right edge of complex
+      } else if (d.current.isMobileCarrier && currentIndex >= etcStartIndex && currentIndex < etcEndIndex) {
+        startRadius = 20; // Mobile carrier radius
+      }
+      
+      let x1 = d.current.position.x + startRadius * Math.cos(angle);
+      let y1 = d.current.position.y + startRadius * Math.sin(angle);
       if (dy > 0) {
         y1 = Math.min(y1, d.current.position.y + 35);
       }
       
-      let x2 = d.next.position.x - 30 * Math.cos(angle);
-      let y2 = d.next.position.y - 30 * Math.sin(angle);
+      // For ETC complexes, end at left edge (x - 40)
+      // For ETC mobile carriers, end at surface (radius 20)
+      // For other nodes, use standard radius (30)
+      const nextIndex = this.reactions.indexOf(d.next);
+      let endRadius = 30;
+      if (d.next.isProteinComplex && nextIndex >= etcStartIndex && nextIndex < etcEndIndex) {
+        endRadius = 40; // Left edge of complex
+      } else if (d.next.isMobileCarrier && nextIndex >= etcStartIndex && nextIndex < etcEndIndex) {
+        endRadius = 20; // Mobile carrier radius
+      }
+      
+      let x2 = d.next.position.x - endRadius * Math.cos(angle);
+      let y2 = d.next.position.y - endRadius * Math.sin(angle);
       if (dy < 0) {
         y2 = Math.max(y2, d.next.position.y - 35);
       }
@@ -1252,7 +1294,7 @@ export class MetabolismViewer {
     // Unified function to create arrow(s) and store in arrowDataMap
     // Supports both single arrow and array of arrows for batch processing
     // Auto-calculates coordinates if not provided
-    const createArrowWithData = (fromNode, toNodeOrArray, coordsOrConfig, connectionId, className, targetReaction, reactantMoleculeId = null, productMoleculeId = null) => {
+    const createArrowWithData = (fromNode, toNodeOrArray, coordsOrConfig, connectionId, className, targetReaction, fromNodeId = null, toNodeId = null) => {
       // Handle array of arrows (batch mode)
       if (Array.isArray(toNodeOrArray)) {
         toNodeOrArray.forEach((arrowConfig, index) => {
@@ -1266,8 +1308,8 @@ export class MetabolismViewer {
             arrowConfig.connectionId,
             arrowConfig.className || className || 'connection-special',
             arrowConfig.targetReaction || targetReaction,
-            arrowConfig.reactantId || reactantMoleculeId,
-            arrowConfig.productId || productMoleculeId
+            arrowConfig.reactantId || fromNodeId,
+            arrowConfig.productId || toNodeId
           );
         });
         return;
@@ -1285,8 +1327,8 @@ export class MetabolismViewer {
       const toNodeData = this.nodeMap.get(toNodeObj.nodeId);
       
       // Determine reactant and product molecules from the target reaction
-      const reactantId = reactantMoleculeId || (targetReaction.substrate ? targetReaction.substrate.id : null);
-      const productId = productMoleculeId || (targetReaction.product ? targetReaction.product.id : null);
+      const reactantId = fromNodeId || (targetReaction.substrate ? targetReaction.substrate.id : null);
+      const productId = toNodeId || (targetReaction.product ? targetReaction.product.id : null);
       
       // Store arrow data
       const moleculeKey = reactantId && productId ? `${arrowKey}-${reactantId}-${productId}` : arrowKey;
@@ -1661,19 +1703,57 @@ export class MetabolismViewer {
         this.selectReaction(step8Node);
       });
     
-    // Create curved path for cycle arrow (visual enhancement)
-    const curveControlX = step8Pos.x + 50;
-    const curveControlY = step8Pos.y - 50;
-    const cycleCurve = this.g.append('path')
-      .attr('class', 'connection connection-special connection-curve')
-      .attr('data-connection-id', 'cac-cycle-curve')
-      .attr('d', `M ${cycleCoords.x1} ${cycleCoords.y1} Q ${curveControlX} ${curveControlY}, ${curveEndX} ${curveEndY}`)
-      .attr('fill', 'none')
-      .attr('stroke', '#2c5f7c')
-      .attr('stroke-width', 2)
-      .attr('stroke-opacity', 0.3)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('pointer-events', 'none');
+    // Create ETC explicit connections (Complex I → CoQ, Complex II → CoQ, etc.)
+    // etcStartIndex already declared above
+    const complex1Node = this.reactions[etcStartIndex]; // Complex I (step 1)
+    const complex2Node = this.reactions[etcStartIndex + 1]; // Complex II (step 2)
+    const coqNode = this.reactions[etcStartIndex + 2]; // CoQ (step 3)
+    
+    // Complex I → CoQ
+    if (complex1Node && coqNode) {
+      // Calculate arrow coordinates: start from Complex I right edge, end at CoQ surface
+      const dx = coqNode.position.x - complex1Node.position.x;
+      const dy = coqNode.position.y - complex1Node.position.y;
+      const angle = Math.atan2(dy, dx);
+      const complex1RightEdge = complex1Node.position.x + 40; // Complex width 80, so right edge at +40
+      const coqRadius = 20; // Mobile carrier radius
+      const coqSurfaceX = coqNode.position.x - coqRadius * Math.cos(angle);
+      const coqSurfaceY = coqNode.position.y - coqRadius * Math.sin(angle);
+      
+      createArrowWithData(
+        complex1Node.nodeId,
+        coqNode.nodeId,
+        { x1: complex1RightEdge, y1: complex1Node.position.y + 40 * Math.sin(angle), x2: coqSurfaceX, y2: coqSurfaceY },
+        'etc-complex1-to-coq',
+        'connection-normal',
+        complex1Node, // targetReaction: Complex I
+        'complex_i',
+        'ubiquinol' // Product: Ubiquinol
+      );
+    }
+    
+    // Complex II → CoQ
+    if (complex2Node && coqNode) {
+      // Calculate arrow coordinates: start from Complex II right edge, end at CoQ surface
+      const dx = coqNode.position.x - complex2Node.position.x;
+      const dy = coqNode.position.y - complex2Node.position.y;
+      const angle = Math.atan2(dy, dx);
+      const complex2RightEdge = complex2Node.position.x + 40; // Complex width 80, so right edge at +40
+      const coqRadius = 20; // Mobile carrier radius
+      const coqSurfaceX = coqNode.position.x - coqRadius * Math.cos(angle);
+      const coqSurfaceY = coqNode.position.y - coqRadius * Math.sin(angle);
+      
+      createArrowWithData(
+        complex2Node.nodeId,
+        coqNode.nodeId,
+        { x1: complex2RightEdge, y1: complex2Node.position.y + 40 * Math.sin(angle), x2: coqSurfaceX, y2: coqSurfaceY },
+        'etc-complex2-to-coq',
+        'connection-normal',
+        complex2Node, // targetReaction: Complex II
+        'complex_ii', // Reactant: FADH₂ (using lowercase ID to match connectionConfig)
+        'ubiquinol' // Product: Ubiquinol
+      );
+    }
     
     // Automatically create secondary arrows from midpoints for multi-product reactions
     // This must be called after all primary arrows are created
@@ -1888,6 +1968,8 @@ export class MetabolismViewer {
         return 'pyruvate-oxidation';
       } else if (pathway.summary.name === 'Citric Acid Cycle (Krebs Cycle)') {
         return 'citric-acid-cycle';
+      } else if (pathway.summary.name === 'Electron Transport Chain / Oxidative Phosphorylation' || pathway.summary.name === 'Electron Transport Chain') {
+        return 'electron-transport-chain';
       }
       return null;
     };
@@ -1948,20 +2030,47 @@ export class MetabolismViewer {
       }
       
       const mainArrow = findMainArrow(reaction);
+      let coords, dx, dy, arrowLength, arrowAngle, midX, midY;
+      
+      // Special handling for ETC complexes - attach arrows directly to complex
+      const isETCComplex = pathway === 'electron-transport-chain' && reaction.isProteinComplex;
+      let attachmentPointX, attachmentPointY;
+      
       if (!mainArrow || !mainArrow.coords) {
-        console.warn(`Main arrow not found for reaction:`, reaction.name, 'ArrowIds:', reaction.arrowIds);
-        return;
+        // For ETC complexes, if no main arrow found, attach directly to complex
+        if (isETCComplex) {
+          // Use complex position as attachment point
+          attachmentPointX = reaction.position.x;
+          attachmentPointY = reaction.position.y;
+          // Create a virtual horizontal arrow for calculations (but we'll use attachment point)
+          coords = {
+            x1: reaction.position.x - 40,
+            y1: reaction.position.y,
+            x2: reaction.position.x + 40,
+            y2: reaction.position.y
+          };
+        } else {
+          console.warn(`Main arrow not found for reaction:`, reaction.name, 'ArrowIds:', reaction.arrowIds);
+          return;
+        }
+      } else {
+        // Normal path: use the found main arrow
+        coords = mainArrow.coords;
+        // For ETC complexes, still use complex position as attachment point even if main arrow exists
+        if (isETCComplex) {
+          attachmentPointX = reaction.position.x;
+          attachmentPointY = reaction.position.y;
+        } else {
+          attachmentPointX = null; // Will use midpoint for non-ETC
+          attachmentPointY = null;
+        }
       }
       
-      const coords = mainArrow.coords;
-      const dx = coords.x2 - coords.x1;
-      const dy = coords.y2 - coords.y1;
-      const arrowLength = Math.sqrt(dx * dx + dy * dy);
-      const arrowAngle = Math.atan2(dy, dx);
-      
-      // Calculate midpoint of the arrow (needed for offset calculation)
-      const midX = (coords.x1 + coords.x2) / 2;
-      const midY = (coords.y1 + coords.y2) / 2;
+      // Calculate arrow properties
+      dx = coords.x2 - coords.x1;
+      dy = coords.y2 - coords.y1;
+      arrowLength = Math.sqrt(dx * dx + dy * dy);
+      arrowAngle = Math.atan2(dy, dx);
       
       // Get rotation angle from reaction data (in degrees, defaults to 0)
       // Angle rotates the perpendicular direction: 0 = perpendicular, 90 = along arrow, -90 = opposite
@@ -1969,8 +2078,8 @@ export class MetabolismViewer {
       let baseRotationAngle = 0;
       
       // Flip 180 degrees for pyruvate oxidation and citric acid cycle to match glycolysis shape
-      // Glycolysis uses the standard shape (above), so we flip the others
-      if (pathway === 'glycolysis') {
+      // Glycolysis and ETC use the standard shape (above), so we flip the others
+      if (pathway === 'glycolysis' || pathway === 'electron-transport-chain') {
         baseRotationAngle = Math.PI; // Add 180 degrees (π radians)
       }
       
@@ -1980,20 +2089,56 @@ export class MetabolismViewer {
       // Apply rotation to get the final perpendicular angle
       let perpAngle = basePerpAngle + baseRotationAngle;
       
-      // If byMoleculeAngle is set, use it to adjust perpAngle (in degrees, converted to radians)
-      // This allows fine-tuning the arrow direction from the data file
-      if (reaction.byMoleculeAngle !== undefined) {
-        perpAngle += reaction.byMoleculeAngle * Math.PI / 180; // Convert degrees to radians and add
+      // Calculate midpoint of the arrow (needed for offset calculation)
+      // For ETC complexes, use attachment point (complex position) instead of midpoint
+      if (isETCComplex && attachmentPointX !== null) {
+        // For ETC complexes, start arrows from the surface of the complex, not the center
+        // Calculate the direction the arrow will curve (perpendicular to main arrow)
+        const complexSize = reaction.complexSize || { width: 80, height: 60 };
+        // Calculate distance from center to edge in the perpendicular direction
+        // For a rounded rectangle, use half the width/height depending on angle
+        const angleToX = Math.abs(Math.cos(perpAngle));
+        const angleToY = Math.abs(Math.sin(perpAngle));
+        const halfWidth = complexSize.width / 2;
+        const halfHeight = complexSize.height / 2;
+        // Approximate distance to edge (ellipse approximation)
+        const edgeDistance = Math.sqrt((halfWidth * angleToX) ** 2 + (halfHeight * angleToY) ** 2);
+        // Start from complex surface in the direction the arrow will curve
+        midX = attachmentPointX + edgeDistance * Math.cos(perpAngle);
+        midY = attachmentPointY + edgeDistance * Math.sin(perpAngle);
+      } else {
+        midX = (coords.x1 + coords.x2) / 2;
+        midY = (coords.y1 + coords.y2) / 2;
       }
+      
+      // Store byMoleculeAngle for later use (will rotate the whole arrow, not change shape)
+      const byMoleculeRotationAngle = reaction.byMoleculeAngle !== undefined 
+        ? reaction.byMoleculeAngle * Math.PI / 180 
+        : 0;
+      
+      // Helper function to rotate a point around a center
+      const rotatePoint = (x, y, centerX, centerY, angle) => {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        return {
+          x: centerX + dx * cos - dy * sin,
+          y: centerY + dx * sin + dy * cos
+        };
+      };
       
       // Distance from arrow to byreactant/byproduct arrow (always use absolute distance)
       const offset = 70; // Distance from main arrow
       
       // Determine offset direction based on pathway
       // Glycolysis: above (negative), pyruvate oxidation and citric acid cycle: flipped 180 (below/opposite)
+      // ETC: above (negative, like glycolysis)
       let offsetDirection = 1; // 1 = positive direction, -1 = negative direction
       if (pathway === 'glycolysis') {
         offsetDirection = -1; // Above
+      } else if (pathway === 'electron-transport-chain') {
+        offsetDirection = -1; // Above (like glycolysis)
       } else if (pathway === 'citric-acid-cycle') {
         // For citric acid cycle, arrows should face outward (away from cycle center)
         // After 180 flip, choose the direction that points outward
@@ -2115,6 +2260,7 @@ export class MetabolismViewer {
       // Endpoint positions will be calculated when drawing the arrows
       let byreactantEndX, byreactantEndY, byproductEndX, byproductEndY;
       let byreactantControlX, byreactantControlY;
+      let byreactantStartX, byreactantStartY; // Declare outside if block for scope
       
       // Create the arrow group
       const uArrowGroup = this.g.append('g')
@@ -2145,18 +2291,32 @@ export class MetabolismViewer {
         // - y-axis: perpendicular direction based on perpAngle (like citric acid cycle)
         const perpDirX = Math.cos(perpAngle);
         const perpDirY = Math.sin(perpAngle);
+        
+        // Byreactant arrow: start at midpoint, curve away (standard behavior for all pathways)
         const x = -byArrowLength * 0.75; // Distance along x-axis (negative = left/opposite)
         const y = byArrowLength * 1.0; // Height (y = x^2, scaled)
         
+        // Start is at midpoint
+        byreactantStartX = midX;
+        byreactantStartY = midY;
+        
         // Control point at (x/2, 0) - ensures horizontal tangent at start
-        // x is negative, so x/2 is also negative (left/opposite to main arrow direction)
         byreactantControlX = midX + (x / 2) * Math.cos(arrowAngle);
         byreactantControlY = midY + (x / 2) * Math.sin(arrowAngle);
         
         // Endpoint at (x, y) - follows parabola y = x^2, direction follows perpAngle
-        // x is negative (left/opposite to main arrow), y direction follows perpAngle
         byreactantEndX = midX + x * Math.cos(arrowAngle) + y * perpDirX;
         byreactantEndY = midY + x * Math.sin(arrowAngle) + y * perpDirY;
+        
+        // Apply rotation to byreactant arrow points if byMoleculeRotationAngle is set
+        if (byMoleculeRotationAngle !== 0) {
+          const rotatedControl = rotatePoint(byreactantControlX, byreactantControlY, midX, midY, byMoleculeRotationAngle);
+          const rotatedEnd = rotatePoint(byreactantEndX, byreactantEndY, midX, midY, byMoleculeRotationAngle);
+          byreactantControlX = rotatedControl.x;
+          byreactantControlY = rotatedControl.y;
+          byreactantEndX = rotatedEnd.x;
+          byreactantEndY = rotatedEnd.y;
+        }
         
         // Create quadratic Bezier path representing half of x^2
         byreactantPath = `M ${midX} ${midY} Q ${byreactantControlX} ${byreactantControlY}, ${byreactantEndX} ${byreactantEndY}`;
@@ -2175,7 +2335,6 @@ export class MetabolismViewer {
       let byproductArrow = null;
       let byproductPath = null;
       let byproductControlX, byproductControlY;
-      let arrowhead = null;
       if (hasByproduct) {
         // Draw basic parabola y = x^2
         // Turning point at (0, 0) with horizontal tangent
@@ -2203,6 +2362,16 @@ export class MetabolismViewer {
         // x is positive (forward/same as main arrow), y direction follows perpAngle
         byproductEndX = midX + x * Math.cos(arrowAngle) + y * perpDirX;
         byproductEndY = midY + x * Math.sin(arrowAngle) + y * perpDirY;
+        
+        // Apply rotation to byproduct arrow points if byMoleculeRotationAngle is set
+        if (byMoleculeRotationAngle !== 0) {
+          const rotatedControl = rotatePoint(byproductControlX, byproductControlY, midX, midY, byMoleculeRotationAngle);
+          const rotatedEnd = rotatePoint(byproductEndX, byproductEndY, midX, midY, byMoleculeRotationAngle);
+          byproductControlX = rotatedControl.x;
+          byproductControlY = rotatedControl.y;
+          byproductEndX = rotatedEnd.x;
+          byproductEndY = rotatedEnd.y;
+        }
         
         // Create quadratic Bezier path representing half of x^2
         byproductPath = `M ${midX} ${midY} Q ${byproductControlX} ${byproductControlY}, ${byproductEndX} ${byproductEndY}`;
@@ -2261,12 +2430,15 @@ export class MetabolismViewer {
       
       // Calculate effective end positions for labels (accounting for stroke width)
       // For arrows with stroke, the visible end is offset by stroke width along the tangent
+      // Note: Tangent angles are calculated after rotation is applied (if any)
       let byreactantTipX = byreactantEndX;
       let byreactantTipY = byreactantEndY;
       let byreactantTangentAngle = 0;
       if (hasByreactant) {
+        // Standard: tangent from control to end (after rotation)
         byreactantTangentAngle = Math.atan2(byreactantEndY - byreactantControlY, byreactantEndX - byreactantControlX);
         const strokeOffset = arrowStrokeWidth;
+        // Extend tip away from start
         byreactantTipX = byreactantEndX + strokeOffset * Math.cos(byreactantTangentAngle);
         byreactantTipY = byreactantEndY + strokeOffset * Math.sin(byreactantTangentAngle);
       }
@@ -2275,16 +2447,88 @@ export class MetabolismViewer {
       let byproductTipY = byproductEndY;
       let byproductTangentAngle = 0;
       if (hasByproduct) {
+        // Calculate tangent angle at endpoint (after rotation)
+        // For quadratic Bezier Q(P0, P1, P2), tangent at P2 is in direction P1->P2
+        // Use the same calculation for all pathways including ETC
         byproductTangentAngle = Math.atan2(byproductEndY - byproductControlY, byproductEndX - byproductControlX);
         const strokeOffset = arrowStrokeWidth;
+        // Extend tip outward along tangent direction
         byproductTipX = byproductEndX + strokeOffset * Math.cos(byproductTangentAngle);
         byproductTipY = byproductEndY + strokeOffset * Math.sin(byproductTangentAngle);
       }
+      
+      // Generalized function to draw triangle arrowhead at the end of a line
+      // Parameters:
+      //   - endX, endY: End point of the arrow path
+      //   - directionAngle: Direction the arrow is heading at the end (in radians)
+      //   - arrowheadSize: Size of the arrowhead
+      //   - rotationAngle: Optional rotation angle (if byMoleculeAngle is set)
+      //   - rotationCenterX, rotationCenterY: Center point for rotation (not used when byMoleculeAngle is set)
+      //   - isByproduct: Whether this is a byproduct arrowhead (needs to be mirrored when rotationAngle is set)
+      // Returns: SVG polygon element
+      const drawTriangleArrowhead = (endX, endY, directionAngle, arrowheadSize, rotationAngle = 0, rotationCenterX = null, rotationCenterY = null, isByproduct = false) => {
+        // When byMoleculeAngle is set, the directionAngle is already calculated from the transformed (rotated) arrow
+        // So it already has the correct heading angle. We should use this transformed direction directly
+        // without additional rotation of the triangle shape.
+        
+        // Shift the triangle forward along the direction so the line doesn't pass through it
+        // Move the tip forward by approximately the base distance to ensure the line ends before the triangle
+        const shiftDistance = arrowheadSize * 0.25; // Shift forward along the direction
+        const tipX = endX + shiftDistance * Math.cos(directionAngle);
+        const tipY = endY + shiftDistance * Math.sin(directionAngle);
+        
+        // Use the transformed direction angle directly (it already accounts for rotation)
+        const adjustedDirectionAngle = directionAngle;
+        
+        // Base points are positioned behind the tip, perpendicular to the arrow direction
+        // The base forms a triangle with the tip pointing in the direction the arrow is heading
+        const baseDistance = arrowheadSize;
+        const baseWidth = arrowheadSize * 0.6; // Width of the base
+        
+        // Calculate perpendicular direction for base width
+        const perpAngle = adjustedDirectionAngle + Math.PI / 2;
+        
+        // Base center point (behind the tip)
+        const baseCenterX = tipX - baseDistance * Math.cos(adjustedDirectionAngle);
+        const baseCenterY = tipY - baseDistance * Math.sin(adjustedDirectionAngle);
+        
+        // Base points (left and right of base center)
+        // For byproduct arrows when rotationAngle is set, swap left/right to create mirror image
+        let baseLeftX = baseCenterX - baseWidth * Math.cos(perpAngle);
+        let baseLeftY = baseCenterY - baseWidth * Math.sin(perpAngle);
+        let baseRightX = baseCenterX + baseWidth * Math.cos(perpAngle);
+        let baseRightY = baseCenterY + baseWidth * Math.sin(perpAngle);
+        
+        // When byMoleculeAngle is set and this is a byproduct arrowhead, swap left/right to create mirror image
+        if (rotationAngle !== 0 && isByproduct) {
+          // Swap left and right base points to create mirror image
+          [baseLeftX, baseRightX] = [baseRightX, baseLeftX];
+          [baseLeftY, baseRightY] = [baseRightY, baseLeftY];
+        }
+        
+        // Calculate arrowhead points
+        // The triangle is positioned based on the transformed arrow's direction (directionAngle)
+        // which already accounts for byMoleculeRotationAngle, so no additional rotation needed
+        const arrowheadPoints = [
+          [tipX, tipY], // Tip shifted forward along the transformed direction
+          [baseLeftX, baseLeftY], // Left base point
+          [baseRightX, baseRightY] // Right base point
+        ];
+        
+        return uArrowGroup.append('polygon')
+          .attr('points', arrowheadPoints.map(p => p.join(',')).join(' '))
+          .attr('fill', arrowColor)
+          .attr('fill-opacity', 1)
+          .style('pointer-events', 'none');
+      };
       
       // Calculate label offsets for each arrow
       const byreactantLabelOffset = hasByreactant ? calculateLabelOffset(byreactantTangentAngle, byreactants) : baseLabelOffset;
       const byproductLabelOffset = hasByproduct ? calculateLabelOffset(byproductTangentAngle, byproducts) : baseLabelOffset;
       
+      // Calculate label positions from the rotated end points
+      // When byMoleculeRotationAngle is set, the end points are already rotated,
+      // so labels calculated from them are already in the correct position
       if (hasByreactant && hasByproduct) {
         // Both exist: position labels at the effective end of each arrow along tangent direction
         byreactantLabelX = byreactantTipX + byreactantLabelOffset * Math.cos(byreactantTangentAngle);
@@ -2305,27 +2549,31 @@ export class MetabolismViewer {
         byproductLabelY = byproductTipY + byproductLabelOffset * Math.sin(byproductTangentAngle);
       }
       
-      // Add triangle arrowhead at the end of the byproduct arrow
+      // Note: When byMoleculeRotationAngle is set, the arrow end points (byproductEndX/Y, byreactantEndX/Y)
+      // are already rotated around midX, midY. The labels are calculated from these rotated end points,
+      // so they are already in the correct position. No additional rotation needed.
+      
+      // Add triangle arrowhead only at the end of the byproduct arrow
+      let byproductArrowhead = null;
+      const arrowheadSize = 12; // Size of the arrowhead
+      
+      // Add triangle arrowhead at the end of the byproduct arrow (only on byproduct side)
       if (hasByproduct) {
-        const arrowheadSize = 12; // Increased size
-        
-        const arrowheadPoints = [
-          [byproductTipX, byproductTipY],
-          [
-            byproductTipX - arrowheadSize * Math.cos(byproductTangentAngle - Math.PI / 6),
-            byproductTipY - arrowheadSize * Math.sin(byproductTangentAngle - Math.PI / 6)
-          ],
-          [
-            byproductTipX - arrowheadSize * Math.cos(byproductTangentAngle + Math.PI / 6),
-            byproductTipY - arrowheadSize * Math.sin(byproductTangentAngle + Math.PI / 6)
-          ]
-        ];
-        
-        arrowhead = uArrowGroup.append('polygon')
-          .attr('points', arrowheadPoints.map(p => p.join(',')).join(' '))
-          .attr('fill', arrowColor)
-          .attr('fill-opacity', 1)
-          .style('pointer-events', 'none');
+        // Use the already-calculated byproductTangentAngle which accounts for:
+        // - Rotation (byMoleculeRotationAngle) if set
+        // - Bezier curve tangent (control to end)
+        // Draw at the actual end of the path (byproductEndX/Y), not the extended tip
+        // Pass isByproduct=true to create mirror image when byMoleculeAngle is set
+        byproductArrowhead = drawTriangleArrowhead(
+          byproductEndX,
+          byproductEndY,
+          byproductTangentAngle,
+          arrowheadSize,
+          byMoleculeRotationAngle,
+          midX,
+          midY,
+          true // isByproduct: true to create mirror image
+        );
       }
       
       // Create invisible hit area for clicking
@@ -2349,8 +2597,19 @@ export class MetabolismViewer {
           .lower() // Put hit area behind labels so labels can be clicked
           .on('click', (event) => {
             event.stopPropagation();
-            // Select the reaction when clicking the arrow
-            this.selectReaction(reaction);
+            // If arrow starts from a node (not from midpoint), highlight the node instead of the reaction
+            // Check if arrow starts from node: attachmentPointX is set (means we're using node position, not midpoint)
+            const startsFromNode = attachmentPointX !== null;
+            if (startsFromNode) {
+              // Select the molecule/node when clicking arrow that starts from node
+              const targetMolecule = reaction.substrate;
+              if (targetMolecule) {
+                this.selectMolecule(targetMolecule, reaction, { skipTabSwitch: false });
+              }
+            } else {
+              // Select the reaction when clicking arrow that starts from midpoint
+              this.selectReaction(reaction);
+            }
           })
           .on('mouseenter', () => {
             if (byreactantArrow) byreactantArrow.attr('stroke-width', 4).attr('stroke-opacity', 1);
@@ -2395,13 +2654,23 @@ export class MetabolismViewer {
             .text(molecule)
             .on('click', (event) => {
               event.stopPropagation();
-              console.log(`Clicking ${isByreactant ? 'byreactant' : 'byproduct'}:`, molecule);
-              // Pass the reaction context and whether it's byreactant or byproduct
-              this.selectMoleculeByName(molecule, null, { 
-                skipTabSwitch: false,
-                sourceReaction: reaction, // Pass the specific reaction where this molecule is used
-                isByreactant: isByreactant // Indicate if this is a byreactant or byproduct
-              });
+              // If arrow starts from a node (not from midpoint), highlight the node instead of the molecule
+              // Check if arrow starts from node: attachmentPointX is set (means we're using node position, not midpoint)
+              const startsFromNode = attachmentPointX !== null;
+              if (startsFromNode) {
+                // Select the node when clicking label on arrow that starts from node
+                const targetMolecule = reaction.substrate;
+                if (targetMolecule) {
+                  this.selectMolecule(targetMolecule, reaction, { skipTabSwitch: false });
+                }
+              } else {
+                // Select the molecule when clicking label on arrow that starts from midpoint
+                this.selectMoleculeByName(molecule, null, { 
+                  skipTabSwitch: false,
+                  sourceReaction: reaction, // Pass the specific reaction where this molecule is used
+                  isByreactant: isByreactant // Indicate if this is a byreactant or byproduct
+                });
+              }
             });
           
           textElements.push(moleculeText);
@@ -2482,20 +2751,20 @@ export class MetabolismViewer {
         });
       };
       
-      // Add byreactant label(s) if they exist
-      if (hasByreactant) {
+      // Add byreactant label(s) if they exist and labels are not hidden
+      if (hasByreactant && !reaction.hideByMoleculeLabels) {
         createMultiMoleculeLabel(byreactants, byreactantLabelX, byreactantLabelY, true);
       }
       
-      // Add byproduct label(s) if they exist
-      if (hasByproduct) {
+      // Add byproduct label(s) if they exist and labels are not hidden
+      if (hasByproduct && !reaction.hideByMoleculeLabels) {
         createMultiMoleculeLabel(byproducts, byproductLabelX, byproductLabelY, false);
       }
       
       // Raise arrows above labels so arrows appear in front
       if (byreactantArrow) byreactantArrow.raise();
       if (byproductArrow) byproductArrow.raise();
-      if (arrowhead) arrowhead.raise();
+      if (byproductArrowhead) byproductArrowhead.raise();
     });
   }
   
@@ -2505,8 +2774,57 @@ export class MetabolismViewer {
       .append('g')
       .attr('class', 'reaction-node');
     
-    // Draw circle for each reaction
-    const circles = nodes.append('circle')
+    // Draw shapes based on node type
+    // Protein complexes: rectangles/ovals
+    // Mobile carriers: smaller circles
+    // Regular reactions: circles
+    
+    const proteinComplexes = nodes.filter(d => d.isProteinComplex);
+    const mobileCarriers = nodes.filter(d => d.isMobileCarrier);
+    const regularReactions = nodes.filter(d => !d.isProteinComplex && !d.isMobileCarrier);
+    
+    // Draw protein complexes as rounded rectangles
+    proteinComplexes.each(function(d) {
+      const size = d.complexSize || { width: 80, height: 60 };
+      const g = d3.select(this);
+      
+      // Draw rounded rectangle (oval-like shape)
+      g.append('rect')
+        .attr('x', -size.width / 2)
+        .attr('y', -size.height / 2)
+        .attr('width', size.width)
+        .attr('height', size.height)
+        .attr('rx', size.height / 2) // Make it oval-shaped
+        .attr('ry', size.height / 2)
+        .attr('fill', '#d4a574') // Tan color like in the image
+        .attr('stroke', '#8b6f47')
+        .attr('stroke-width', 3)
+        .attr('class', 'protein-complex');
+      
+      // Add complex number label
+      if (d.complexNumber) {
+        g.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('dy', '0.35em')
+          .attr('font-size', '24px')
+          .attr('font-weight', 'bold')
+          .attr('fill', '#000')
+          .text(d.complexNumber);
+      }
+    });
+    
+    // Draw mobile carriers as smaller circles
+    mobileCarriers.append('circle')
+      .attr('r', 20)
+      .attr('fill', '#d4a574') // Tan color
+      .attr('stroke', '#8b6f47')
+      .attr('stroke-width', 2)
+      .attr('class', 'mobile-carrier');
+    
+    // Draw regular reactions as circles
+    regularReactions.append('circle')
       .attr('r', 30)
       .attr('fill', '#5fa8d3')
       .attr('stroke', '#2c5f7c')
@@ -2571,11 +2889,10 @@ export class MetabolismViewer {
       return name;
     };
     
-    // Add compound name label (positioned relative to circle bottom)
-    // Circle radius is 30px, so bottom edge is at y = 30 (relative to node center at 0,0)
-    // Position text consistently 8px below the bottom edge of circle
-    // Total distance from node center: 30 (radius) + 8 (gap) = 38px
-    // ALL labels must use y=38 with dominant-baseline='hanging' for consistency
+    // Add compound name label (positioned relative to shape bottom)
+    // For protein complexes: use complexSize.height/2 + 8
+    // For mobile carriers: use 20 (radius) + 8 = 28
+    // For regular reactions: use 30 (radius) + 8 = 38
     const labels = nodes.append('text')
       .attr('text-anchor', 'middle')
       .attr('x', 0) // Center horizontally
@@ -2583,9 +2900,14 @@ export class MetabolismViewer {
       .attr('font-size', '16px')
       .attr('font-weight', '500')
       .text(d => {
+        // For ETC protein complexes and mobile carriers, show the complex/carrier name
+        if (d.isProteinComplex || d.isMobileCarrier) {
+          return d.name;
+        }
+        
         // For citric acid cycle reactions, show previous reaction's product (shifted one step backward)
         // For other reactions, show substrate name
-        const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 2; // +2 for Acetyl-CoA and Lipoamide nodes
+        const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
         const currentIndex = this.reactions.indexOf(d);
         const isCACReaction = currentIndex >= cacStartIndex;
         
@@ -2606,20 +2928,30 @@ export class MetabolismViewer {
       });
     
     // Apply text wrapping to ALL labels (even single-word ones)
-    // This ensures all labels use tspans with consistent y=38 positioning
-    labels.each(function() {
+    // Position labels based on node type
+    labels.each(function(d) {
       const textEl = d3.select(this);
       const originalText = textEl.text();
+      
+      // Calculate label y position based on node type
+      let labelY;
+      if (d.isProteinComplex) {
+        const size = d.complexSize || { width: 80, height: 60 };
+        labelY = size.height / 2 + 8; // Below the complex
+      } else if (d.isMobileCarrier) {
+        labelY = 20 + 8; // Below the circle (radius 20 + gap 8)
+      } else {
+        labelY = 38; // Regular reactions (radius 30 + gap 8)
+      }
       
       // Always call wrapText to ensure consistent tspan creation
       // Limit text width to 120px to force wrapping for long names
       textEl.call(MetabolismViewer.prototype.wrapText, 120);
       
-      // Verify first tspan has y=38 and dominant-baseline='hanging'
-      // Don't override subsequent lines - they use absolute positioning
+      // Set first tspan y position and dominant-baseline
       const firstTspan = textEl.select('tspan:first-child');
       if (!firstTspan.empty()) {
-        firstTspan.attr('y', 38);
+        firstTspan.attr('y', labelY);
         firstTspan.attr('dominant-baseline', 'hanging');
       }
       
@@ -2628,6 +2960,191 @@ export class MetabolismViewer {
       
       // Remove y attribute from text element (tspans handle all positioning)
       textEl.attr('y', null);
+    });
+  }
+  
+  drawETCSubArrows() {
+    // Draw special subarrows for ETC complexes: H+ pumping arrows only
+    // Oxidation arrows (NADH, FADH2) are now handled by the by-molecule arrow system
+    const etcReactions = this.reactions.filter(r => r.etcSubArrows);
+    
+    if (etcReactions.length === 0) return;
+    
+    // Create a group for ETC subarrows - must be in the transform group (this.g) not this.svg
+    // This ensures arrows move with zoom/pan
+    const etcSubArrowGroup = this.g.append('g')
+      .attr('class', 'etc-sub-arrows');
+    
+    etcReactions.forEach(reaction => {
+      if (!reaction.etcSubArrows || !reaction.position) return;
+      
+      const complexX = reaction.position.x;
+      const complexY = reaction.position.y; // This is the center Y
+      const complexSize = reaction.complexSize || { width: 80, height: 60 };
+      const complexHeight = complexSize.height;
+      const complexWidth = complexSize.width;
+      
+      // Draw each subarrow defined in etcSubArrows
+      Object.values(reaction.etcSubArrows).forEach(subArrow => {
+        const offsetX = subArrow.offset?.x || 0;
+        const arrowLength = 100; // Increased arrow length for better visibility
+        
+        if (subArrow.type === 'proton-pump') {
+          // Blue straight arrow for H+ pumping - passes through the CENTER of the complex
+          // Always centered, not influenced by offsetX (which is for oxidation arrows)
+          // Direction: top to bottom (reversed from original)
+          const centerX = complexX; // Always use complex center, ignore offsetX
+          const centerY = complexY; // Center of complex
+          
+          // Start point: above the complex (intermembrane space side) - symmetric extension
+          const startX = centerX;
+          const startY = complexY - complexHeight / 2 - arrowLength;
+          
+          // End point: below the complex (matrix side) - symmetric extension
+          const endX = centerX;
+          const endY = complexY + complexHeight / 2 + arrowLength;
+          
+          // Draw straight arrow passing through the center of the complex
+          const arrowPath = `M ${startX} ${startY} L ${endX} ${endY}`;
+          const arrow = etcSubArrowGroup.append('path')
+            .attr('d', arrowPath)
+            .attr('fill', 'none')
+            .attr('stroke', '#4a90e2') // Blue for H+ pumping
+            .attr('stroke-width', 3)
+            .attr('marker-end', 'url(#arrowhead-normal)')
+            .attr('class', 'etc-sub-arrow etc-proton-pump')
+            .style('cursor', 'pointer')
+            .style('pointer-events', 'all')
+            .style('stroke-opacity', 0.8)
+            .on('mouseenter', () => {
+              // Make arrow thicker and more opaque on hover
+              arrow.style('stroke-width', 4).style('stroke-opacity', 1);
+            })
+            .on('mouseleave', () => {
+              // Reset to normal size and opacity
+              arrow.style('stroke-width', 3).style('stroke-opacity', 0.8);
+            })
+            .on('click', (event) => {
+              event.stopPropagation();
+              // Highlight the node when clicking H+ arrow
+              const targetMolecule = reaction.substrate;
+              if (targetMolecule) {
+                this.selectMolecule(targetMolecule, reaction, { skipTabSwitch: false });
+              }
+            });
+          
+          // Helper function to create clickable H+ label
+          const createHPlusLabel = (x, y, text) => {
+            const label = etcSubArrowGroup.append('text')
+              .attr('x', x)
+              .attr('y', y)
+              .attr('text-anchor', 'middle')
+              .attr('font-size', '11px')
+              .attr('font-weight', '500')
+              .attr('fill', '#4a90e2')
+              .style('cursor', 'pointer')
+              .style('pointer-events', 'all')
+              .text(text)
+              .on('click', (event) => {
+                event.stopPropagation();
+                // Select H+ molecule to show detail
+                const hPlusMolecule = {
+                  name: 'H⁺',
+                  formula: 'H⁺',
+                  id: 'h-plus',
+                  description: 'Hydrogen ion (proton). In the electron transport chain, protons are pumped across the inner mitochondrial membrane to create a proton gradient that drives ATP synthesis.'
+                };
+                this.selectMolecule(hPlusMolecule, reaction, { skipTabSwitch: false });
+              });
+            return label;
+          };
+          
+          // Add label on both sides
+          const labelText = `${subArrow.count || ''} H⁺`;
+          // Label at top (start)
+          createHPlusLabel(centerX, startY - 12, labelText);
+          // Label at bottom (end)
+          createHPlusLabel(centerX, endY + 20, labelText);
+            
+        } else if (subArrow.type === 'proton-flow') {
+          // Blue arrow for H+ flow back to matrix through ATP Synthase
+          // Passes through the CENTER of the complex
+          // Direction: bottom to top (reversed from original)
+          // Always centered, not influenced by offsetX (which is for oxidation arrows)
+          const centerX = complexX; // Always use complex center, ignore offsetX
+          const centerY = complexY; // Center of complex
+          
+          // Start point: below the complex (matrix) - symmetric extension
+          const startX = centerX;
+          const startY = complexY + complexHeight / 2 + arrowLength;
+          
+          // End point: above the complex (intermembrane space) - symmetric extension
+          const endX = centerX;
+          const endY = complexY - complexHeight / 2 - arrowLength;
+          
+          // Draw straight arrow passing through the center of the complex
+          const arrowPath = `M ${startX} ${startY} L ${endX} ${endY}`;
+          const arrow = etcSubArrowGroup.append('path')
+            .attr('d', arrowPath)
+            .attr('fill', 'none')
+            .attr('stroke', '#4a90e2') // Blue for H+ flow
+            .attr('stroke-width', 3)
+            .attr('marker-end', 'url(#arrowhead-normal)')
+            .attr('class', 'etc-sub-arrow etc-proton-flow')
+            .style('cursor', 'pointer')
+            .style('pointer-events', 'all')
+            .style('stroke-opacity', 0.8)
+            .on('mouseenter', () => {
+              // Make arrow thicker and more opaque on hover
+              arrow.style('stroke-width', 4).style('stroke-opacity', 1);
+            })
+            .on('mouseleave', () => {
+              // Reset to normal size and opacity
+              arrow.style('stroke-width', 3).style('stroke-opacity', 0.8);
+            })
+            .on('click', (event) => {
+              event.stopPropagation();
+              // Highlight the node when clicking H+ arrow
+              const targetMolecule = reaction.substrate;
+              if (targetMolecule) {
+                this.selectMolecule(targetMolecule, reaction, { skipTabSwitch: false });
+              }
+            });
+          
+          // Helper function to create clickable H+ label
+          const createHPlusLabel = (x, y, text) => {
+            const label = etcSubArrowGroup.append('text')
+              .attr('x', x)
+              .attr('y', y)
+              .attr('text-anchor', 'middle')
+              .attr('font-size', '11px')
+              .attr('font-weight', '500')
+              .attr('fill', '#4a90e2')
+              .style('cursor', 'pointer')
+              .style('pointer-events', 'all')
+              .text(text)
+              .on('click', (event) => {
+                event.stopPropagation();
+                // Select H+ molecule to show detail
+                const hPlusMolecule = {
+                  name: 'H⁺',
+                  formula: 'H⁺',
+                  id: 'h-plus',
+                  description: 'Hydrogen ion (proton). In the electron transport chain, protons flow back through ATP Synthase to drive ATP synthesis.'
+                };
+                this.selectMolecule(hPlusMolecule, reaction, { skipTabSwitch: false });
+              });
+            return label;
+          };
+          
+          // Add label on both sides - text is "3H+"
+          const labelText = '3H⁺';
+          // Label at bottom (start)
+          createHPlusLabel(centerX, startY + 20, labelText);
+          // Label at top (end)
+          createHPlusLabel(centerX, endY - 12, labelText);
+        }
+      });
     });
   }
   
@@ -2885,10 +3402,17 @@ export class MetabolismViewer {
         event.preventDefault();
         // For CAC reactions, select the molecule that's visually displayed on the node
         // (which is the previous reaction's product)
+        // For ETC complexes, always use the substrate from that specific reaction
         // For other reactions, show the substrate
-        const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 2; // +2 for Acetyl-CoA and Lipoamide nodes
+        const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
+        const cacEndIndex = cacStartIndex + citricAcidCycleReactions.length;
+        const etcStartIndex = cacEndIndex;
+        const etcEndIndex = etcStartIndex + electronTransportChainReactions.length;
         const currentIndex = this.reactions.indexOf(d);
-        const isCACReaction = currentIndex >= cacStartIndex;
+        // Check if reaction is within CAC range (not just >= cacStartIndex, which would include ETC)
+        const isCACReaction = currentIndex >= cacStartIndex && currentIndex < cacEndIndex;
+        // Check if reaction is an ETC complex (protein complex in ETC pathway)
+        const isETCComplex = currentIndex >= etcStartIndex && currentIndex < etcEndIndex && d.isProteinComplex;
         
         let molecule;
         if (isCACReaction) {
@@ -2900,10 +3424,29 @@ export class MetabolismViewer {
           const prevReaction = this.reactions[prevCACIndex];
           // Use previous reaction's product (what's actually displayed on this node)
           molecule = prevReaction && prevReaction.product ? prevReaction.product : d.product;
+        } else if (isETCComplex) {
+          // For ETC complexes, always use the substrate from that specific reaction
+          // This ensures we get the correct molecule object from the ETC reaction, not from another pathway
+          // Make sure we have a valid molecule object with all required fields
+          if (d.substrate && typeof d.substrate === 'object') {
+            molecule = {
+              ...d.substrate,
+              // Ensure we have the molecule from this specific ETC reaction
+              // This prevents lookup issues where a molecule with the same name from another pathway might be found
+            };
+          } else {
+            molecule = d.substrate;
+          }
         } else {
           molecule = d.substrate;
         }
-        this.selectMolecule(molecule, d);
+        
+        // Ensure molecule is valid before selecting
+        if (molecule) {
+          this.selectMolecule(molecule, d);
+        } else {
+          console.warn('No molecule found for reaction:', d.name, d);
+        }
       })
       .on('dblclick', (event, d) => {
         event.stopPropagation();
@@ -2938,17 +3481,8 @@ export class MetabolismViewer {
       .attr('stroke', '#2c5f7c')
       .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
     
-    // Reset all highlights
-    this.reactionGroups.selectAll('.reaction-circle')
-      .attr('stroke-width', 2)
-      .attr('stroke', '#2c5f7c')
-      .attr('fill', '#5fa8d3');
-    
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    this.reactionGroups.selectAll('.molecule-image-bg')
-      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
-      .attr('stroke-width', 2)
-      .attr('fill', this.getImageBgColor());
+    // Reset all node highlights using unified function
+    this.resetAllNodeHighlights();
     
     // Reset pathway button highlighting
     this.pathways.forEach(pathway => {
@@ -3126,7 +3660,7 @@ export class MetabolismViewer {
     }
     
     // If not found in product nodes, find where the molecule is visually displayed
-    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 2; // +2 for Acetyl-CoA and Lipoamide nodes
+    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
     
     for (let i = 0; i < this.reactions.length; i++) {
       const reaction = this.reactions[i];
@@ -3162,6 +3696,27 @@ export class MetabolismViewer {
     return null;
   }
   
+  /**
+   * Highlight all arrows representing a reaction
+   * @param {string} reactionNodeId - The nodeId of the reaction
+   * @param {number} strokeWidth - The stroke width for the arrows (default: 4)
+   */
+  highlightReactionArrows(reactionNodeId, strokeWidth = 4) {
+    for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
+      const targetReactionNodeId = arrowData.targetReaction?.nodeId;
+      if (targetReactionNodeId === reactionNodeId) {
+        const arrowElement = this.g.select(`.connection[data-connection-id="${arrowData.connectionId}"]`);
+        if (!arrowElement.empty()) {
+          arrowElement
+            .attr('stroke-width', strokeWidth)
+            .attr('stroke-opacity', 1)
+            .attr('stroke', '#ff6b6b')
+            .attr('marker-end', 'url(#arrowhead-highlighted)');
+        }
+      }
+    }
+  }
+  
   selectReaction(reaction, options = {}) {
     this.selectedReaction = reaction;
     this.selectedMolecule = null;
@@ -3185,22 +3740,7 @@ export class MetabolismViewer {
       .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
     
     // Highlight all arrows representing this reaction
-    // Compare by nodeId to handle cases where reaction objects are different references
-    const reactionNodeId = reaction.nodeId;
-    for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
-      const targetReactionNodeId = arrowData.targetReaction?.nodeId;
-      if (targetReactionNodeId === reactionNodeId) {
-        // Find the arrow element by connection ID
-        const arrowElement = this.g.select(`.connection[data-connection-id="${arrowData.connectionId}"]`);
-        if (!arrowElement.empty()) {
-          arrowElement
-            .attr('stroke-width', 6)
-            .attr('stroke-opacity', 1)
-            .attr('stroke', '#ff6b6b') // Highlight color for selected reaction arrows
-            .attr('marker-end', 'url(#arrowhead-highlighted)'); // Use highlighted arrowhead
-        }
-      }
-    }
+    this.highlightReactionArrows(reaction.nodeId, 6);
     
     this.applyReactionHighlight(reaction);
     
@@ -3229,14 +3769,51 @@ export class MetabolismViewer {
     }
   }
   
-  // Helper function to highlight a node by nodeId with specified color
-  highlightNode(nodeId, colorType = 'product') {
-    const node = this.nodeMap.get(nodeId);
-    if (!node) return;
+  /**
+   * Reset all nodes to their default unhighlighted state
+   * Works for all node types: reaction circles, protein complexes, mobile carriers, and image backgrounds
+   */
+  resetAllNodeHighlights() {
+    // Reset regular reaction circles
+    this.reactionGroups.selectAll('.reaction-circle')
+      .attr('stroke-width', 2)
+      .attr('stroke', '#2c5f7c')
+      .attr('fill', '#5fa8d3');
     
-    // Different colors for reactants vs products
-    // Reactants use the same color as node selection (teal/cyan)
+    // Reset protein complex rectangles (ETC complexes)
+    this.reactionGroups.selectAll('.protein-complex')
+      .attr('stroke-width', 3)
+      .attr('stroke', '#8b6f47')
+      .attr('fill', '#d4a574');
+    
+    // Reset mobile carrier circles (ETC mobile carriers)
+    this.reactionGroups.selectAll('.mobile-carrier')
+      .attr('stroke-width', 2)
+      .attr('stroke', '#8b6f47')
+      .attr('fill', '#d4a574');
+    
+    // Reset image backgrounds
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    this.reactionGroups.selectAll('.molecule-image-bg')
+      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
+      .attr('stroke-width', 2)
+      .attr('fill', this.getImageBgColor());
+  }
+  
+  /**
+   * Apply highlighting styles to a node group based on color type
+   * @param {d3.Selection} nodeGroup - D3 selection of the node group to highlight
+   * @param {string} colorType - 'default' (selection), 'reactant', or 'product'
+   */
+  applyNodeHighlightStyle(nodeGroup, colorType = 'default') {
+    // Color schemes for different highlight types
     const colors = {
+      default: {
+        stroke: '#4ecdc4',  // Teal/cyan - for node selection
+        fill: '#6ee7e7',
+        bgStroke: '#4ecdc4',
+        bgFill: '#f0fdfa'
+      },
       reactant: {
         stroke: '#4ecdc4',  // Teal/cyan - same as node selection color
         fill: '#6ee7e7',
@@ -3247,35 +3824,53 @@ export class MetabolismViewer {
         stroke: '#ff6b6b',  // Red for products
         fill: '#ff8787',
         bgStroke: '#ff6b6b',
-        bgFill: '#fff5f5'
+        bgFill: this.getHighlightImageBgColor()
       }
     };
     
-    const color = colors[colorType] || colors.product;
-    const nodeGroup = this.reactionGroups.filter(d => d === node);
+    const color = colors[colorType] || colors.default;
+    
+    // Apply highlighting to all node types (works for ETC and other pathways)
     nodeGroup.select('.reaction-circle')
       .attr('stroke-width', 4)
       .attr('stroke', color.stroke)
       .attr('fill', color.fill);
+    
+    nodeGroup.select('.protein-complex')
+      .attr('stroke-width', 4)
+      .attr('stroke', color.stroke)
+      .attr('fill', color.fill);
+    
+    nodeGroup.select('.mobile-carrier')
+      .attr('stroke-width', 4)
+      .attr('stroke', color.stroke)
+      .attr('fill', color.fill);
+    
     nodeGroup.select('.molecule-image-bg')
       .attr('stroke', color.bgStroke)
       .attr('stroke-width', 4)
       .attr('fill', color.bgFill);
   }
   
+  /**
+   * Highlight a node by nodeId with specified color type
+   * Works for all pathways (ETC and others) and all node types
+   * @param {string} nodeId - The nodeId to highlight
+   * @param {string} colorType - 'default' (selection), 'reactant', or 'product'
+   */
+  highlightNode(nodeId, colorType = 'product') {
+    const node = this.nodeMap.get(nodeId);
+    if (!node) return;
+    
+    const nodeGroup = this.reactionGroups.filter(d => d === node);
+    this.applyNodeHighlightStyle(nodeGroup, colorType);
+  }
+  
   applyReactionHighlight(reaction) {
-    // Reset all highlights
-    this.reactionGroups.selectAll('.reaction-circle')
-      .attr('stroke-width', 2)
-      .attr('stroke', '#2c5f7c')
-      .attr('fill', '#5fa8d3');
+    // Reset all node highlights using unified function
+    this.resetAllNodeHighlights();
     
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    this.reactionGroups.selectAll('.molecule-image-bg')
-      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
-      .attr('stroke-width', 2)
-      .attr('fill', this.getImageBgColor());
-    
+    // Reset arrow connections
     this.g.selectAll('.connection')
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7);
@@ -3302,22 +3897,66 @@ export class MetabolismViewer {
         const reactantMoleculeId = data.reactantMoleculeId;
         
         if (reactantMoleculeId) {
-          // Check if reactant is displayed on fromNode (as substrate)
+          // Check if reactant is displayed on fromNode (as substrate or byreactant)
           if (fromNode) {
             const fromNodeSubstrateId = fromNode.substrate?.id;
+            const fromNodeByreactant = fromNode.byreactant;
+            
+            // For ETC complexes: if reactantMoleculeId matches the complex substrate ID, highlight the complex node
+            // This handles cases where the arrow's reactant is the complex itself (e.g., 'complex_i', 'complex_ii')
             if (fromNodeSubstrateId === reactantMoleculeId) {
               if (!excludedReactants.has(fromNodeSubstrateId)) {
                 reactantNodeIds.add(data.fromNodeId);
               }
             }
+            // Check if reactant matches byreactant (for cases where NADH/FADH₂ are the reactants)
+            // Handle case-insensitive comparison and normalize molecule names
+            else if (fromNodeByreactant) {
+              const byreactantArray = Array.isArray(fromNodeByreactant) ? fromNodeByreactant : [fromNodeByreactant];
+              const normalizedReactantId = reactantMoleculeId.toLowerCase();
+              const matchesByreactant = byreactantArray.some(br => {
+                const normalizedBr = typeof br === 'string' ? br.toLowerCase() : br;
+                return normalizedBr === normalizedReactantId || 
+                       normalizedBr === reactantMoleculeId ||
+                       br === reactantMoleculeId;
+              });
+              if (matchesByreactant) {
+                if (!excludedReactants.has(reactantMoleculeId)) {
+                  reactantNodeIds.add(data.fromNodeId);
+                }
+              }
+            }
+            // Fallback: for ETC complexes, if this is the fromNode and no other match, highlight it
+            else if (fromNode.isProteinComplex && fromNode.nodeId === data.fromNodeId) {
+              reactantNodeIds.add(data.fromNodeId);
+            }
           }
           
-          // Check if reactant is displayed on toNode (as substrate - for cases like Step 10→11 where Step 11 consumes pyruvate)
+          // Check if reactant is displayed on toNode (as substrate or byreactant)
           if (toNode) {
             const toNodeSubstrateId = toNode.substrate?.id;
+            const toNodeByreactant = toNode.byreactant;
+            // Check if reactant matches substrate
             if (toNodeSubstrateId === reactantMoleculeId) {
               if (!excludedReactants.has(toNodeSubstrateId)) {
                 reactantNodeIds.add(data.toNodeId);
+              }
+            }
+            // Check if reactant matches byreactant
+            // Handle case-insensitive comparison and normalize molecule names
+            else if (toNodeByreactant) {
+              const byreactantArray = Array.isArray(toNodeByreactant) ? toNodeByreactant : [toNodeByreactant];
+              const normalizedReactantId = reactantMoleculeId.toLowerCase();
+              const matchesByreactant = byreactantArray.some(br => {
+                const normalizedBr = typeof br === 'string' ? br.toLowerCase() : br;
+                return normalizedBr === normalizedReactantId || 
+                       normalizedBr === reactantMoleculeId ||
+                       br === reactantMoleculeId;
+              });
+              if (matchesByreactant) {
+                if (!excludedReactants.has(reactantMoleculeId)) {
+                  reactantNodeIds.add(data.toNodeId);
+                }
               }
             }
           }
@@ -3370,7 +4009,7 @@ export class MetabolismViewer {
     // Special handling for CAC Step 1 (Citrate Formation) - Step 15
     // For CAC reactions, nodes display the previous reaction's product, not the substrate
     // So we need to ensure Step 15 node (displaying Oxaloacetate) is highlighted as reactant
-    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 2; // +2 for Acetyl-CoA and Lipoamide nodes
+    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
     const isCACStep1 = reaction.step === 15 && this.reactions.indexOf(reaction) === cacStartIndex;
     
     if (isCACStep1) {
@@ -3449,20 +4088,7 @@ export class MetabolismViewer {
         this.applyReactionHighlight(sourceReaction);
         
         // Re-highlight the reaction arrows (selectMolecule resets them)
-        const reactionNodeId = sourceReaction.nodeId;
-        for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
-          const targetReactionNodeId = arrowData.targetReaction?.nodeId;
-          if (targetReactionNodeId === reactionNodeId) {
-            const arrowElement = this.g.select(`.connection[data-connection-id="${arrowData.connectionId}"]`);
-            if (!arrowElement.empty()) {
-              arrowElement
-                .attr('stroke-width', 4) // Keep same size, don't make bigger
-                .attr('stroke-opacity', 1)
-                .attr('stroke', '#ff6b6b')
-                .attr('marker-end', 'url(#arrowhead-highlighted)');
-            }
-          }
-        }
+        this.highlightReactionArrows(sourceReaction.nodeId, 4);
         
         return;
       }
@@ -3549,15 +4175,32 @@ export class MetabolismViewer {
         }
       }
       
-      // Check byproduct - handle both name and molecules array formats
+      // Check byproduct - handle string, array, name, and molecules array formats
       if (sourceReaction.byproduct) {
         let byproductMatches = false;
         let byproductName = null;
         let byproductFormula = '';
         let byproductId = null;
         
+        // Check if byproduct is a string (e.g., 'NAD⁺')
+        if (typeof sourceReaction.byproduct === 'string' && sourceReaction.byproduct.trim() !== '') {
+          if (sourceReaction.byproduct === moleculeName) {
+            byproductMatches = true;
+            byproductName = sourceReaction.byproduct;
+          }
+        }
+        // Check if byproduct is an array
+        else if (Array.isArray(sourceReaction.byproduct)) {
+          const matchingMolecule = sourceReaction.byproduct.find(m => 
+            m === moleculeName || (typeof m === 'string' && m.trim() === moleculeName)
+          );
+          if (matchingMolecule) {
+            byproductMatches = true;
+            byproductName = typeof matchingMolecule === 'string' ? matchingMolecule : moleculeName;
+          }
+        }
         // Check if byproduct has molecules array
-        if (sourceReaction.byproduct.molecules) {
+        else if (sourceReaction.byproduct.molecules) {
           const molecules = Array.isArray(sourceReaction.byproduct.molecules) 
             ? sourceReaction.byproduct.molecules 
             : [sourceReaction.byproduct.molecules];
@@ -3568,7 +4211,9 @@ export class MetabolismViewer {
             byproductMatches = true;
             byproductName = typeof matchingMolecule === 'string' ? matchingMolecule : moleculeName;
           }
-        } else if (sourceReaction.byproduct.name === moleculeName || 
+        } 
+        // Check if byproduct has name property (object format)
+        else if (sourceReaction.byproduct.name === moleculeName || 
                    (moleculeId && sourceReaction.byproduct.id === moleculeId)) {
           byproductMatches = true;
           byproductName = sourceReaction.byproduct.name;
@@ -3637,20 +4282,7 @@ export class MetabolismViewer {
           this.applyReactionHighlight(sourceReaction);
           
           // Re-highlight the reaction arrows (selectMolecule resets them)
-          const reactionNodeId = sourceReaction.nodeId;
-          for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
-            const targetReactionNodeId = arrowData.targetReaction?.nodeId;
-            if (targetReactionNodeId === reactionNodeId) {
-              const arrowElement = this.g.select(`.connection[data-connection-id="${arrowData.connectionId}"]`);
-              if (!arrowElement.empty()) {
-                arrowElement
-                  .attr('stroke-width', 6)
-                  .attr('stroke-opacity', 1)
-                  .attr('stroke', '#ff6b6b')
-                  .attr('marker-end', 'url(#arrowhead-highlighted)');
-              }
-            }
-          }
+          this.highlightReactionArrows(sourceReaction.nodeId, 6);
           
           return;
         }
@@ -3674,7 +4306,7 @@ export class MetabolismViewer {
     // If not found in product nodes, find where the molecule is visually displayed
     if (!targetReaction) {
       // Calculate CAC start index
-      const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 2; // +2 for Acetyl-CoA and Lipoamide nodes
+      const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
       
       for (let i = 0; i < this.reactions.length; i++) {
         const reaction = this.reactions[i];
@@ -3942,16 +4574,7 @@ export class MetabolismViewer {
           }
           
           // Reset all node highlighting to avoid highlighting unrelated molecules
-          this.reactionGroups.selectAll('.reaction-circle')
-            .attr('stroke-width', 2)
-            .attr('stroke', '#2c5f7c')
-            .attr('fill', '#5fa8d3');
-          
-          const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-          this.reactionGroups.selectAll('.molecule-image-bg')
-            .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
-            .attr('stroke-width', 2)
-            .attr('fill', this.getImageBgColor());
+          this.resetAllNodeHighlights();
           
           // Dispatch custom event for molecule detail view
           const detailEvent = new CustomEvent('molecule-selected', {
@@ -4245,34 +4868,19 @@ export class MetabolismViewer {
     }
   }
   
+  /**
+   * Apply molecule highlight - highlights only the selected node
+   * Works for all pathways (ETC and others) and all node types
+   * @param {Object} molecule - The molecule object (not used for highlighting, but kept for API consistency)
+   * @param {Object} reactionNode - The reaction node to highlight
+   */
   applyMoleculeHighlight(molecule, reactionNode) {
-    // Remove previous selection - reset all nodes to original style
-    this.reactionGroups.selectAll('.reaction-circle')
-      .attr('stroke-width', 2)
-      .attr('stroke', '#2c5f7c')
-      .attr('fill', '#5fa8d3');
+    // Reset all nodes to default state (clears any previous product/reactant highlights)
+    this.resetAllNodeHighlights();
     
-    // Reset image backgrounds
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    this.reactionGroups.selectAll('.molecule-image-bg')
-      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
-      .attr('stroke-width', 2)
-      .attr('fill', this.getImageBgColor());
-    
-    // Always highlight the clicked node itself (the molecule selected is what's displayed on that node)
+    // Highlight only the selected node using unified function
     const selectedGroup = this.reactionGroups.filter(d => d === reactionNode);
-    
-    // Highlight circle (if visible)
-    selectedGroup.select('.reaction-circle')
-      .attr('stroke-width', 4)
-      .attr('stroke', '#4ecdc4')
-      .attr('fill', '#6ee7e7');
-    
-    // Highlight image background (if visible)
-    selectedGroup.select('.molecule-image-bg')
-      .attr('stroke', '#4ecdc4')
-      .attr('stroke-width', 4)
-      .attr('fill', '#f0fdfa');
+    this.applyNodeHighlightStyle(selectedGroup, 'default');
   }
   
   zoomToReaction(reaction) {
@@ -4369,7 +4977,7 @@ export class MetabolismViewer {
   async fetchMoleculeImages() {
     // Fetch PubChem data for all molecules to get image URLs
     const uniqueMolecules = new Map();
-    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + 2; // +2 for Acetyl-CoA and Lipoamide nodes
+    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
     const cacLength = citricAcidCycleReactions.length;
     
     this.reactions.forEach((reaction, index) => {
@@ -4393,14 +5001,26 @@ export class MetabolismViewer {
     // Fetch images for each unique molecule
     for (const [id, molecule] of uniqueMolecules) {
       try {
-        // Use shared utility that handles normalization and alternatives
-        const pubchemData = await fetchPubChemData(molecule.name, this.pubchemDataCache);
+        let imageUrl = null;
         
-        if (pubchemData && pubchemData.image2DUrlSmall) {
-          this.moleculeImages.set(id, pubchemData.image2DUrlSmall);
+        // Check if molecule already has an imageUrl (e.g., from Wikipedia for complexes)
+        if (molecule.imageUrl) {
+          imageUrl = molecule.imageUrl;
+        } else {
+          // Use shared utility that handles normalization and alternatives
+          const pubchemData = await fetchPubChemData(molecule.name, this.pubchemDataCache);
           
-          // Update all nodes that use this molecule
+          if (pubchemData && pubchemData.image2DUrlSmall) {
+            imageUrl = pubchemData.image2DUrlSmall;
+          }
+        }
+        
+        if (imageUrl) {
+          this.moleculeImages.set(id, imageUrl);
+          
+          // Update all nodes on the map that use this molecule
           // For CAC reactions, check if they should display this molecule (previous reaction's product)
+          // For ETC and other reactions, use the substrate molecule
           const reactions = this.reactions;
           this.reactionGroups.each(function(d) {
             const reactionIndex = reactions.indexOf(d);
@@ -4412,12 +5032,14 @@ export class MetabolismViewer {
               const prevReaction = reactions[prevCACIndex];
               displayMolecule = prevReaction && prevReaction.product ? prevReaction.product : d.product;
             } else {
+              // For ETC and other pathways, display the substrate molecule
               displayMolecule = d.substrate;
             }
             
+            // Update the image on the map node if this molecule matches
             if (displayMolecule && displayMolecule.id === id) {
               d3.select(this).select('.molecule-structure-image')
-                .attr('href', pubchemData.image2DUrlSmall);
+                .attr('href', imageUrl);
             }
           });
         }

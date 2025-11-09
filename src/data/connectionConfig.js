@@ -123,6 +123,145 @@ export const connectionConfig = {
       connectionId: 'cac-cycle',
       targetReactionStep: 22 // Step 22 (Malate Oxidation)
     }
+  },
+  
+  // Electron transport chain connections
+  electronTransportChain: {
+    // NADH from glycolysis (step 6) to ETC Complex I (step 23)
+    glycolysisNadhToEtc: {
+      type: 'pathway-transition',
+      fromPathway: 'glycolysis',
+      fromStep: 6,
+      toPathway: 'electron-transport-chain',
+      toStep: 1,
+      coords: { x1: 100, y1: 700, x2: 193, y2: 2621 }, // From glycolysis step 6 to ETC Complex I
+      reactantId: 'nadh',
+      productId: 'nadh',
+      connectionId: 'glycolysis-nadh-to-etc',
+      targetReactionStep: 6 // Glycolysis step 6 produces NADH
+    },
+    // NADH from pyruvate oxidation (step 14) to ETC Complex I
+    pyruvateNadhToEtc: {
+      type: 'pathway-transition',
+      fromPathway: 'pyruvate-oxidation',
+      fromStep: 4,
+      toPathway: 'electron-transport-chain',
+      toStep: 1,
+      coords: { x1: 250, y1: 1825, x2: 193, y2: 2621 }, // From pyruvate oxidation step 4 to ETC Complex I
+      reactantId: 'nadh',
+      productId: 'nadh',
+      connectionId: 'pyruvate-nadh-to-etc',
+      targetReactionStep: 14 // Pyruvate oxidation step 4 produces NADH
+    },
+    // NADH from citric acid cycle step 3 (isocitrate oxidation, step 17) to ETC Complex I
+    cacNadh1ToEtc: {
+      type: 'pathway-transition',
+      fromPathway: 'citric-acid-cycle',
+      fromStep: 3,
+      toPathway: 'electron-transport-chain',
+      toStep: 1,
+      coords: { x1: 418, y1: 2050, x2: -57, y2: 2671 }, // From CAC step 3 to ETC Complex I
+      reactantId: 'nadh',
+      productId: 'nadh',
+      connectionId: 'cac-nadh1-to-etc',
+      targetReactionStep: 17 // CAC step 3 produces NADH
+    },
+    // NADH from citric acid cycle step 4 (alpha-ketoglutarate oxidation, step 18) to ETC Complex I
+    cacNadh2ToEtc: {
+      type: 'pathway-transition',
+      fromPathway: 'citric-acid-cycle',
+      fromStep: 4,
+      toPathway: 'electron-transport-chain',
+      toStep: 1,
+      coords: { x1: 484, y1: 2209, x2: -57, y2: 2671 }, // From CAC step 4 to ETC Complex I
+      reactantId: 'nadh',
+      productId: 'nadh',
+      connectionId: 'cac-nadh2-to-etc',
+      targetReactionStep: 18 // CAC step 4 produces NADH
+    },
+    // NADH from citric acid cycle step 8 (malate oxidation, step 22) to ETC Complex I
+    cacNadh3ToEtc: {
+      type: 'pathway-transition',
+      fromPathway: 'citric-acid-cycle',
+      fromStep: 8,
+      toPathway: 'electron-transport-chain',
+      toStep: 1,
+      coords: { x1: 34, y1: 2209, x2: -57, y2: 2671 }, // From CAC step 8 to ETC Complex I
+      reactantId: 'nadh',
+      productId: 'nadh',
+      connectionId: 'cac-nadh3-to-etc',
+      targetReactionStep: 22 // CAC step 8 produces NADH
+    },
+    // FADH2 from citric acid cycle step 6 (succinate oxidation, step 20) to ETC Complex II
+    cacFadh2ToEtc: {
+      type: 'pathway-transition',
+      fromPathway: 'citric-acid-cycle',
+      fromStep: 6,
+      toPathway: 'electron-transport-chain',
+      toStep: 2,
+      coords: { x1: 259, y1: 2434, x2: 93, y2: 2571 }, // From CAC step 6 to ETC Complex II
+      reactantId: 'fadh2',
+      productId: 'fadh2',
+      connectionId: 'cac-fadh2-to-etc',
+      targetReactionStep: 20 // CAC step 6 produces FADH2
+    },
+    // Sequential flow through ETC: Complex I → CoQ
+    etcComplex1ToCoQ: {
+      type: 'explicit',
+      fromStep: 1,
+      toStep: 3,
+      coords: { x1: -17, y1: 2671, x2: 223, y2: 2671 }, // Horizontal flow - ends at CoQ surface (radius 20)
+      reactantId: 'ubiquinol',
+      productId: 'ubiquinol',
+      connectionId: 'etc-complex1-to-coq',
+      targetReactionStep: 23 // ETC Complex I
+    },
+    // Complex II → CoQ
+    etcComplex2ToCoQ: {
+      type: 'explicit',
+      fromStep: 2,
+      toStep: 3,
+      coords: { x1: 133, y1: 2571, x2: 223, y2: 2671 }, // Flow - ends at CoQ surface (radius 20)
+      reactantId: 'ubiquinol',
+      productId: 'ubiquinol',
+      connectionId: 'etc-complex2-to-coq',
+      targetReactionStep: 24 // ETC Complex II
+    },
+    // CoQ → Complex III
+    etcCoQToComplex3: {
+      type: 'explicit',
+      fromStep: 3,
+      toStep: 4,
+      coords: { x1: 263, y1: 2671, x2: 393, y2: 2671 }, // Horizontal flow
+      reactantId: 'ubiquinol',
+      productId: 'ubiquinol',
+      connectionId: 'etc-coq-to-complex3',
+      targetReactionStep: 25 // CoQ
+    },
+    // Complex III → Cyt c
+    etcComplex3ToCytC: {
+      type: 'explicit',
+      fromStep: 4,
+      toStep: 5,
+      coords: { x1: 433, y1: 2671, x2: 543, y2: 2671 }, // Horizontal flow
+      reactantId: 'cytochrome_c_reduced',
+      productId: 'cytochrome_c_reduced',
+      connectionId: 'etc-complex3-to-cyt-c',
+      targetReactionStep: 26 // ETC Complex III
+    },
+    // Cyt c → Complex IV
+    etcCytCToComplex4: {
+      type: 'explicit',
+      fromStep: 5,
+      toStep: 6,
+      coords: { x1: 563, y1: 2671, x2: 693, y2: 2671 }, // Horizontal flow
+      reactantId: 'cytochrome_c_reduced',
+      productId: 'cytochrome_c_reduced',
+      connectionId: 'etc-cyt-c-to-complex4',
+      targetReactionStep: 27 // Cyt c
+    },
+    // Note: ATP Synthase is independent - no direct connection from Complex IV
+    // It uses the H+ gradient created by Complexes I, III, and IV
   }
 };
 

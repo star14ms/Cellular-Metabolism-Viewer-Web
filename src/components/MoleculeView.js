@@ -6,6 +6,19 @@
 
 import { fetchAndDisplayPubChem } from '../utils/pubchemHelpers.js';
 
+/**
+ * Remove coefficients from molecule names (e.g., "1/2 O₂" → "O₂", "2 H⁺" → "H⁺")
+ * @param {string} moleculeName - The molecule name that may contain coefficients
+ * @returns {string} - The molecule name without coefficients
+ */
+function removeCoefficients(moleculeName) {
+  if (!moleculeName || typeof moleculeName !== 'string') return moleculeName;
+  
+  // Remove patterns like "1/2 ", "2 ", "3 ", etc. at the start
+  // Also handle fractional coefficients like "1/2", "3/2", etc.
+  return moleculeName.replace(/^(\d+\/\d+|\d+)\s+/, '').trim();
+}
+
 export class MoleculeView {
   constructor(container) {
     this.container = container;
@@ -22,15 +35,18 @@ export class MoleculeView {
     
     this.currentMolecule = molecule;
     
+    // Remove coefficients for display
+    const displayName = removeCoefficients(molecule.name);
+    
     const html = `
       <div class="molecule-detail">
         <div class="detail-header">
-          <h2>${molecule.name}</h2>
+          <h2>${displayName}</h2>
         </div>
         
         <div class="detail-section">
           <div class="molecule-info" id="molecule-info">
-            <div class="molecule-name">${molecule.name}</div>
+            <div class="molecule-name">${displayName}</div>
             ${molecule.formula ? `<div class="molecule-formula">${molecule.formula}</div>` : ''}
             ${molecule.description ? `<div class="molecule-description">${molecule.description}</div>` : ''}
             ${molecule.smiles ? `
@@ -56,7 +72,9 @@ export class MoleculeView {
   }
   
   async fetchPubChemData(moleculeName) {
-    await fetchAndDisplayPubChem(moleculeName, 'molecule-info', this.pubchemCache);
+    // Remove coefficients before searching PubChem
+    const searchName = removeCoefficients(moleculeName);
+    await fetchAndDisplayPubChem(searchName, 'molecule-info', this.pubchemCache);
   }
   
   renderStructure(molecule) {

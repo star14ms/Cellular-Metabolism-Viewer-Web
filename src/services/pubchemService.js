@@ -68,17 +68,34 @@ export async function fetchCompoundByName(compoundName) {
         const cidResponse = await fetch(cidUrl);
         
         if (!cidResponse.ok) {
+          console.warn(`PubChem API returned ${cidResponse.status} for "${name}"`);
           // Try next variation
           continue;
         }
         
         const cidData = await cidResponse.json();
-        cid = cidData.IdentifierList?.CID?.[0];
         
-        if (cid) {
+        // Check for error response
+        if (cidData.Fault) {
+          console.warn(`PubChem API error for "${name}":`, cidData.Fault.Message);
+          continue; // Try next variation
+        }
+        
+        // PubChem API returns: { "IdentifierList": { "CID": [12345, 67890, ...] } }
+        // Use the first CID from the array (first result, most relevant)
+        const cids = cidData?.IdentifierList?.CID;
+        
+        if (cids && Array.isArray(cids) && cids.length > 0) {
+          // Use the first result (index 0) - this is the first/most relevant result from PubChem
+          // For "Cytochrome c", this should be CID 16057918
+          cid = cids[0];
+          console.log(`✓ Found ${cids.length} PubChem result(s) for "${name}", using first result (CID: ${cid})`);
           break; // Found a valid CID
+        } else {
+          console.warn(`No CIDs found in response for "${name}". Response:`, JSON.stringify(cidData, null, 2));
         }
       } catch (error) {
+        console.warn(`Error fetching CID for "${name}":`, error);
         lastError = error;
         continue; // Try next variation
       }
