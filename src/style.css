@@ -363,6 +363,10 @@ body {
   opacity: 0.85;
 }
 
+.clickable-molecule {
+  cursor: pointer;
+}
+
 .clickable-molecule:hover {
   background: var(--border-color-light);
   border-color: #667eea;
@@ -921,14 +925,14 @@ body {
 .h-plus-label {
   font-size: 11px;
   font-weight: 500;
-  fill: #4a90e2;
+  fill: #ff6b6b;
   cursor: pointer;
   pointer-events: all;
   transition: fill 0.2s ease;
 }
 
 .h-plus-label:hover {
-  fill: #2c5aa0;
+  fill: #e74c3c;
 }
 
 /* SVG container styles */

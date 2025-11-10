@@ -11,7 +11,7 @@
 export const electronTransportChainReactions = [
   {
     step: 1,
-    name: 'Complex I: NADH Dehydrogenase',
+    name: 'Transporting Electron from NADH to Ubiquinone',
     substrate: {
       id: 'complex_i',
       name: 'Complex I: NADH Dehydrogenase',
@@ -66,7 +66,7 @@ export const electronTransportChainReactions = [
   },
   {
     step: 2,
-    name: 'Complex II: Succinate Dehydrogenase',
+    name: 'Transporting Electron from FADH₂ to Ubiquinone',
     substrate: {
       id: 'complex_ii',
       name: 'Complex II: Succinate Dehydrogenase',
@@ -114,7 +114,7 @@ export const electronTransportChainReactions = [
   },
   {
     step: 3,
-    name: 'Coenzyme Q (CoQ)',
+    name: 'Transporting Electron from Ubiquinol to Complex III',
     substrate: {
       id: 'coenzyme_q',
       name: 'Coenzyme Q (Ubiquinone/Ubiquinol)',
@@ -153,7 +153,7 @@ export const electronTransportChainReactions = [
   },
   {
     step: 4,
-    name: 'Complex III: Cytochrome bc₁ Complex',
+    name: 'Transporting Electron from Complex III to Cytochrome c',
     substrate: {
       id: 'complex_iii',
       name: 'Complex III: Cytochrome bc₁ Complex',
@@ -206,7 +206,7 @@ export const electronTransportChainReactions = [
   },
   {
     step: 5,
-    name: 'Cytochrome c (Cyt c)',
+    name: 'Transporting Electron from Cytochrome c to Complex IV',
     substrate: {
       id: 'cytochrome_c',
       name: 'Cytochrome c',
@@ -245,7 +245,7 @@ export const electronTransportChainReactions = [
   },
   {
     step: 6,
-    name: 'Complex IV: Cytochrome c Oxidase',
+    name: 'Transporting Electron from Cytochrome c to O₂',
     substrate: {
       id: 'complex_iv',
       name: 'Complex IV: Cytochrome c Oxidase',

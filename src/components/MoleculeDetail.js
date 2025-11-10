@@ -42,9 +42,10 @@ export class ReactionDetail {
     this.currentReaction = reaction;
     
     // Check if by-molecule arrows start from node (not from midpoint)
-    // This happens for ETC complexes where arrows attach directly to the complex
-    // We can detect this by checking if it's a protein complex with ETC-specific properties
-    const arrowsStartFromNode = reaction.isProteinComplex && (reaction.complexNumber || reaction.etcSubArrows);
+    // This happens for enzyme/carrier nodes where arrows attach directly to the node
+    // We can detect this by checking if it's a protein complex or mobile carrier
+    const arrowsStartFromNode = reaction.isProteinComplex === true || reaction.isMobileCarrier === true;
+    const isEnzymeOrCarrierNode = arrowsStartFromNode; // Same check - used for section title
     
     const html = `
       <div class="reaction-detail">
@@ -53,7 +54,7 @@ export class ReactionDetail {
         </div>
         
         <div class="detail-section">
-          <h3>Substrate → Product</h3>
+          <h3>${isEnzymeOrCarrierNode ? 'Departure → Destination' : 'Substrate → Product'}</h3>
           <div class="reaction-flow">
             <div class="reaction-reactants">
               <div class="reaction-molecule clickable-molecule" 

@@ -137,9 +137,10 @@ if (!app) {
       const reactionView = new ReactionDetail(reactionContainer)
       const pathwayView = new PathwayDetail(pathwayContainer)
       
-      // Set viewer container reference for pathway view and reaction view to enable selection
+      // Set viewer container reference for pathway view, reaction view, and molecule view to enable selection
       pathwayView.setViewerContainer(viewerContainer)
       reactionView.setViewerContainer(viewerContainer)
+      moleculeView.setViewerContainer(viewerContainer)
 
       // Tab switching
       const tabs = document.querySelectorAll('.detail-tab')
@@ -313,9 +314,11 @@ if (!app) {
       viewerContainer.addEventListener('molecule-selected', (event) => {
         const moleculeData = event.detail;
         const molecule = moleculeData.molecule || moleculeData; // Handle both old and new format
+        const reactionNode = moleculeData.reactionNode || null; // Get reaction node for complex nodes
         const skipTabSwitch = moleculeData.skipTabSwitch || false;
+        const isDirectNodeClick = moleculeData.isDirectNodeClick !== false; // Default to true for backward compatibility
         
-        moleculeView.render(molecule)
+        moleculeView.render(molecule, reactionNode, isDirectNodeClick)
         
         // Clear reaction tab by default when selecting a molecule
         // Only keep it if the molecule is directly related to the current reaction

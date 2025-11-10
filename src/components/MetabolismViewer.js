@@ -24,6 +24,15 @@ import {
   createSecondaryArrowFromMidpoint
 } from './MultiProductHandler.js';
 
+// Helper function to remove coefficients from molecule names
+function removeCoefficients(moleculeName) {
+  if (!moleculeName || typeof moleculeName !== 'string') return moleculeName;
+  
+  // Remove patterns like "1/2 ", "2 ", "3 ", etc. at the start
+  // Also handle fractional coefficients like "1/2", "3/2", etc.
+  return moleculeName.replace(/^(\d+\/\d+|\d+)\s+/, '').trim();
+}
+
 export class MetabolismViewer {
   constructor(container, options = {}) {
     this.container = container;
@@ -1074,7 +1083,7 @@ export class MetabolismViewer {
       .attr('d', 'M0,-5L10,0L0,5')
       .attr('fill', '#ff6b6b');
     
-    // Add arrow marker for ETC H+ arrows (normal size, blue color)
+    // Add arrow marker for ETC H+ arrows (normal size, red color)
     defs.append('marker')
       .attr('id', 'arrowhead-normal')
       .attr('viewBox', '0 -5 10 10')
@@ -1085,7 +1094,7 @@ export class MetabolismViewer {
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#4a90e2');
+      .attr('fill', '#ff6b6b');
     
     // Draw arrows between reactions
     // Filter out special cases:
@@ -1927,6 +1936,18 @@ export class MetabolismViewer {
   }
   
   /**
+   * Check if a reaction node represents an enzyme/carrier (not a substrate/product)
+   * This includes protein complexes and mobile carriers
+   * @param {Object} reaction - The reaction node to check
+   * @returns {boolean} - True if the node represents an enzyme/carrier
+   */
+  isEnzymeOrCarrierNode(reaction) {
+    if (!reaction) return false;
+    // Check if it's a protein complex or mobile carrier
+    return reaction.isProteinComplex === true || reaction.isMobileCarrier === true;
+  }
+  
+  /**
    * Draw U-shaped arrows for byreactants and byproducts
    * These arrows are attached to the main reaction arrows
    */
@@ -2007,21 +2028,24 @@ export class MetabolismViewer {
       const mainArrow = findMainArrow(reaction);
       let coords, dx, dy, arrowLength, arrowAngle, midX, midY;
       
-      // Special handling for ETC complexes - attach arrows directly to complex
-      const isETCComplex = pathway === 'electron-transport-chain' && reaction.isProteinComplex;
+      // Check if this is an enzyme/carrier node (generalized check)
+      const isEnzymeOrCarrier = this.isEnzymeOrCarrierNode(reaction);
       let attachmentPointX, attachmentPointY;
       
       if (!mainArrow || !mainArrow.coords) {
-        // For ETC complexes, if no main arrow found, attach directly to complex
-        if (isETCComplex) {
-          // Use complex position as attachment point
+        // For enzyme/carrier nodes, if no main arrow found, attach directly to node
+        if (isEnzymeOrCarrier) {
+          // Use node position as attachment point
           attachmentPointX = reaction.position.x;
           attachmentPointY = reaction.position.y;
           // Create a virtual horizontal arrow for calculations (but we'll use attachment point)
+          // Use appropriate size based on node type
+          const nodeWidth = reaction.isProteinComplex ? (reaction.complexSize?.width || 80) : 
+                           (reaction.isMobileCarrier ? 40 : 60);
           coords = {
-            x1: reaction.position.x - 40,
+            x1: reaction.position.x - nodeWidth / 2,
             y1: reaction.position.y,
-            x2: reaction.position.x + 40,
+            x2: reaction.position.x + nodeWidth / 2,
             y2: reaction.position.y
           };
         } else {
@@ -2031,12 +2055,12 @@ export class MetabolismViewer {
       } else {
         // Normal path: use the found main arrow
         coords = mainArrow.coords;
-        // For ETC complexes, still use complex position as attachment point even if main arrow exists
-        if (isETCComplex) {
+        // For enzyme/carrier nodes, use node position as attachment point even if main arrow exists
+        if (isEnzymeOrCarrier) {
           attachmentPointX = reaction.position.x;
           attachmentPointY = reaction.position.y;
         } else {
-          attachmentPointX = null; // Will use midpoint for non-ETC
+          attachmentPointX = null; // Will use midpoint for regular reactions
           attachmentPointY = null;
         }
       }
@@ -2065,20 +2089,27 @@ export class MetabolismViewer {
       let perpAngle = basePerpAngle + baseRotationAngle;
       
       // Calculate midpoint of the arrow (needed for offset calculation)
-      // For ETC complexes, use attachment point (complex position) instead of midpoint
-      if (isETCComplex && attachmentPointX !== null) {
-        // For ETC complexes, start arrows from the surface of the complex, not the center
+      // For enzyme/carrier nodes, use attachment point (node position) instead of midpoint
+      if (isEnzymeOrCarrier && attachmentPointX !== null) {
+        // For enzyme/carrier nodes, start arrows from the surface of the node, not the center
         // Calculate the direction the arrow will curve (perpendicular to main arrow)
-        const complexSize = reaction.complexSize || { width: 80, height: 60 };
+        let nodeSize;
+        if (reaction.isProteinComplex) {
+          nodeSize = reaction.complexSize || { width: 80, height: 60 };
+        } else if (reaction.isMobileCarrier) {
+          nodeSize = { width: 40, height: 40 }; // Circle with radius 20
+        } else {
+          nodeSize = { width: 60, height: 60 }; // Default circle with radius 30
+        }
         // Calculate distance from center to edge in the perpendicular direction
         // For a rounded rectangle, use half the width/height depending on angle
         const angleToX = Math.abs(Math.cos(perpAngle));
         const angleToY = Math.abs(Math.sin(perpAngle));
-        const halfWidth = complexSize.width / 2;
-        const halfHeight = complexSize.height / 2;
+        const halfWidth = nodeSize.width / 2;
+        const halfHeight = nodeSize.height / 2;
         // Approximate distance to edge (ellipse approximation)
         const edgeDistance = Math.sqrt((halfWidth * angleToX) ** 2 + (halfHeight * angleToY) ** 2);
-        // Start from complex surface in the direction the arrow will curve
+        // Start from node surface in the direction the arrow will curve
         midX = attachmentPointX + edgeDistance * Math.cos(perpAngle);
         midY = attachmentPointY + edgeDistance * Math.sin(perpAngle);
       } else {
@@ -2570,6 +2601,7 @@ export class MetabolismViewer {
             event.stopPropagation();
             // If arrow starts from a node (not from midpoint), highlight the node instead of the reaction
             // Check if arrow starts from node: attachmentPointX is set (means we're using node position, not midpoint)
+            // This happens for enzyme/carrier nodes
             const startsFromNode = attachmentPointX !== null;
             if (startsFromNode) {
               // Select the molecule/node when clicking arrow that starts from node
@@ -2623,23 +2655,15 @@ export class MetabolismViewer {
             .text(molecule)
             .on('click', (event) => {
               event.stopPropagation();
-              // If arrow starts from a node (not from midpoint), highlight the node instead of the molecule
-              // Check if arrow starts from node: attachmentPointX is set (means we're using node position, not midpoint)
+              // Always select the by-molecule when clicking its label, regardless of where arrow starts
+              // If arrow starts from node, skip zoom but still show by-molecule details
               const startsFromNode = attachmentPointX !== null;
-              if (startsFromNode) {
-                // Select the node when clicking label on arrow that starts from node
-                const targetMolecule = reaction.substrate;
-                if (targetMolecule) {
-                  this.selectMolecule(targetMolecule, reaction, { skipTabSwitch: false });
-                }
-              } else {
-                // Select the molecule when clicking label on arrow that starts from midpoint
-                this.selectMoleculeByName(molecule, null, { 
-                  skipTabSwitch: false,
-                  sourceReaction: reaction, // Pass the specific reaction where this molecule is used
-                  isByreactant: isByreactant // Indicate if this is a byreactant or byproduct
-                });
-              }
+              this.selectMoleculeByName(molecule, null, { 
+                skipTabSwitch: false,
+                skipZoom: startsFromNode, // Don't move frame if arrow starts from node
+                sourceReaction: reaction, // Pass the specific reaction where this molecule is used
+                isByreactant: isByreactant // Indicate if this is a byreactant or byproduct
+              });
             });
           
           textElements.push(moleculeText);
@@ -2867,7 +2891,7 @@ export class MetabolismViewer {
       .text(d => {
         // For ETC protein complexes and mobile carriers, show the complex/carrier name
         if (d.isProteinComplex || d.isMobileCarrier) {
-          return d.name;
+          return d.substrate.name;
         }
         
         // For citric acid cycle reactions, show previous reaction's product (shifted one step backward)
@@ -2985,7 +3009,7 @@ export class MetabolismViewer {
           const arrow = etcSubArrowGroup.append('path')
             .attr('d', arrowPath)
             .attr('fill', 'none')
-            .attr('stroke', '#4a90e2') // Blue for H+
+            .attr('stroke', '#ff6b6b') // Red for H+
             .attr('stroke-width', 3)
             .attr('marker-end', 'url(#arrowhead-normal)')
             .attr('class', 'etc-sub-arrow etc-proton-pump')
@@ -3286,17 +3310,15 @@ export class MetabolismViewer {
         event.preventDefault();
         // For CAC reactions, select the molecule that's visually displayed on the node
         // (which is the previous reaction's product)
-        // For ETC complexes, always use the substrate from that specific reaction
+        // For enzyme/carrier nodes, always use the substrate from that specific reaction
         // For other reactions, show the substrate
         const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
         const cacEndIndex = cacStartIndex + citricAcidCycleReactions.length;
-        const etcStartIndex = cacEndIndex;
-        const etcEndIndex = etcStartIndex + electronTransportChainReactions.length;
         const currentIndex = this.reactions.indexOf(d);
         // Check if reaction is within CAC range (not just >= cacStartIndex, which would include ETC)
         const isCACReaction = currentIndex >= cacStartIndex && currentIndex < cacEndIndex;
-        // Check if reaction is an ETC complex (protein complex in ETC pathway)
-        const isETCComplex = currentIndex >= etcStartIndex && currentIndex < etcEndIndex && d.isProteinComplex;
+        // Check if reaction is an enzyme/carrier node (protein complex or mobile carrier)
+        const isEnzymeOrCarrier = this.isEnzymeOrCarrierNode(d);
         
         let molecule;
         if (isCACReaction) {
@@ -3308,14 +3330,14 @@ export class MetabolismViewer {
           const prevReaction = this.reactions[prevCACIndex];
           // Use previous reaction's product (what's actually displayed on this node)
           molecule = prevReaction && prevReaction.product ? prevReaction.product : d.product;
-        } else if (isETCComplex) {
-          // For ETC complexes, always use the substrate from that specific reaction
-          // This ensures we get the correct molecule object from the ETC reaction, not from another pathway
+        } else if (isEnzymeOrCarrier) {
+          // For enzyme/carrier nodes, always use the substrate from that specific reaction
+          // This ensures we get the correct molecule object from the reaction, not from another pathway
           // Make sure we have a valid molecule object with all required fields
           if (d.substrate && typeof d.substrate === 'object') {
             molecule = {
               ...d.substrate,
-              // Ensure we have the molecule from this specific ETC reaction
+              // Ensure we have the molecule from this specific reaction
               // This prevents lookup issues where a molecule with the same name from another pathway might be found
             };
           } else {
@@ -3954,11 +3976,12 @@ export class MetabolismViewer {
               (sourceReaction.coSubstrate.consumed ? 'It is consumed during the reaction.' : '') +
               (sourceReaction.coSubstrate.reduced ? ' It is reduced during the reaction.' : '')
           };
-        // First, do the same as clicking the curved arrow - update reaction tab completely
-        this.selectReaction(sourceReaction, { skipTabSwitch: true });
-        
-        // Then, update molecule tab and show it (skip zoom to prevent view movement for by-molecules)
-        this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: skipZoomForByMolecules });
+          // First, do the same as clicking the curved arrow - update reaction tab completely
+          this.selectReaction(sourceReaction, { skipTabSwitch: true });
+          
+          // Then, update molecule tab and show it (use skipZoom option from caller)
+          // This is a by-molecule click, not a direct node click, so don't show "Substrate → Product" section
+          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: skipZoomForByMolecules, isDirectNodeClick: false });
         
         // Re-apply reaction highlights after selectMolecule (which resets them)
         // This ensures the map shows the same effect as clicking the main arrow
@@ -4019,14 +4042,15 @@ export class MetabolismViewer {
             name: byreactantName,
             formula: byreactantFormula,
             id: byreactantId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-            description: `${byreactantName} is a byreactant in ${sourceReaction.name || 'reaction'} (Step ${sourceReaction.step || 'N/A'}). ` +
+            description: `${removeCoefficients(byreactantName)} is a byreactant in ${sourceReaction.name || 'reaction'} (Step ${sourceReaction.step || 'N/A'}). ` +
               (sourceReaction.enzyme ? `Catalyzed by ${sourceReaction.enzyme.name}.` : '')
           };
           // First, do the same as clicking the curved arrow - update reaction tab completely
           this.selectReaction(sourceReaction, { skipTabSwitch: true });
           
-          // Then, update molecule tab and show it (skip zoom to prevent view movement)
-          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: true });
+          // Then, update molecule tab and show it (use skipZoom option from caller)
+          // This is a by-molecule click, not a direct node click, so don't show "Substrate → Product" section
+          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: skipZoomForByMolecules, isDirectNodeClick: false });
           
           // Re-apply reaction highlights after selectMolecule (which resets them)
           // This ensures the map shows the same effect as clicking the main arrow
@@ -4109,8 +4133,9 @@ export class MetabolismViewer {
           // First, do the same as clicking the curved arrow - update reaction tab completely
           this.selectReaction(sourceReaction, { skipTabSwitch: true });
           
-          // Then, update molecule tab and show it (skip zoom to prevent view movement)
-          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: true });
+          // Then, update molecule tab and show it (use skipZoom option from caller)
+          // This is a by-molecule click, not a direct node click, so don't show "Substrate → Product" section
+          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: skipZoomForByMolecules, isDirectNodeClick: false });
           
           // Re-apply reaction highlights after selectMolecule (which resets them)
           // This ensures the map shows the same effect as clicking the main arrow
@@ -4152,7 +4177,8 @@ export class MetabolismViewer {
           this.selectReaction(sourceReaction, { skipTabSwitch: true });
           
           // Then, update molecule tab and show it (skip zoom to prevent view movement for by-molecules)
-          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: true });
+          // This is a by-molecule click (Pi cofactor), not a direct node click
+          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: true, isDirectNodeClick: false });
           
           // Re-apply reaction highlights after selectMolecule (which resets them)
           // This ensures the map shows the same effect as clicking the main arrow
@@ -4593,7 +4619,7 @@ export class MetabolismViewer {
               name: byreactantName,
               formula: byreactantFormula,
               id: byreactantId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-              description: `${byreactantName} is a byreactant in ${reaction.name || 'reaction'} (Step ${reaction.step || 'N/A'}). ` +
+              description: `${removeCoefficients(byreactantName)} is a byreactant in ${reaction.name || 'reaction'} (Step ${reaction.step || 'N/A'}). ` +
                 (reaction.enzyme ? `Catalyzed by ${reaction.enzyme.name}.` : '')
             };
             targetReaction = reaction;
@@ -4679,6 +4705,10 @@ export class MetabolismViewer {
     this.selectedNode = reactionNode;
     this.selectedReaction = null;
     
+    // Determine if this is a direct node click (not a by-molecule click)
+    // Only show "Substrate → Product" section for direct node clicks
+    const isDirectNodeClick = options.isDirectNodeClick !== false; // Default to true unless explicitly set to false
+    
     // Get the pathway for this reaction node
     const pathway = reactionNode ? this.getPathwayForReaction(reactionNode) : null;
     
@@ -4737,7 +4767,9 @@ export class MetabolismViewer {
     const detailEvent = new CustomEvent('molecule-selected', {
       detail: {
         molecule: molecule,
-        skipTabSwitch: options.skipTabSwitch || false
+        reactionNode: reactionNode, // Pass reaction node for complex nodes
+        skipTabSwitch: options.skipTabSwitch || false,
+        isDirectNodeClick: isDirectNodeClick // Flag to indicate if this is a direct node click
       }
     });
     this.container.dispatchEvent(detailEvent);
