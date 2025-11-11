@@ -234,12 +234,14 @@ export class MetabolismViewer {
       return
     }
     
-    // Ensure container has dimensions
-    const containerElement = this.container
-    if (containerElement) {
-      containerElement.style.width = this.options.width + 'px'
-      containerElement.style.height = this.options.height + 'px'
-    }
+    // Get actual container dimensions (container uses CSS flexbox sizing)
+    const containerRect = this.container.getBoundingClientRect();
+    const containerWidth = containerRect.width || this.options.width || 800;
+    const containerHeight = containerRect.height || this.options.height || 600;
+    
+    // Update options with actual container dimensions
+    this.options.width = containerWidth;
+    this.options.height = containerHeight;
     
     // Clear container first
     d3.select(this.container).selectAll('*').remove()
@@ -263,8 +265,8 @@ export class MetabolismViewer {
     
     this.svg = d3.select(this.container)
       .append('svg')
-      .attr('width', this.options.width)
-      .attr('height', this.options.height)
+      .attr('width', containerWidth)
+      .attr('height', containerHeight)
       .attr('class', 'metabolism-viewer')
       .style('background', bgColor); // Keep dynamic background color in JS
     
@@ -714,29 +716,39 @@ export class MetabolismViewer {
       .attr('class', 'pathway-buttons');
     
     // Position buttons at the top-left of the map
-    const buttonY = 50; // Same row as help button
-    const baseButtonWidth = 140; // Increased base width to accommodate longer text
-    const buttonSpacing = 160; // Increased spacing to accommodate wider buttons
+    const buttonY = 20; // Match top margin of theme toggle button
+    const horizontalPadding = 16; // Consistent padding: 8px on each side
+    const verticalPadding = 16; // Consistent padding: 8px on top and bottom
+    const buttonHeight = 28; // Height accounting for vertical padding (8px top + text ~10px + 8px bottom)
     
     // Helper function to calculate button width based on text length
+    // Uses a temporary text element to measure actual text width for accuracy
     const calculateButtonWidth = (text) => {
-      // Estimate: ~8px per character for font-size 14px
-      const textWidth = text.length * 8;
-      // Add padding: 8px on each side
-      return Math.max(baseButtonWidth, textWidth + 16);
+      // Create a temporary text element to measure actual width
+      const tempText = this.svg.append('text')
+        .attr('font-size', '10px')
+        .attr('font-weight', '600')
+        .text(text)
+        .style('visibility', 'hidden');
+      
+      const textWidth = tempText.node().getBBox().width;
+      tempText.remove();
+      
+      // Add consistent horizontal padding (8px on each side)
+      return textWidth + horizontalPadding;
     };
     
     // Add "Show All" button first (replaces reset zoom)
     const showAllButton = buttonGroup.append('g')
       .attr('class', 'pathway-button btn')
-      .attr('transform', `translate(${50}, ${buttonY})`);
+      .attr('transform', `translate(${20}, ${buttonY})`);
     
     const showAllText = 'Show All';
     const showAllWidth = calculateButtonWidth(showAllText);
     
     showAllButton.append('rect')
       .attr('width', showAllWidth)
-      .attr('height', 35)
+      .attr('height', buttonHeight)
       .attr('rx', 6)
       .attr('fill', '#667eea')
       .attr('stroke', '#5568d3')
@@ -744,10 +756,10 @@ export class MetabolismViewer {
     
     showAllButton.append('text')
       .attr('x', showAllWidth / 2)
-      .attr('y', 22)
+      .attr('y', buttonHeight / 2 + 3) // Vertically centered: half height + small baseline offset
       .attr('text-anchor', 'middle')
       .attr('fill', 'white')
-      .attr('font-size', '14px')
+      .attr('font-size', '10px')
       .attr('font-weight', '600')
       .text(showAllText);
     
@@ -768,7 +780,7 @@ export class MetabolismViewer {
     });
     
     // Add pathway buttons (shifted by one position)
-    let currentX = 50 + showAllWidth + 20; // Start after "Show All" button with 20px gap
+    let currentX = 20 + showAllWidth + 15; // Start after "Show All" button with 15px gap
     this.pathways.forEach((pathway, index) => {
       const buttonWidth = calculateButtonWidth(pathway.name);
       
@@ -779,7 +791,7 @@ export class MetabolismViewer {
       // Button background
       button.append('rect')
         .attr('width', buttonWidth)
-        .attr('height', 35)
+        .attr('height', buttonHeight)
         .attr('rx', 6)
         .attr('fill', '#667eea')
         .attr('stroke', '#5568d3')
@@ -788,15 +800,15 @@ export class MetabolismViewer {
       // Button text
       button.append('text')
         .attr('x', buttonWidth / 2)
-        .attr('y', 22)
+        .attr('y', buttonHeight / 2 + 3) // Vertically centered: half height + small baseline offset
         .attr('text-anchor', 'middle')
         .attr('fill', 'white')
-        .attr('font-size', '14px')
+        .attr('font-size', '10px')
         .attr('font-weight', '600')
         .text(pathway.name);
       
       // Update currentX for next button
-      currentX += buttonWidth + 20; // 20px gap between buttons
+      currentX += buttonWidth + 15; // 15px gap between buttons
       
       // Hover effects
       button.on('mouseenter', function() {
@@ -3075,7 +3087,7 @@ export class MetabolismViewer {
       const fontSize = 16; // Font size in pixels
       const lineSpacing = 16; // Tight spacing (16px = font size) to show wrapped lines are part of continuous name
       const x = textEl.attr('x') || '0';
-      // Always use y=38 for consistency (30 circle radius + 8px gap)
+      // Always use y=38 for consistency (30 circle radius + 10px gap)
       const baseY = 38;
       
       // Clear existing text

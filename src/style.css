@@ -318,6 +318,16 @@ body {
   filter: brightness(0.9);
 }
 
+/* Pathway button opacity - reduced by default, full on hover */
+.pathway-button.btn {
+  opacity: 0.33;
+  transition: opacity 0.2s ease;
+}
+
+.pathway-button.btn:hover {
+  opacity: 1;
+}
+
 .help-tooltip.btn rect {
   transition: opacity 0.2s ease;
 }
@@ -866,7 +876,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  transition: all 0.3s ease;
+  transition: right 0.3s ease, top 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   box-shadow: 0 2px 8px var(--shadow);
 }
 
@@ -1021,6 +1031,7 @@ svg.metabolism-viewer:active {
 /* Help button and tooltip */
 .help-button {
   cursor: pointer;
+  transition: transform 0.3s ease;
 }
 
 .help-tooltip {

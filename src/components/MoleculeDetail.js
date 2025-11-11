@@ -76,7 +76,14 @@ export class ReactionDetail {
               ${reaction.byreactant && !arrowsStartFromNode ? (() => {
                 // Handle different byreactant formats: string, array, or object with molecules array
                 // Hide byreactants if arrows start from node (ETC complexes)
+                // Skip byreactants that have the same name as coSubstrate to avoid duplication
+                const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
+                
                 if (typeof reaction.byreactant === 'string') {
+                  // Skip if this byreactant matches coSubstrate
+                  if (coSubstrateName && removeCoefficients(reaction.byreactant) === removeCoefficients(coSubstrateName)) {
+                    return '';
+                  }
                   const displayName = removeCoefficients(reaction.byreactant);
                   return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
@@ -87,9 +94,14 @@ export class ReactionDetail {
                     </div>
                   `;
                 } else if (Array.isArray(reaction.byreactant)) {
-                  return reaction.byreactant.map(mol => {
-                    const displayName = removeCoefficients(mol);
-                    return `
+                  return reaction.byreactant
+                    .filter(mol => {
+                      // Filter out molecules that match coSubstrate
+                      return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
+                    })
+                    .map(mol => {
+                      const displayName = removeCoefficients(mol);
+                      return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
                          data-molecule-name="${mol}" 
                          data-molecule-id=""
@@ -97,11 +109,16 @@ export class ReactionDetail {
                       <strong>${displayName}</strong>
                     </div>
                   `;
-                  }).join('');
+                    }).join('');
                 } else if (reaction.byreactant.molecules && Array.isArray(reaction.byreactant.molecules)) {
-                  return reaction.byreactant.molecules.map(mol => {
-                    const displayName = removeCoefficients(mol);
-                    return `
+                  return reaction.byreactant.molecules
+                    .filter(mol => {
+                      // Filter out molecules that match coSubstrate
+                      return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
+                    })
+                    .map(mol => {
+                      const displayName = removeCoefficients(mol);
+                      return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
                          data-molecule-name="${mol}" 
                          data-molecule-id=""
@@ -109,8 +126,12 @@ export class ReactionDetail {
                       <strong>${displayName}</strong>
                     </div>
                   `;
-                  }).join('');
+                    }).join('');
                 } else if (reaction.byreactant.name) {
+                  // Skip if this byreactant matches coSubstrate
+                  if (coSubstrateName && removeCoefficients(reaction.byreactant.name) === removeCoefficients(coSubstrateName)) {
+                    return '';
+                  }
                   const displayName = removeCoefficients(reaction.byreactant.name);
                   return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
