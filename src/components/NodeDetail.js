@@ -1,10 +1,11 @@
 /**
- * Molecule View Component
+ * Node Detail Component
  * 
- * Displays detailed information about a molecule (from PubChem)
+ * Displays detailed information about a molecule node (from PubChem)
+ * Used when clicking on molecule nodes in the metabolism viewer
  */
 
-import { fetchAndDisplayPubChem } from '../utils/pubchemHelpers.js';
+import { fetchAndDisplayPubChem, fetchPubChemData } from '../utils/pubchemHelpers.js';
 
 /**
  * Remove coefficients from molecule names (e.g., "1/2 O₂" → "O₂", "2 H⁺" → "H⁺")
@@ -19,7 +20,7 @@ function removeCoefficients(moleculeName) {
   return moleculeName.replace(/^(\d+\/\d+|\d+)\s+/, '').trim();
 }
 
-export class MoleculeView {
+export class NodeDetail {
   constructor(container) {
     this.container = container;
     this.currentMolecule = null;
@@ -48,17 +49,69 @@ export class MoleculeView {
     // Only show "Substrate → Product" section for direct node clicks, not for by-molecule clicks
     const isEnzymeOrCarrierNode = isDirectNodeClick && reactionNode && (reactionNode.isProteinComplex === true || reactionNode.isMobileCarrier === true);
     
+    // Check if there are any by-molecules to display in the Substrate → Product section
+    // For ETC reactions, only show the section if there are by-molecules
+    const hasCoSubstrate = !!(reactionNode && reactionNode.coSubstrate && reactionNode.coSubstrate.name);
+    const hasByreactant = !!(reactionNode && reactionNode.byreactant);
+    const hasByproduct = !!(reactionNode && reactionNode.byproduct);
+    const hasByMolecules = hasCoSubstrate || hasByreactant || hasByproduct;
+    const shouldShowSection = isEnzymeOrCarrierNode && hasByMolecules;
+    
+    // Helper function to get formula for a molecule name from PubChem (async)
+    // This will be called after rendering to populate formulas
+    const getFormulaForMoleculeAsync = async (moleculeName, container) => {
+      if (!moleculeName || !container) return;
+      
+      try {
+        // Remove coefficients before searching PubChem
+        const searchName = removeCoefficients(moleculeName);
+        const pubchemData = await fetchPubChemData(searchName, this.pubchemCache);
+        if (pubchemData && pubchemData.molecularFormula) {
+          // Find the molecule element(s) - there might be multiple with the same name
+          // Use CSS.escape to handle special characters in molecule names
+          const escapedName = CSS.escape(moleculeName);
+          const moleculeElements = container.querySelectorAll(`[data-molecule-name="${escapedName}"]`);
+          
+          if (moleculeElements.length === 0) {
+            console.warn(`No elements found for molecule: ${moleculeName}`);
+            return;
+          }
+          
+          moleculeElements.forEach(moleculeElement => {
+            // Only add formula if it doesn't already exist
+            if (moleculeElement && !moleculeElement.querySelector('.molecule-formula')) {
+              const formulaDiv = document.createElement('div');
+              formulaDiv.className = 'molecule-formula';
+              formulaDiv.textContent = pubchemData.molecularFormula;
+              moleculeElement.appendChild(formulaDiv);
+            }
+          });
+        } else {
+          console.warn(`No formula found in PubChem data for: ${moleculeName}`);
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch formula for ${moleculeName}:`, error);
+      }
+    };
+    
     const html = `
       <div class="molecule-detail">
         <div class="detail-header">
           <h2>${displayName}</h2>
         </div>
         
-        ${isEnzymeOrCarrierNode ? `
+        ${shouldShowSection ? `
           <div class="detail-section">
             <h3>Substrate → Product</h3>
             <div class="reaction-flow">
               <div class="reaction-reactants">
+                ${reactionNode.coSubstrate ? `
+                  <div class="reaction-molecule clickable-molecule co-reactant" 
+                       data-molecule-name="${reactionNode.coSubstrate.name}" 
+                       data-molecule-id="">
+                    <strong>${removeCoefficients(reactionNode.coSubstrate.name)}</strong>
+                  </div>
+                ` : ''}
                 ${reactionNode.byreactant ? (() => {
                   // Handle different byreactant formats: string, array, or object with molecules array
                   // Show coefficients in Substrate → Product section
@@ -96,12 +149,11 @@ export class MoleculeView {
                            data-molecule-name="${reactionNode.byreactant.name}" 
                            data-molecule-id="">
                         <strong>${reactionNode.byreactant.name}</strong>
-                        ${reactionNode.byreactant.formula ? `<div class="molecule-formula">${reactionNode.byreactant.formula}</div>` : ''}
                       </div>
                     `;
                   }
                   return '';
-                })() : '<div class="reaction-molecule">-</div>'}
+                })() : ''}
               </div>
               <div class="reaction-arrow">→</div>
               <div class="reaction-products">
@@ -122,7 +174,6 @@ export class MoleculeView {
                            data-molecule-name="${reactionNode.byproduct.name}" 
                            data-molecule-id="">
                         <strong>${reactionNode.byproduct.name}</strong>
-                        ${reactionNode.byproduct.formula ? `<div class="molecule-formula">${reactionNode.byproduct.formula}</div>` : ''}
                       </div>
                     `;
                   } else if (reactionNode.byproduct.molecules && Array.isArray(reactionNode.byproduct.molecules)) {
@@ -134,10 +185,10 @@ export class MoleculeView {
                         <strong>${mol}</strong>
                       </div>
                     `;
-                    }).join('');
+                  }).join('');
                   }
                   return '';
-                })() : '<div class="reaction-molecule">-</div>'}
+                })() : ''}
               </div>
             </div>
           </div>
@@ -166,8 +217,8 @@ export class MoleculeView {
     
     this.container.innerHTML = html;
     
-    // Add click handlers for reaction flow molecules if this is an enzyme/carrier node
-    if (isEnzymeOrCarrierNode) {
+    // Add click handlers for reaction flow molecules if the section is shown
+    if (shouldShowSection) {
       const moleculeElements = this.container.querySelectorAll('.clickable-molecule');
       moleculeElements.forEach(element => {
         element.addEventListener('click', (e) => {
@@ -201,8 +252,49 @@ export class MoleculeView {
       });
     }
     
-    // Fetch PubChem data
+    // Fetch PubChem data for main molecule
     this.fetchPubChemData(molecule.name);
+    
+    // Fetch formulas for all by-molecules in Substrate → Product section
+    if (shouldShowSection) {
+      // Use setTimeout to ensure DOM is fully rendered
+      setTimeout(() => {
+        const moleculeNames = new Set();
+        
+        // Collect all by-molecule names
+        if (reactionNode.byreactant) {
+          if (typeof reactionNode.byreactant === 'string') {
+            moleculeNames.add(reactionNode.byreactant);
+          } else if (Array.isArray(reactionNode.byreactant)) {
+            reactionNode.byreactant.forEach(mol => moleculeNames.add(mol));
+          } else if (reactionNode.byreactant.molecules && Array.isArray(reactionNode.byreactant.molecules)) {
+            reactionNode.byreactant.molecules.forEach(mol => moleculeNames.add(mol));
+          } else if (reactionNode.byreactant.name) {
+            moleculeNames.add(reactionNode.byreactant.name);
+          }
+        }
+        
+        // Also check coSubstrate (it might be displayed as byreactant)
+        if (reactionNode.coSubstrate && reactionNode.coSubstrate.name) {
+          moleculeNames.add(reactionNode.coSubstrate.name);
+        }
+        
+        if (reactionNode.byproduct) {
+          if (typeof reactionNode.byproduct === 'string') {
+            moleculeNames.add(reactionNode.byproduct);
+          } else if (reactionNode.byproduct.name) {
+            moleculeNames.add(reactionNode.byproduct.name);
+          } else if (reactionNode.byproduct.molecules && Array.isArray(reactionNode.byproduct.molecules)) {
+            reactionNode.byproduct.molecules.forEach(mol => moleculeNames.add(mol));
+          }
+        }
+        
+        // Fetch formulas for all by-molecules
+        moleculeNames.forEach(molName => {
+          getFormulaForMoleculeAsync(molName, this.container);
+        });
+      }, 0);
+    }
   }
   
   async fetchPubChemData(moleculeName) {

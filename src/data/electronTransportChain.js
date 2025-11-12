@@ -316,7 +316,7 @@ export const electronTransportChainReactions = [
       id: 'atp_etc',
       name: 'ATP',
       formula: 'C₁₀H₁₆N₅O₁₃P₃',
-      description: 'Adenosine triphosphate produced by oxidative phosphorylation',
+      description: 'Adenosine triphosphate produced by phosphorylation of ADP and inorganic phosphate',
       smiles: 'NC1=NC=NC2=C1N=CN2[C@@H]1[C@H](O)[C@@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)O[C@H]1N1C=NC2=C1N=CN=C2N'
     },
     enzyme: {

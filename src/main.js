@@ -1,7 +1,7 @@
 import './style.css'
 import { MetabolismViewer } from './components/MetabolismViewer.js'
-import { ReactionDetail } from './components/MoleculeDetail.js'
-import { MoleculeView } from './components/MoleculeView.js'
+import { ArrowDetail } from './components/ArrowDetail.js'
+import { NodeDetail } from './components/NodeDetail.js'
 import { PathwayDetail } from './components/PathwayDetail.js'
 import { glycolysisReactions, glycolysisSummary } from './data/glycolysis.js'
 import { pyruvateOxidationReactions, pyruvateOxidationSummary } from './data/pyruvateOxidation.js'
@@ -133,14 +133,14 @@ if (!app) {
         return
       }
       
-      const moleculeView = new MoleculeView(moleculeContainer)
-      const reactionView = new ReactionDetail(reactionContainer)
+      const nodeDetail = new NodeDetail(moleculeContainer)
+      const arrowDetail = new ArrowDetail(reactionContainer)
       const pathwayView = new PathwayDetail(pathwayContainer)
       
-      // Set viewer container reference for pathway view, reaction view, and molecule view to enable selection
+      // Set viewer container reference for pathway view, arrow detail, and node detail to enable selection
       pathwayView.setViewerContainer(viewerContainer)
-      reactionView.setViewerContainer(viewerContainer)
-      moleculeView.setViewerContainer(viewerContainer)
+      arrowDetail.setViewerContainer(viewerContainer)
+      nodeDetail.setViewerContainer(viewerContainer)
 
       // Tab switching
       const tabs = document.querySelectorAll('.detail-tab')
@@ -160,8 +160,8 @@ if (!app) {
           if (tabName === 'molecule') {
             moleculeContainer.classList.add('active')
             // If molecule view has content, trigger the same effect as clicking the molecule
-            if (moleculeView.currentMolecule) {
-              const molecule = moleculeView.currentMolecule
+            if (nodeDetail.currentMolecule) {
+              const molecule = nodeDetail.currentMolecule
               // Find the reaction node that displays this molecule
               const moleculeNode = viewer.findReactionNodeForMolecule(molecule.name, molecule.id)
               if (moleculeNode) {
@@ -174,9 +174,9 @@ if (!app) {
           } else if (tabName === 'reaction') {
             reactionContainer.classList.add('active')
             // If reaction view has content, trigger the same effect as clicking the reaction arrow
-            if (reactionView.currentReaction) {
-              viewer.selectReaction(reactionView.currentReaction, { skipTabSwitch: true })
-              viewer.zoomToReactionArrow(reactionView.currentReaction)
+            if (arrowDetail.currentReaction) {
+              viewer.selectReaction(arrowDetail.currentReaction, { skipTabSwitch: true })
+              viewer.zoomToReactionArrow(arrowDetail.currentReaction)
             }
           } else if (tabName === 'pathway') {
             pathwayContainer.classList.add('active')
@@ -211,8 +211,8 @@ if (!app) {
         
         // Check if current reaction belongs to the selected pathway
         // If so, keep the reaction tab open
-        if (reactionView.currentReaction) {
-          const currentReaction = reactionView.currentReaction
+        if (arrowDetail.currentReaction) {
+          const currentReaction = arrowDetail.currentReaction
           const reactionPathway = viewer.getPathwayForReaction(currentReaction)
           
           // Keep reaction if it belongs to the selected pathway
@@ -220,8 +220,8 @@ if (!app) {
             // Keep the reaction tab - don't clear it
           } else {
             // Clear reaction view if it doesn't belong to the selected pathway
-            reactionView.render(null)
-            reactionView.currentReaction = null
+            arrowDetail.render(null)
+            arrowDetail.currentReaction = null
             viewer.selectedReaction = null
             // Reset reaction arrow highlighting
             viewer.g.selectAll('.connection')
@@ -232,13 +232,13 @@ if (!app) {
           }
         } else {
           // No current reaction, so clear it anyway
-          reactionView.render(null)
+          arrowDetail.render(null)
         }
         
         // Check if current molecule is involved in the selected pathway
         // If so, keep the molecule tab open
-        if (moleculeView.currentMolecule && selectedPathway) {
-          const currentMolecule = moleculeView.currentMolecule
+        if (nodeDetail.currentMolecule && selectedPathway) {
+          const currentMolecule = nodeDetail.currentMolecule
           const pathwayReactions = selectedPathway.reactions || []
           
           // Check if the molecule is involved in any reaction in the pathway
@@ -255,11 +255,11 @@ if (!app) {
             // Keep the molecule tab - don't clear it
           } else {
             // Clear molecule view if it's not involved in the selected pathway
-            moleculeView.render(null)
+            nodeDetail.render(null)
           }
         } else {
           // No current molecule or no selected pathway, so clear it anyway
-          moleculeView.render(null)
+          nodeDetail.render(null)
         }
         
         // Switch to pathway tab
@@ -278,12 +278,12 @@ if (!app) {
         const reaction = reactionData.reaction || reactionData; // Handle both old and new format
         const skipTabSwitch = reactionData.skipTabSwitch || false;
         
-        reactionView.render(reaction)
+        arrowDetail.render(reaction)
         
         // Check if current molecule is involved in the selected reaction
         // If so, keep the molecule tab open
-        if (moleculeView.currentMolecule) {
-          const currentMolecule = moleculeView.currentMolecule
+        if (nodeDetail.currentMolecule) {
+          const currentMolecule = nodeDetail.currentMolecule
           const isRelated = viewer.isReactionRelatedToMolecule(
             reaction,
             currentMolecule.name,
@@ -293,11 +293,11 @@ if (!app) {
           // Keep molecule if it's involved in the selected reaction
           if (!isRelated) {
             // Clear molecule view if it's not involved in the selected reaction
-            moleculeView.render(null)
+            nodeDetail.render(null)
           }
         } else {
           // No current molecule, so clear it anyway
-          moleculeView.render(null)
+          nodeDetail.render(null)
         }
         
         // Only switch to reaction tab if not skipping tab switch (i.e., clicked from pathway card)
@@ -318,12 +318,12 @@ if (!app) {
         const skipTabSwitch = moleculeData.skipTabSwitch || false;
         const isDirectNodeClick = moleculeData.isDirectNodeClick !== false; // Default to true for backward compatibility
         
-        moleculeView.render(molecule, reactionNode, isDirectNodeClick)
+        nodeDetail.render(molecule, reactionNode, isDirectNodeClick)
         
         // Clear reaction tab by default when selecting a molecule
         // Only keep it if the molecule is directly related to the current reaction
-        if (reactionView.currentReaction) {
-          const currentReaction = reactionView.currentReaction;
+        if (arrowDetail.currentReaction) {
+          const currentReaction = arrowDetail.currentReaction;
           
           // Check if the molecule is related to the current reaction
           const isRelated = viewer.isReactionRelatedToMolecule(
@@ -336,13 +336,13 @@ if (!app) {
           // Otherwise, clear the reaction tab and reset reaction selection in viewer
           if (!isRelated) {
             // Clear the reaction view - use both render(null) and direct container clear
-            reactionView.render(null)
+            arrowDetail.render(null)
             // Also directly clear the container to ensure it's emptied
             if (reactionContainer) {
               reactionContainer.innerHTML = '<div class="detail-placeholder">Click a reaction arrow to view reaction details</div>'
             }
             // Ensure currentReaction is cleared
-            reactionView.currentReaction = null
+            arrowDetail.currentReaction = null
             // Also clear the reaction selection in the viewer and reset visual highlighting
             viewer.selectedReaction = null
             // Reset reaction arrow highlighting
@@ -463,8 +463,8 @@ if (!app) {
       // detailPanel already defined above
       viewerContainer.addEventListener('clear-selection', () => {
         // Clear all detail views
-        moleculeView.render(null)
-        reactionView.render(null)
+        nodeDetail.render(null)
+        arrowDetail.render(null)
         pathwayView.render(null)
         // Completely hide the detail panel to show the full map
         if (detailPanel) {

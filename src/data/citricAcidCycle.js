@@ -30,11 +30,9 @@ export const citricAcidCycleReactions = [
     },
     coSubstrate: {
       name: 'Acetyl-CoA',
-      formula: 'C₂₃H₃₈N₇O₁₇P₃S'
     },
     byproduct: {
       name: 'CoA',
-      formula: 'C₂₁H₃₆N₇O₁₆P₃S'
     },
     conditions: {
       location: 'Mitochondrial matrix',
@@ -144,12 +142,10 @@ export const citricAcidCycleReactions = [
     },
     coSubstrate: {
       name: 'CoA',
-      formula: 'C₂₁H₃₆N₇O₁₆P₃S'
     },
     byreactant: 'CoA', // For display on map
     byproduct: {
       name: 'CO₂',
-      formula: 'CO₂'
     },
     conditions: {
       location: 'Mitochondrial matrix',
@@ -186,7 +182,6 @@ export const citricAcidCycleReactions = [
     },
     coSubstrate: {
       name: 'GDP',
-      formula: 'C₁₀H₁₅N₅O₁₁P₂'
     },
     byreactant: 'GDP', // For display on map
     byproduct: {
@@ -231,7 +226,6 @@ export const citricAcidCycleReactions = [
     byreactant: 'FAD', // For display on map
     byproduct: {
       name: 'FADH₂',
-      formula: 'C₂₇H₃₃N₉O₁₅P₂'
     },
     conditions: {
       location: 'Inner mitochondrial membrane',
@@ -268,7 +262,6 @@ export const citricAcidCycleReactions = [
     },
     coSubstrate: {
       name: 'H₂O',
-      formula: 'H₂O'
     },
     byreactant: 'H₂O', // For display on map
     conditions: {
@@ -310,7 +303,6 @@ export const citricAcidCycleReactions = [
     byreactant: 'NAD⁺', // For display on map
     byproduct: {
       name: 'NADH',
-      formula: 'C₂₁H₂₇N₇O₁₄P₂'
     },
     conditions: {
       location: 'Mitochondrial matrix',

@@ -1,6 +1,6 @@
 /**
  * Shared utility for molecule alternative names
- * Used across MetabolismViewer, MoleculeView, and MoleculeDetail
+ * Used across MetabolismViewer, NodeDetail, and ArrowDetail
  */
 
 /**

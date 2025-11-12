@@ -3972,237 +3972,9 @@ export class MetabolismViewer {
     // For by-molecules, always skip zoom unless explicitly overridden
     const skipZoomForByMolecules = options.skipZoom !== undefined ? options.skipZoom : true;
     
-    // If sourceReaction is provided and we're looking for a byreactant/byproduct,
-    // check that reaction first for coSubstrate/byreactant/byproduct
-    if (sourceReaction) {
-      // Check if molecule is a coSubstrate or byproduct of the source reaction
-      if (sourceReaction.coSubstrate && 
-          (sourceReaction.coSubstrate.name === moleculeName || 
-           (moleculeId && sourceReaction.coSubstrate.id === moleculeId))) {
-          const targetMolecule = {
-            name: sourceReaction.coSubstrate.name,
-            formula: sourceReaction.coSubstrate.formula || '',
-            id: sourceReaction.coSubstrate.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-            description: sourceReaction.coSubstrate.description || 
-              `${sourceReaction.coSubstrate.name} is a co-substrate in ${sourceReaction.name || 'reaction'} (Step ${sourceReaction.step || 'N/A'}). ` +
-              (sourceReaction.coSubstrate.consumed ? 'It is consumed during the reaction.' : '') +
-              (sourceReaction.coSubstrate.reduced ? ' It is reduced during the reaction.' : '')
-          };
-          // First, do the same as clicking the curved arrow - update reaction tab completely
-          this.selectReaction(sourceReaction, { skipTabSwitch: true });
-          
-          // Then, update molecule tab and show it (use skipZoom option from caller)
-          // This is a by-molecule click, not a direct node click, so don't show "Substrate → Product" section
-          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: skipZoomForByMolecules, isDirectNodeClick: false });
-        
-        // Re-apply reaction highlights after selectMolecule (which resets them)
-        // This ensures the map shows the same effect as clicking the main arrow
-        this.applyReactionHighlight(sourceReaction);
-        
-        // Re-highlight the reaction arrows (selectMolecule resets them)
-        this.highlightReactionArrows(sourceReaction.nodeId, 4);
-        
-        return;
-      }
-      
-      // Check byreactant - handle both string, array, and object with molecules array formats
-      if (sourceReaction.byreactant) {
-        let byreactantMatches = false;
-        let byreactantName = null;
-        
-        // Handle string format
-        if (typeof sourceReaction.byreactant === 'string' && sourceReaction.byreactant.trim() !== '') {
-          if (sourceReaction.byreactant === moleculeName) {
-            byreactantMatches = true;
-            byreactantName = sourceReaction.byreactant;
-          }
-        }
-        // Handle array format
-        else if (Array.isArray(sourceReaction.byreactant)) {
-          const matchingMolecule = sourceReaction.byreactant.find(m => 
-            m === moleculeName || (typeof m === 'string' && m.trim() === moleculeName)
-          );
-          if (matchingMolecule) {
-            byreactantMatches = true;
-            byreactantName = typeof matchingMolecule === 'string' ? matchingMolecule : moleculeName;
-          }
-        }
-        // Handle object with molecules array format
-        else if (sourceReaction.byreactant.molecules) {
-          const molecules = Array.isArray(sourceReaction.byreactant.molecules) 
-            ? sourceReaction.byreactant.molecules 
-            : [sourceReaction.byreactant.molecules];
-          const matchingMolecule = molecules.find(m => 
-            m === moleculeName || (typeof m === 'string' && m.trim() === moleculeName)
-          );
-          if (matchingMolecule) {
-            byreactantMatches = true;
-            byreactantName = typeof matchingMolecule === 'string' ? matchingMolecule : moleculeName;
-          }
-        }
-        
-        if (byreactantMatches) {
-          // Try to find molecule info from coSubstrate if available
-          let byreactantFormula = '';
-          let byreactantId = null;
-          if (sourceReaction.coSubstrate && sourceReaction.coSubstrate.name === byreactantName) {
-            byreactantFormula = sourceReaction.coSubstrate.formula || '';
-            byreactantId = sourceReaction.coSubstrate.id;
-          }
-          
-          const targetMolecule = {
-            name: byreactantName,
-            formula: byreactantFormula,
-            id: byreactantId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-            description: `${removeCoefficients(byreactantName)} is a byreactant in ${sourceReaction.name || 'reaction'} (Step ${sourceReaction.step || 'N/A'}). ` +
-              (sourceReaction.enzyme ? `Catalyzed by ${sourceReaction.enzyme.name}.` : '')
-          };
-          // First, do the same as clicking the curved arrow - update reaction tab completely
-          this.selectReaction(sourceReaction, { skipTabSwitch: true });
-          
-          // Then, update molecule tab and show it (use skipZoom option from caller)
-          // This is a by-molecule click, not a direct node click, so don't show "Substrate → Product" section
-          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: skipZoomForByMolecules, isDirectNodeClick: false });
-          
-          // Re-apply reaction highlights after selectMolecule (which resets them)
-          // This ensures the map shows the same effect as clicking the main arrow
-          this.applyReactionHighlight(sourceReaction);
-          
-          // Re-highlight the reaction arrows (selectMolecule resets them)
-          const reactionNodeId = sourceReaction.nodeId;
-          for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
-            const targetReactionNodeId = arrowData.targetReaction?.nodeId;
-            if (targetReactionNodeId === reactionNodeId) {
-              const arrowElement = this.g.select(`.connection[data-connection-id="${arrowData.connectionId}"]`);
-              if (!arrowElement.empty()) {
-                arrowElement
-                  .attr('stroke-width', 4) // Keep same size, don't make bigger
-                  .attr('stroke-opacity', 1)
-                  .attr('stroke', '#ff6b6b')
-                  .attr('marker-end', 'url(#arrowhead-highlighted)');
-              }
-            }
-          }
-          
-          return;
-        }
-      }
-      
-      // Check byproduct - handle string, array, name, and molecules array formats
-      if (sourceReaction.byproduct) {
-        let byproductMatches = false;
-        let byproductName = null;
-        let byproductFormula = '';
-        let byproductId = null;
-        
-        // Check if byproduct is a string (e.g., 'NAD⁺')
-        if (typeof sourceReaction.byproduct === 'string' && sourceReaction.byproduct.trim() !== '') {
-          if (sourceReaction.byproduct === moleculeName) {
-            byproductMatches = true;
-            byproductName = sourceReaction.byproduct;
-          }
-        }
-        // Check if byproduct is an array
-        else if (Array.isArray(sourceReaction.byproduct)) {
-          const matchingMolecule = sourceReaction.byproduct.find(m => 
-            m === moleculeName || (typeof m === 'string' && m.trim() === moleculeName)
-          );
-          if (matchingMolecule) {
-            byproductMatches = true;
-            byproductName = typeof matchingMolecule === 'string' ? matchingMolecule : moleculeName;
-          }
-        }
-        // Check if byproduct has molecules array
-        else if (sourceReaction.byproduct.molecules) {
-          const molecules = Array.isArray(sourceReaction.byproduct.molecules) 
-            ? sourceReaction.byproduct.molecules 
-            : [sourceReaction.byproduct.molecules];
-          const matchingMolecule = molecules.find(m => 
-            m === moleculeName || (typeof m === 'string' && m.trim() === moleculeName)
-          );
-          if (matchingMolecule) {
-            byproductMatches = true;
-            byproductName = typeof matchingMolecule === 'string' ? matchingMolecule : moleculeName;
-          }
-        } 
-        // Check if byproduct has name property (object format)
-        else if (sourceReaction.byproduct.name === moleculeName || 
-                   (moleculeId && sourceReaction.byproduct.id === moleculeId)) {
-          byproductMatches = true;
-          byproductName = sourceReaction.byproduct.name;
-          byproductFormula = sourceReaction.byproduct.formula || '';
-          byproductId = sourceReaction.byproduct.id;
-        }
-        
-        if (byproductMatches) {
-          const targetMolecule = {
-            name: byproductName,
-            formula: byproductFormula,
-            id: byproductId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-            description: `${byproductName} is a byproduct of ${sourceReaction.name || 'reaction'} (Step ${sourceReaction.step || 'N/A'}). ` +
-              (sourceReaction.enzyme ? `Catalyzed by ${sourceReaction.enzyme.name}.` : '')
-          };
-          // First, do the same as clicking the curved arrow - update reaction tab completely
-          this.selectReaction(sourceReaction, { skipTabSwitch: true });
-          
-          // Then, update molecule tab and show it (use skipZoom option from caller)
-          // This is a by-molecule click, not a direct node click, so don't show "Substrate → Product" section
-          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: skipZoomForByMolecules, isDirectNodeClick: false });
-          
-          // Re-apply reaction highlights after selectMolecule (which resets them)
-          // This ensures the map shows the same effect as clicking the main arrow
-          this.applyReactionHighlight(sourceReaction);
-          
-          // Re-highlight the reaction arrows (selectMolecule resets them)
-          const reactionNodeId = sourceReaction.nodeId;
-          for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
-            const targetReactionNodeId = arrowData.targetReaction?.nodeId;
-            if (targetReactionNodeId === reactionNodeId) {
-              const arrowElement = this.g.select(`.connection[data-connection-id="${arrowData.connectionId}"]`);
-              if (!arrowElement.empty()) {
-                arrowElement
-                  .attr('stroke-width', 4) // Keep same size, don't make bigger
-                  .attr('stroke-opacity', 1)
-                  .attr('stroke', '#ff6b6b')
-                  .attr('marker-end', 'url(#arrowhead-highlighted)');
-              }
-            }
-          }
-          
-          return;
-        }
-      }
-      
-      // Check cofactors for Pi (inorganic phosphate)
-      if (moleculeName === 'Pi' && sourceReaction.enzyme && sourceReaction.enzyme.cofactors) {
-        const hasPi = sourceReaction.enzyme.cofactors.some(cf => 
-          cf && (cf.includes('Pi') || cf.includes('inorganic phosphate') || cf === 'Pi')
-        );
-        if (hasPi) {
-          const targetMolecule = {
-            name: 'Pi',
-            formula: 'H₃PO₄',
-            id: 'pi',
-            description: `Inorganic phosphate (cofactor in ${sourceReaction.name || 'reaction'})`
-          };
-          // First, do the same as clicking the curved arrow - update reaction tab completely
-          this.selectReaction(sourceReaction, { skipTabSwitch: true });
-          
-          // Then, update molecule tab and show it (skip zoom to prevent view movement for by-molecules)
-          // This is a by-molecule click (Pi cofactor), not a direct node click
-          this.selectMolecule(targetMolecule, sourceReaction, { skipTabSwitch: false, skipZoom: true, isDirectNodeClick: false });
-          
-          // Re-apply reaction highlights after selectMolecule (which resets them)
-          // This ensures the map shows the same effect as clicking the main arrow
-          this.applyReactionHighlight(sourceReaction);
-          
-          // Re-highlight the reaction arrows (selectMolecule resets them)
-          this.highlightReactionArrows(sourceReaction.nodeId, 6);
-          
-          return;
-        }
-      }
-    }
+    // Note: Removed special handling for byreactants/coSubstrates/byproducts
+    // All molecules now use the unified detail page with PubChem data
+    // The sourceReaction is still passed but won't create special detail views
     
     // First check product nodes (like Acetyl-CoA, Lipoamide) - these have their own nodes
     let targetReaction = null;
@@ -4403,9 +4175,13 @@ export class MetabolismViewer {
       const commonByMolecules = ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP'];
       const isCommonByMolecule = commonByMolecules.includes(moleculeName);
       
-      // If this is a common by-molecule and no sourceReaction is provided, 
-      // find all reactions where it appears and highlight them instead of zooming to a node
-      if (isCommonByMolecule && !sourceReaction) {
+      // If this is a common by-molecule, always find all reactions where it appears 
+      // and highlight them instead of zooming to a node (regardless of sourceReaction)
+      // Common by-molecules don't have dedicated nodes, so we should never zoom to a specific node
+      if (isCommonByMolecule) {
+        // Force skipZoom for common by-molecules to prevent any zoom behavior
+        options.skipZoom = true;
+        
         const reactionsWithMolecule = [];
         let moleculeInfo = null;
         
@@ -4420,8 +4196,16 @@ export class MetabolismViewer {
                 name: reaction.coSubstrate.name,
                 formula: reaction.coSubstrate.formula || '',
                 id: reaction.coSubstrate.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-                description: `${reaction.coSubstrate.name} is a co-substrate that appears in multiple reactions.`
+                description: '' // Let PubChem provide the description
               };
+            } else {
+              // Merge: use formula/id from this reaction if current one is missing
+              if (!moleculeInfo.formula && reaction.coSubstrate.formula) {
+                moleculeInfo.formula = reaction.coSubstrate.formula;
+              }
+              if (!moleculeInfo.id && reaction.coSubstrate.id) {
+                moleculeInfo.id = reaction.coSubstrate.id;
+              }
             }
           }
           // Check byproduct
@@ -4434,13 +4218,24 @@ export class MetabolismViewer {
                 name: reaction.byproduct.name,
                 formula: reaction.byproduct.formula || '',
                 id: reaction.byproduct.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-                description: `${reaction.byproduct.name} is a byproduct that appears in multiple reactions.`
+                description: '' // Let PubChem provide the description
               };
+            } else {
+              // Merge: use formula/id from this reaction if current one is missing
+              if (!moleculeInfo.formula && reaction.byproduct.formula) {
+                moleculeInfo.formula = reaction.byproduct.formula;
+              }
+              if (!moleculeInfo.id && reaction.byproduct.id) {
+                moleculeInfo.id = reaction.byproduct.id;
+              }
             }
           }
           // Check byreactant
           else if (reaction.byreactant) {
             let matches = false;
+            let byreactantFormula = '';
+            let byreactantId = null;
+            
             if (typeof reaction.byreactant === 'string' && reaction.byreactant === moleculeName) {
               matches = true;
             } else if (Array.isArray(reaction.byreactant) && reaction.byreactant.includes(moleculeName)) {
@@ -4452,16 +4247,35 @@ export class MetabolismViewer {
               if (molecules.includes(moleculeName)) {
                 matches = true;
               }
+            } else if (reaction.byreactant.name === moleculeName) {
+              matches = true;
+              byreactantFormula = reaction.byreactant.formula || '';
+              byreactantId = reaction.byreactant.id;
             }
+            
             if (matches) {
               reactionsWithMolecule.push(reaction);
+              // Try to get formula from coSubstrate if byreactant matches coSubstrate
+              if (!byreactantFormula && reaction.coSubstrate && reaction.coSubstrate.name === moleculeName) {
+                byreactantFormula = reaction.coSubstrate.formula || '';
+                byreactantId = reaction.coSubstrate.id;
+              }
+              
               if (!moleculeInfo) {
                 moleculeInfo = {
                   name: moleculeName,
-                  formula: '',
-                  id: moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-                  description: `${moleculeName} is a byreactant that appears in multiple reactions.`
+                  formula: byreactantFormula,
+                  id: byreactantId || moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+                  description: '' // Let PubChem provide the description
                 };
+              } else {
+                // Merge: use formula/id from this reaction if current one is missing
+                if (!moleculeInfo.formula && byreactantFormula) {
+                  moleculeInfo.formula = byreactantFormula;
+                }
+                if (!moleculeInfo.id && byreactantId) {
+                  moleculeInfo.id = byreactantId;
+                }
               }
             }
           }
@@ -4572,10 +4386,7 @@ export class MetabolismViewer {
             name: reaction.coSubstrate.name,
             formula: reaction.coSubstrate.formula || '',
             id: reaction.coSubstrate.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-            description: reaction.coSubstrate.description || 
-              `${reaction.coSubstrate.name} is a co-substrate in ${reaction.name || 'reaction'} (Step ${reaction.step || 'N/A'}). ` +
-              (reaction.coSubstrate.consumed ? 'It is consumed during the reaction.' : '') +
-              (reaction.coSubstrate.reduced ? ' It is reduced during the reaction.' : '')
+            description: '' // Let PubChem provide the description
           };
           targetReaction = reaction;
           break;
@@ -4631,8 +4442,7 @@ export class MetabolismViewer {
               name: byreactantName,
               formula: byreactantFormula,
               id: byreactantId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-              description: `${removeCoefficients(byreactantName)} is a byreactant in ${reaction.name || 'reaction'} (Step ${reaction.step || 'N/A'}). ` +
-                (reaction.enzyme ? `Catalyzed by ${reaction.enzyme.name}.` : '')
+              description: '' // Let PubChem provide the description
             };
             targetReaction = reaction;
             break;
@@ -4672,8 +4482,7 @@ export class MetabolismViewer {
               name: byproductName,
               formula: byproductFormula,
               id: byproductId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-              description: `${byproductName} is a byproduct of ${reaction.name || 'reaction'} (Step ${reaction.step || 'N/A'}). ` +
-                (reaction.enzyme ? `Catalyzed by ${reaction.enzyme.name}.` : '')
+              description: '' // Let PubChem provide the description
             };
             targetReaction = reaction;
             break;
@@ -4692,7 +4501,7 @@ export class MetabolismViewer {
               name: 'Pi',
               formula: 'H₃PO₄',
               id: 'pi',
-              description: `Inorganic phosphate (cofactor in ${reaction.name || 'reaction'})`
+              description: '' // Let PubChem provide the description
             };
             targetReaction = reaction;
             break;
@@ -4702,6 +4511,13 @@ export class MetabolismViewer {
     }
     
     if (targetReaction && targetMolecule) {
+      // Check again if this is a common by-molecule - if so, never zoom
+      const commonByMolecules = ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP'];
+      const isCommonByMolecule = commonByMolecules.includes(moleculeName);
+      if (isCommonByMolecule) {
+        options.skipZoom = true;
+      }
+      
       this.selectMolecule(targetMolecule, targetReaction, options);
       // Zoom to the molecule node only if skipZoom is not set (for by-molecules, skip zoom)
       if (!options.skipZoom) {

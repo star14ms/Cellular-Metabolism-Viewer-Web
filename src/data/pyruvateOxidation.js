@@ -33,7 +33,6 @@ export const pyruvateOxidationReactions = [
     byreactant: '', // Empty - only byproduct shown
     byproduct: {
       name: 'CO₂',
-      formula: 'CO₂',
       description: 'Carbon dioxide released as a byproduct'
     },
     conditions: {
@@ -104,7 +103,6 @@ export const pyruvateOxidationReactions = [
     },
     coSubstrate: {
       name: 'CoA',
-      formula: 'C₂₁H₃₆N₇O₁₆P₃S'
     },
     byreactant: 'CoA', // For display on map
     conditions: {
@@ -146,7 +144,6 @@ export const pyruvateOxidationReactions = [
     byreactant: 'NAD⁺', // For display on map
     byproduct: {
       name: 'NADH',
-      formula: 'C₂₁H₂₇N₇O₁₄P₂'
     },
     byMoleculeAngle: 0, // Adjust arrow direction: adds 180° to perpAngle to flip direction (curves to the right)
     conditions: {

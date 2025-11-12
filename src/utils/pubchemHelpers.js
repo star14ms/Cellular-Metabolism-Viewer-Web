@@ -1,6 +1,6 @@
 /**
  * Shared utilities for PubChem data fetching and display
- * Used across MoleculeView, ReactionDetail, and other components
+ * Used across NodeDetail, ArrowDetail, and other components
  */
 
 import { fetchCompoundWithFallback } from '../services/pubchemService.js';
@@ -88,6 +88,12 @@ export function displayPubChemData(container, pubchemData, loadingElement) {
             </div>
           </div>
         ` : ''}
+      </div>
+    ` : ''}
+    ${pubchemData.description ? `
+      <div class="pubchem-description">
+        <strong>Description:</strong>
+        <div class="description-text">${pubchemData.description}</div>
       </div>
     ` : ''}
     <div class="pubchem-properties">

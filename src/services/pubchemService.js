@@ -131,6 +131,32 @@ export async function fetchCompoundByName(compoundName) {
       throw new Error(`No property data found for CID: ${cid}`);
     }
     
+    // Fetch description from PubChem
+    let description = null;
+    try {
+      const descriptionUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/description/JSON`;
+      const descriptionResponse = await fetch(descriptionUrl);
+      
+      if (descriptionResponse.ok) {
+        const descriptionData = await descriptionResponse.json();
+        // The description is in InformationList.Information array
+        // Each item in the array can have a "Description" property
+        const informationList = descriptionData?.InformationList?.Information;
+        if (informationList && Array.isArray(informationList)) {
+          // Find the first entry that has a Description property
+          const descriptionEntry = informationList.find(info => 
+            info && info.Description
+          );
+          if (descriptionEntry && descriptionEntry.Description) {
+            description = descriptionEntry.Description;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`Failed to fetch description for CID ${cid}:`, error);
+      // Don't throw - description is optional
+    }
+    
     // Safely format molecular weight
     let molecularWeight = null;
     if (propertiesList.MolecularWeight != null) {
@@ -151,6 +177,7 @@ export async function fetchCompoundByName(compoundName) {
     return {
       cid: cid,
       name: compoundName,
+      description: description,
       molecularFormula: propertiesList.MolecularFormula || null,
       molecularWeight: molecularWeight,
       canonicalSmiles: propertiesList.CanonicalSMILES || null,
