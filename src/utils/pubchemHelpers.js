@@ -5,6 +5,7 @@
 
 import { fetchCompoundWithFallback } from '../services/pubchemService.js';
 import { getAlternativeNames } from './moleculeAlternatives.js';
+import { loadCacheFromStorage, saveToStorage, getFromStorage } from './pubchemCache.js';
 
 /**
  * Normalize molecule name for PubChem search
@@ -18,15 +19,25 @@ export function normalizeMoleculeName(moleculeName) {
 }
 
 /**
- * Fetch PubChem data for a molecule with caching
+ * Fetch PubChem data for a molecule with caching (localStorage + in-memory)
  * @param {string} moleculeName - Name of the molecule
- * @param {Map} cache - Cache map to store results
+ * @param {Map} cache - Optional in-memory cache map (for backward compatibility)
  * @returns {Promise<Object>} PubChem data
  */
 export async function fetchPubChemData(moleculeName, cache) {
-  // Check cache first
+  // Check in-memory cache first (if provided)
   if (cache && cache.has(moleculeName)) {
     return cache.get(moleculeName);
+  }
+  
+  // Check localStorage cache
+  const cachedData = getFromStorage(moleculeName);
+  if (cachedData) {
+    // Also update in-memory cache if provided
+    if (cache) {
+      cache.set(moleculeName, cachedData);
+    }
+    return cachedData;
   }
   
   // Normalize name for search
@@ -36,7 +47,10 @@ export async function fetchPubChemData(moleculeName, cache) {
   const alternativeNames = getAlternativeNames(moleculeName);
   const pubchemData = await fetchCompoundWithFallback(searchName, alternativeNames);
   
-  // Cache the result
+  // Save to localStorage
+  saveToStorage(moleculeName, pubchemData);
+  
+  // Also update in-memory cache if provided
   if (cache) {
     cache.set(moleculeName, pubchemData);
   }

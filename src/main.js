@@ -611,3 +611,21 @@ if (!app) {
     }
   }, 100)
 }
+
+// Expose PubChem cache utilities to global scope for easy access
+import { clearCache, getCacheStats, loadCacheFromStorage } from './utils/pubchemCache.js'
+window.PubChemCache = {
+  clear: clearCache,
+  stats: getCacheStats,
+  load: loadCacheFromStorage,
+  help: () => {
+    console.log(`
+PubChem Cache Utilities:
+  - PubChemCache.clear()     : Clear all cached PubChem data
+  - PubChemCache.stats()     : Get cache statistics (size, last updated, version)
+  - PubChemCache.load()      : Load and return the cache Map
+  - PubChemCache.help()      : Show this help message
+    `)
+  }
+}
+console.log('PubChem cache utilities available. Type PubChemCache.help() for more info.')
