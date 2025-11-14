@@ -34,6 +34,98 @@ function removeCoefficients(moleculeName) {
   return moleculeName.replace(/^(\d+\/\d+|\d+)\s+/, '').trim();
 }
 
+// Configuration object for pathway-specific and general settings
+const PATHWAY_CONFIG = {
+  // Pathway ID to display name mapping
+  pathwayNames: {
+    'glycolysis': 'Glycolysis',
+    'pyruvate-oxidation': 'Pyruvate Oxidation',
+    'citric-acid-cycle': 'Citric Acid Cycle (Krebs Cycle)',
+    'electron-transport-chain': 'Electron Transport Chain'
+  },
+  
+  // Pathway-specific behavior for by-molecule arrows
+  pathwayBehavior: {
+    'glycolysis': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (negative)
+      useStandardShape: true
+    },
+    'pyruvate-oxidation': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: 1, // Below (after 180 flip)
+      useStandardShape: false
+    },
+    'citric-acid-cycle': {
+      rotationAngle: 0, // No base rotation (handled dynamically)
+      offsetDirection: 1, // Below/outward (after 180 flip)
+      useStandardShape: false,
+      calculateOutwardDirection: true // Special handling for cycle
+    },
+    'electron-transport-chain': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    }
+  },
+  
+  // Common by-molecules that don't have dedicated nodes
+  commonByMolecules: ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP'],
+  
+  // Node ID patterns for special node types
+  nodeIdPatterns: {
+    etcComplex: /^complex_/,
+    etcCarriers: ['coenzyme_q', 'cytochrome_c']
+  },
+  
+  // Special reaction/node handling
+  specialReactions: {
+    // Format: { reactionId, step, specialHandling }
+    'rxn_pyruvate_3': { step: 14, type: 'multi-product' },
+    'rxn_cac_1': { step: 15, type: 'cycle-start' }
+  },
+  
+  // UI Colors
+  colors: {
+    primary: '#667eea',
+    primaryHover: '#5568d3',
+    primaryDark: '#4a5fb8',
+    secondary: '#2c5f7c',
+    highlight: '#ff6b6b',
+    highlightHover: '#ff8787',
+    reactant: '#4ecdc4',
+    reactantFill: '#6ee7e7',
+    product: '#ff6b6b',
+    productFill: '#ff8787',
+    byMoleculeArrow: '#8b9dc3',
+    etcProtonArrow: '#ff6b6b',
+    proteinComplex: '#d4a574',
+    proteinComplexStroke: '#8b6f47',
+    reactionCircle: '#5fa8d3',
+    reactionCircleStroke: '#2c5f7c'
+  },
+  
+  // Node sizes
+  nodeSizes: {
+    regular: { radius: 30, width: 60, height: 60 },
+    mobileCarrier: { radius: 20, width: 40, height: 40 },
+    proteinComplex: { radius: 40, width: 80, height: 60 }
+  },
+  
+  // Arrow settings
+  arrowSettings: {
+    byMoleculeOffset: 70, // Distance from main arrow
+    byMoleculeLength: 66, // Length of by-molecule arrows
+    hitAreaWidth: 40, // Invisible hit area width
+    midpointHitAreaWidth: 30, // Hit area for midpoint connections
+    arrowheadSize: 12,
+    strokeWidth: 4,
+    strokeWidthHover: 6,
+    strokeOpacity: 0.7,
+    strokeOpacityHover: 1
+  }
+};
+
 export class MetabolismViewer {
   constructor(container, options = {}) {
     this.container = container;
@@ -744,8 +836,8 @@ export class MetabolismViewer {
     // Button circle
     const circle = helpGroup.append('circle')
       .attr('r', 15)
-      .attr('fill', '#667eea')
-      .attr('stroke', '#5568d3')
+      .attr('fill', PATHWAY_CONFIG.colors.primary)
+      .attr('stroke', PATHWAY_CONFIG.colors.primaryHover)
       .attr('stroke-width', 2);
     
     // Question mark text
@@ -778,7 +870,7 @@ export class MetabolismViewer {
       .attr('width', tooltipWidth)
       .attr('height', 75) // Increased height for more lines
       .attr('rx', 6)
-      .attr('fill', '#2c5f7c')
+      .attr('fill', PATHWAY_CONFIG.colors.secondary)
       .attr('opacity', 0.95);
     
     // Split text into multiple lines to prevent overflow
@@ -818,13 +910,13 @@ export class MetabolismViewer {
     helpGroup.on('mouseenter', function() {
       d3.select(this).select('circle')
         .transition().duration(200)
-        .attr('fill', '#5568d3')
+        .attr('fill', PATHWAY_CONFIG.colors.primaryHover)
         .attr('stroke-width', 3);
     })
     .on('mouseleave', function() {
       d3.select(this).select('circle')
         .transition().duration(200)
-        .attr('fill', '#667eea')
+        .attr('fill', PATHWAY_CONFIG.colors.primary)
         .attr('stroke-width', 2);
     });
   }
@@ -869,8 +961,8 @@ export class MetabolismViewer {
       .attr('width', showAllWidth)
       .attr('height', buttonHeight)
       .attr('rx', 6)
-      .attr('fill', '#667eea')
-      .attr('stroke', '#5568d3')
+      .attr('fill', PATHWAY_CONFIG.colors.primary)
+      .attr('stroke', PATHWAY_CONFIG.colors.primaryHover)
       .attr('stroke-width', 2);
     
     showAllButton.append('text')
@@ -885,12 +977,12 @@ export class MetabolismViewer {
     const viewer = this;
     showAllButton.on('mouseenter', function() {
       d3.select(this).select('rect')
-        .attr('fill', '#5568d3')
+        .attr('fill', PATHWAY_CONFIG.colors.primaryHover)
         .attr('stroke-width', 3);
     })
     .on('mouseleave', function() {
       d3.select(this).select('rect')
-        .attr('fill', '#667eea')
+        .attr('fill', PATHWAY_CONFIG.colors.primary)
         .attr('stroke-width', 2);
     })
     .on('click', (event) => {
@@ -912,8 +1004,8 @@ export class MetabolismViewer {
         .attr('width', buttonWidth)
         .attr('height', buttonHeight)
         .attr('rx', 6)
-        .attr('fill', '#667eea')
-        .attr('stroke', '#5568d3')
+        .attr('fill', PATHWAY_CONFIG.colors.primary)
+        .attr('stroke', PATHWAY_CONFIG.colors.primaryHover)
         .attr('stroke-width', 2);
       
       // Button text
@@ -932,13 +1024,13 @@ export class MetabolismViewer {
       // Hover effects
       button.on('mouseenter', function() {
         d3.select(this).select('rect')
-          .attr('fill', '#5568d3')
+          .attr('fill', PATHWAY_CONFIG.colors.primaryHover)
           .attr('stroke-width', 3);
       })
       .on('mouseleave', function() {
         if (viewer.selectedPathway !== pathway.id) {
           d3.select(this).select('rect')
-            .attr('fill', '#667eea')
+            .attr('fill', PATHWAY_CONFIG.colors.primary)
             .attr('stroke-width', 2);
         }
       })
@@ -958,7 +1050,7 @@ export class MetabolismViewer {
       const prevPathway = this.pathways.find(p => p.id === this.selectedPathway);
       if (prevPathway && prevPathway.button) {
         prevPathway.button.select('rect')
-          .attr('fill', '#667eea')
+          .attr('fill', PATHWAY_CONFIG.colors.primary)
           .attr('stroke-width', 2);
       }
     }
@@ -966,7 +1058,7 @@ export class MetabolismViewer {
     // Highlight selected pathway button
     if (pathway.button) {
       pathway.button.select('rect')
-        .attr('fill', '#4a5fb8')
+        .attr('fill', PATHWAY_CONFIG.colors.primaryDark)
         .attr('stroke-width', 3);
     }
     
@@ -1170,7 +1262,7 @@ export class MetabolismViewer {
       const prevPathway = this.pathways.find(p => p.id === this.selectedPathway);
       if (prevPathway && prevPathway.button) {
         prevPathway.button.select('rect')
-          .attr('fill', '#667eea')
+          .attr('fill', PATHWAY_CONFIG.colors.primary)
           .attr('stroke-width', 2);
       }
       this.selectedPathway = null;
@@ -1333,9 +1425,9 @@ export class MetabolismViewer {
       );
       
       // Make the hit area wider at the endpoint for easier clicking
-      if (arrowResult && arrowResult.hitArea) {
-        arrowResult.hitArea.attr('stroke-width', 30); // Wider hit area for midpoint connections
-      }
+        if (arrowResult && arrowResult.hitArea) {
+          arrowResult.hitArea.attr('stroke-width', PATHWAY_CONFIG.arrowSettings.midpointHitAreaWidth);
+        }
       
       return arrowResult;
     };
@@ -1351,8 +1443,8 @@ export class MetabolismViewer {
         .attr('x2', coords.x2)
         .attr('y2', coords.y2)
         .attr('stroke', '#2c5f7c')
-        .attr('stroke-width', 4)
-        .attr('stroke-opacity', 0.7)
+        .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+        .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
         .attr('marker-end', 'url(#arrowhead)');
       
       // Create invisible hit area (wider, transparent) - larger for easier interaction
@@ -1364,19 +1456,19 @@ export class MetabolismViewer {
         .attr('x2', coords.x2)
         .attr('y2', coords.y2)
         .attr('stroke', 'transparent')
-        .attr('stroke-width', 40) // Wider invisible hit area for easier hovering (increased from 20)
+        .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.hitAreaWidth)
         .attr('stroke-opacity', 0)
         .on('mouseenter', () => {
           // Make arrow bigger on hover (visual only, hit area stays the same)
           visibleArrow
-            .attr('stroke-width', 6)
-            .attr('stroke-opacity', 1);
+            .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidthHover)
+            .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacityHover);
         })
         .on('mouseleave', () => {
           // Reset to normal size
           visibleArrow
-            .attr('stroke-width', 4)
-            .attr('stroke-opacity', 0.7);
+            .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+            .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity);
         })
         .on('click', (event) => {
           event.stopPropagation();
@@ -1795,76 +1887,7 @@ export class MetabolismViewer {
     
     return arrowResult;
   }
-  
-  /**
-   * Automatically create secondary arrows from midpoints of primary arrows
-   * for reactions that produce multiple products
-   */
-  createSecondaryArrowsFromMidpoints() {
-    // Configuration for reactions with multiple products
-    // Format: { reactionId, primaryArrowConnectionId, secondaryProducts: [{ toNodeId, connectionId, reactantId, productId, targetReactionId }] }
-    const multiProductConfig = [
-      {
-        // Step 3 (Pyruvate Oxidation) produces Acetyl-CoA (primary) and Dihydrolipoamide (secondary)
-        reactionId: 'rxn_pyruvate_3', // Step 3 - use reaction ID instead of index
-        primaryArrowConnectionId: 'step3-to-acetyl-coa',
-        secondaryProducts: [{
-          toNodeId: 'dihydrolipoamide', // Use node ID directly instead of array index
-          connectionId: 'step3-acetylCoa-midpoint-to-step4',
-          reactantId: 'acetyl-lipoamide',
-          productId: 'dihydrolipoamide',
-          targetReactionId: 'rxn_pyruvate_3', // Use reaction ID instead of array index
-          // toNodePosition removed - will use toNode.position dynamically
-        }]
-      }
-    ];
-    
-    multiProductConfig.forEach(config => {
-      // Find reaction by ID instead of using array index
-      const reaction = this.reactions.find(r => r.id === config.reactionId);
-      if (!reaction) {
-        console.warn(`Reaction not found: ${config.reactionId}`);
-        return;
-      }
-      
-      // Find the primary arrow
-      const primaryArrow = findArrowData(
-        this.arrowDataMap,
-        config.primaryArrowConnectionId,
-        reaction.nodeId,
-        null,
-        null,
-        null
-      );
-      
-      if (!primaryArrow) {
-        console.warn(`Primary arrow not found for reaction at index ${config.reactionIndex}`);
-        return;
-      }
-      
-      // Create secondary arrows from midpoint
-      config.secondaryProducts.forEach(secondary => {
-        const toNode = this.nodeMap.get(secondary.toNodeId);
-        if (!toNode) {
-          console.warn(`Target node not found: ${secondary.toNodeId}`);
-          return;
-        }
-        
-        createSecondaryArrowFromMidpoint(
-          this,
-          primaryArrow,
-          reaction,
-          toNode,
-          secondary.connectionId,
-          secondary.targetReaction,
-          secondary.reactantId,
-          secondary.productId,
-          secondary.toNodePosition
-        );
-      });
-    });
-  }
-  
+
   /**
    * Helper method to create visual arrow elements
    */
@@ -1877,9 +1900,9 @@ export class MetabolismViewer {
       .attr('y1', coords.y1)
       .attr('x2', coords.x2)
       .attr('y2', coords.y2)
-      .attr('stroke', '#2c5f7c')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
+            .attr('stroke', PATHWAY_CONFIG.colors.secondary)
+            .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+            .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
       .attr('marker-end', 'url(#arrowhead)');
     
     // Create invisible hit area
@@ -1891,17 +1914,17 @@ export class MetabolismViewer {
       .attr('x2', coords.x2)
       .attr('y2', coords.y2)
         .attr('stroke', 'transparent')
-        .attr('stroke-width', 40)
+        .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.hitAreaWidth)
         .attr('stroke-opacity', 0)
       .on('mouseenter', () => {
         visibleArrow
-          .attr('stroke-width', 6)
-          .attr('stroke-opacity', 1);
+          .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidthHover)
+          .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacityHover);
       })
       .on('mouseleave', () => {
         visibleArrow
-          .attr('stroke-width', 4)
-          .attr('stroke-opacity', 0.7);
+          .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+          .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity);
       })
       .on('click', (event) => {
         event.stopPropagation();
@@ -1935,15 +1958,15 @@ export class MetabolismViewer {
       const pathway = this.getPathwayForReaction(reaction);
       if (!pathway) return null;
       
-      // Map pathway summary names to config pathway names
-      if (pathway.summary.name === 'Glycolysis') {
-        return 'glycolysis';
-      } else if (pathway.summary.name === 'Pyruvate Oxidation') {
-        return 'pyruvate-oxidation';
-      } else if (pathway.summary.name === 'Citric Acid Cycle (Krebs Cycle)') {
-        return 'citric-acid-cycle';
-      } else if (pathway.summary.name === 'Electron Transport Chain / Oxidative Phosphorylation' || pathway.summary.name === 'Electron Transport Chain') {
-        return 'electron-transport-chain';
+      // Map pathway summary names to config pathway names using PATHWAY_CONFIG
+      const summaryName = pathway.summary.name;
+      for (const [pathwayId, displayName] of Object.entries(PATHWAY_CONFIG.pathwayNames)) {
+        if (summaryName === displayName || 
+            (pathwayId === 'electron-transport-chain' && 
+             (summaryName === 'Electron Transport Chain / Oxidative Phosphorylation' || 
+              summaryName === 'Electron Transport Chain'))) {
+          return pathwayId;
+        }
       }
       return null;
     };
@@ -2022,11 +2045,15 @@ export class MetabolismViewer {
       // Get pathway name
       // For ETC complexes, try to find pathway by nodeId first (more reliable than index-based)
       let pathway = null;
-      if (reaction.nodeId && (reaction.nodeId.startsWith('complex_') || reaction.nodeId === 'coenzyme_q' || reaction.nodeId === 'cytochrome_c')) {
-        // ETC pathway - find by checking if nodeId is in ETC nodes
-        const etcPathway = this.pathways.find(p => p.id === 'electron-transport-chain');
-        if (etcPathway && etcPathway.nodes.some(n => n.id === reaction.nodeId)) {
-          pathway = 'electron-transport-chain';
+      if (reaction.nodeId) {
+        const isETCComplex = PATHWAY_CONFIG.nodeIdPatterns.etcComplex.test(reaction.nodeId);
+        const isETCCarrier = PATHWAY_CONFIG.nodeIdPatterns.etcCarriers.includes(reaction.nodeId);
+        if (isETCComplex || isETCCarrier) {
+          // ETC pathway - find by checking if nodeId is in ETC nodes
+          const etcPathway = this.pathways.find(p => p.id === 'electron-transport-chain');
+          if (etcPathway && etcPathway.nodes.some(n => n.id === reaction.nodeId)) {
+            pathway = 'electron-transport-chain';
+          }
         }
       }
       
@@ -2081,8 +2108,10 @@ export class MetabolismViewer {
         if (isEnzymeOrCarrier) {
           attachmentPointX = reaction.position.x;
           attachmentPointY = reaction.position.y;
-          const nodeWidth = reaction.isProteinComplex ? (reaction.complexSize?.width || 80) : 
-                           (reaction.isMobileCarrier ? 40 : 60);
+          const nodeWidth = reaction.isProteinComplex ? 
+                           (reaction.complexSize?.width || PATHWAY_CONFIG.nodeSizes.proteinComplex.width) : 
+                           (reaction.isMobileCarrier ? PATHWAY_CONFIG.nodeSizes.mobileCarrier.width : 
+                            PATHWAY_CONFIG.nodeSizes.regular.width);
           coords = {
             x1: reaction.position.x - nodeWidth / 2,
             y1: reaction.position.y,
@@ -2117,10 +2146,9 @@ export class MetabolismViewer {
       // Positive = counterclockwise, negative = clockwise
       let baseRotationAngle = 0;
       
-      // Flip 180 degrees for pyruvate oxidation and citric acid cycle to match glycolysis shape
-      // Glycolysis and ETC use the standard shape (above), so we flip the others
-      if (pathway === 'glycolysis' || pathway === 'electron-transport-chain') {
-        baseRotationAngle = Math.PI; // Add 180 degrees (π radians)
+      // Get rotation angle from pathway configuration
+      if (pathway && PATHWAY_CONFIG.pathwayBehavior[pathway]) {
+        baseRotationAngle = PATHWAY_CONFIG.pathwayBehavior[pathway].rotationAngle || 0;
       }
       
       // Calculate base perpendicular direction (90 degrees counterclockwise from arrow)
@@ -2139,11 +2167,14 @@ export class MetabolismViewer {
           // Calculate the direction the arrow will curve (perpendicular to main arrow)
           let nodeSize;
           if (reaction.isProteinComplex) {
-            nodeSize = reaction.complexSize || { width: 80, height: 60 };
+            const complexSize = PATHWAY_CONFIG.nodeSizes.proteinComplex;
+            nodeSize = reaction.complexSize || { width: complexSize.width, height: complexSize.height };
           } else if (reaction.isMobileCarrier) {
-            nodeSize = { width: 40, height: 40 }; // Circle with radius 20
+            const carrierSize = PATHWAY_CONFIG.nodeSizes.mobileCarrier;
+            nodeSize = { width: carrierSize.width, height: carrierSize.height };
           } else {
-            nodeSize = { width: 60, height: 60 }; // Default circle with radius 30
+            const regularSize = PATHWAY_CONFIG.nodeSizes.regular;
+            nodeSize = { width: regularSize.width, height: regularSize.height };
           }
           // Calculate distance from center to edge in the perpendicular direction
           // For a rounded rectangle, use half the width/height depending on angle
@@ -2190,47 +2221,42 @@ export class MetabolismViewer {
       };
       
       // Distance from arrow to byreactant/byproduct arrow (always use absolute distance)
-      const offset = 70; // Distance from main arrow
+      const offset = PATHWAY_CONFIG.arrowSettings.byMoleculeOffset;
       
-      // Determine offset direction based on pathway
-      // Glycolysis: above (negative), pyruvate oxidation and citric acid cycle: flipped 180 (below/opposite)
-      // ETC: above (negative, like glycolysis)
+      // Determine offset direction based on pathway configuration
       let offsetDirection = 1; // 1 = positive direction, -1 = negative direction
-      if (pathway === 'glycolysis') {
-        offsetDirection = -1; // Above
-      } else if (pathway === 'electron-transport-chain') {
-        offsetDirection = -1; // Above (like glycolysis)
-      } else if (pathway === 'citric-acid-cycle') {
-        // For citric acid cycle, arrows should face outward (away from cycle center)
-        // After 180 flip, choose the direction that points outward
-        const cacReactions = this.reactions.filter(r => {
-          const rPathway = this.getPathwayForReaction(r);
-          return rPathway && rPathway.summary.name === 'Citric Acid Cycle (Krebs Cycle)';
-        });
-        if (cacReactions.length > 0) {
-          const centerX = cacReactions.reduce((sum, r) => sum + r.position.x, 0) / cacReactions.length;
-          const centerY = cacReactions.reduce((sum, r) => sum + r.position.y, 0) / cacReactions.length;
-          
-          // Calculate direction from center to arrow midpoint
-          const centerToMidX = midX - centerX;
-          const centerToMidY = midY - centerY;
-          const centerToMidAngle = Math.atan2(centerToMidY, centerToMidX);
-          
-          // Choose the perpendicular direction that points outward (after 180 flip)
-          const perpAngle1 = basePerpAngle + Math.PI;
-          const perpAngle2 = basePerpAngle;
-          
-          const diff1 = Math.abs(centerToMidAngle - perpAngle1);
-          const diff2 = Math.abs(centerToMidAngle - perpAngle2);
-          const wrappedDiff1 = Math.min(diff1, 2 * Math.PI - diff1);
-          const wrappedDiff2 = Math.min(diff2, 2 * Math.PI - diff2);
-          
-          perpAngle = wrappedDiff1 < wrappedDiff2 ? perpAngle1 : perpAngle2;
+      if (pathway && PATHWAY_CONFIG.pathwayBehavior[pathway]) {
+        const behavior = PATHWAY_CONFIG.pathwayBehavior[pathway];
+        offsetDirection = behavior.offsetDirection || 1;
+        
+        // Special handling for citric acid cycle (calculate outward direction)
+        if (behavior.calculateOutwardDirection && pathway === 'citric-acid-cycle') {
+          // For citric acid cycle, arrows should face outward (away from cycle center)
+          const cacReactions = this.reactions.filter(r => {
+            const rPathway = this.getPathwayForReaction(r);
+            return rPathway && rPathway.summary.name === PATHWAY_CONFIG.pathwayNames['citric-acid-cycle'];
+          });
+          if (cacReactions.length > 0) {
+            const centerX = cacReactions.reduce((sum, r) => sum + r.position.x, 0) / cacReactions.length;
+            const centerY = cacReactions.reduce((sum, r) => sum + r.position.y, 0) / cacReactions.length;
+            
+            // Calculate direction from center to arrow midpoint
+            const centerToMidX = midX - centerX;
+            const centerToMidY = midY - centerY;
+            const centerToMidAngle = Math.atan2(centerToMidY, centerToMidX);
+            
+            // Choose the perpendicular direction that points outward (after 180 flip)
+            const perpAngle1 = basePerpAngle + Math.PI;
+            const perpAngle2 = basePerpAngle;
+            
+            const diff1 = Math.abs(centerToMidAngle - perpAngle1);
+            const diff2 = Math.abs(centerToMidAngle - perpAngle2);
+            const wrappedDiff1 = Math.min(diff1, 2 * Math.PI - diff1);
+            const wrappedDiff2 = Math.min(diff2, 2 * Math.PI - diff2);
+            
+            perpAngle = wrappedDiff1 < wrappedDiff2 ? perpAngle1 : perpAngle2;
+          }
         }
-        offsetDirection = 1; // Below/outward (after 180 flip)
-      } else {
-        // Pyruvate oxidation: below (after 180 flip)
-        offsetDirection = 1;
       }
       
       const finalOffset = offset * offsetDirection;
@@ -2312,11 +2338,12 @@ export class MetabolismViewer {
       // Byreactant arrow: half parabola starting at turning point (midpoint)
       // Byproduct arrow: straight line in same direction as main arrow
       
-      const byArrowLength = 66; // Length of the arrows (shortened by 66%)
+      const byArrowLength = PATHWAY_CONFIG.arrowSettings.byMoleculeLength;
       
       // Determine pathway for this reaction
       const reactionPathway = this.getPathwayForReaction(reaction);
-      const isGlycolysis = reactionPathway && reactionPathway.summary && reactionPathway.summary.name === 'Glycolysis';
+      const isGlycolysis = reactionPathway && reactionPathway.summary && 
+                          reactionPathway.summary.name === PATHWAY_CONFIG.pathwayNames['glycolysis'];
       
       // Endpoint positions will be calculated when drawing the arrows
       let byreactantEndX, byreactantEndY, byproductEndX, byproductEndY;
@@ -2329,9 +2356,9 @@ export class MetabolismViewer {
         .attr('data-reaction-step', reaction.step);
       
       // Draw arrows from midpoint
-      const arrowColor = '#8b9dc3';
-      const arrowStrokeWidth = 3;
-      const arrowOpacity = 0.8;
+      const arrowColor = PATHWAY_CONFIG.colors.byMoleculeArrow;
+      const arrowStrokeWidth = PATHWAY_CONFIG.arrowSettings.strokeWidth - 1; // Slightly thinner for by-molecules
+      const arrowOpacity = PATHWAY_CONFIG.arrowSettings.strokeOpacity + 0.1; // Slightly more opaque
       
       // Draw byreactant arrow: half of x^2 parabola
       // Simple, basic parabola y = x^2
@@ -2613,7 +2640,7 @@ export class MetabolismViewer {
       
       // Add triangle arrowhead only at the end of the byproduct arrow
       let byproductArrowhead = null;
-      const arrowheadSize = 12; // Size of the arrowhead
+      const arrowheadSize = PATHWAY_CONFIG.arrowSettings.arrowheadSize;
       
       // Add triangle arrowhead at the end of the byproduct arrow (only on byproduct side)
       if (hasByproduct) {
@@ -2829,23 +2856,24 @@ export class MetabolismViewer {
     const mobileCarriers = nodes.filter(d => d.isMobileCarrier);
     const regularReactions = nodes.filter(d => !d.isProteinComplex && !d.isMobileCarrier);
     
-    // Draw protein complexes as rounded rectangles
-    proteinComplexes.each(function(d) {
-      const size = d.complexSize || { width: 80, height: 60 };
-      const g = d3.select(this);
-      
-      // Draw rounded rectangle (oval-like shape)
-      g.append('rect')
-        .attr('x', -size.width / 2)
-        .attr('y', -size.height / 2)
-        .attr('width', size.width)
-        .attr('height', size.height)
-        .attr('rx', size.height / 2) // Make it oval-shaped
-        .attr('ry', size.height / 2)
-        .attr('fill', '#d4a574') // Tan color like in the image
-        .attr('stroke', '#8b6f47')
-        .attr('stroke-width', 3)
-        .attr('class', 'protein-complex');
+      // Draw protein complexes as rounded rectangles
+      proteinComplexes.each(function(d) {
+        const defaultSize = PATHWAY_CONFIG.nodeSizes.proteinComplex;
+        const size = d.complexSize || { width: defaultSize.width, height: defaultSize.height };
+        const g = d3.select(this);
+        
+        // Draw rounded rectangle (oval-like shape)
+        g.append('rect')
+          .attr('x', -size.width / 2)
+          .attr('y', -size.height / 2)
+          .attr('width', size.width)
+          .attr('height', size.height)
+          .attr('rx', size.height / 2) // Make it oval-shaped
+          .attr('ry', size.height / 2)
+          .attr('fill', PATHWAY_CONFIG.colors.proteinComplex)
+          .attr('stroke', PATHWAY_CONFIG.colors.proteinComplexStroke)
+          .attr('stroke-width', 3)
+          .attr('class', 'protein-complex');
       
       // Add complex number label
       if (d.complexNumber) {
@@ -2863,17 +2891,17 @@ export class MetabolismViewer {
     
     // Draw mobile carriers as smaller circles
     mobileCarriers.append('circle')
-      .attr('r', 20)
-      .attr('fill', '#d4a574') // Tan color
-      .attr('stroke', '#8b6f47')
+      .attr('r', PATHWAY_CONFIG.nodeSizes.mobileCarrier.radius)
+      .attr('fill', PATHWAY_CONFIG.colors.proteinComplex)
+      .attr('stroke', PATHWAY_CONFIG.colors.proteinComplexStroke)
       .attr('stroke-width', 2)
       .attr('class', 'mobile-carrier');
     
     // Draw regular reactions as circles
     regularReactions.append('circle')
-      .attr('r', 30)
-      .attr('fill', '#5fa8d3')
-      .attr('stroke', '#2c5f7c')
+      .attr('r', PATHWAY_CONFIG.nodeSizes.regular.radius)
+      .attr('fill', PATHWAY_CONFIG.colors.reactionCircle)
+      .attr('stroke', PATHWAY_CONFIG.colors.reactionCircleStroke)
       .attr('stroke-width', 2)
       .attr('class', 'reaction-circle');
     
@@ -3081,7 +3109,7 @@ export class MetabolismViewer {
           const arrow = etcSubArrowGroup.append('path')
             .attr('d', arrowPath)
             .attr('fill', 'none')
-            .attr('stroke', '#ff6b6b') // Red for H+
+            .attr('stroke', PATHWAY_CONFIG.colors.etcProtonArrow)
             .attr('stroke-width', 3)
             .attr('marker-end', 'url(#arrowhead-normal)')
             .attr('class', 'etc-sub-arrow etc-proton-pump')
@@ -3263,7 +3291,7 @@ export class MetabolismViewer {
   
   updateArrowConnections(zoomLevel, nodeRadius) {
     const zoomThreshold = 0.5; // Decreased from 1.5 to change view mode earlier
-    const radius = zoomLevel >= zoomThreshold ? nodeRadius : 30;
+    const radius = zoomLevel >= zoomThreshold ? nodeRadius : PATHWAY_CONFIG.nodeSizes.regular.radius;
     
     // Update regular connections based on zoom level
     this.g.selectAll('.connection').each(function(d) {
@@ -3446,9 +3474,9 @@ export class MetabolismViewer {
     
     // Reset all arrow highlighting
     this.g.selectAll('.connection')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      .attr('stroke', '#2c5f7c')
+      .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+      .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
+      .attr('stroke', PATHWAY_CONFIG.colors.secondary)
       .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
     
     // Reset all node highlights using unified function
@@ -3458,7 +3486,7 @@ export class MetabolismViewer {
     this.pathways.forEach(pathway => {
       if (pathway.button) {
         pathway.button.select('rect')
-          .attr('fill', '#667eea')
+          .attr('fill', PATHWAY_CONFIG.colors.primary)
           .attr('stroke-width', 2);
       }
     });
@@ -3694,20 +3722,20 @@ export class MetabolismViewer {
     this.pathways.forEach(pathway => {
       if (pathway.button) {
         pathway.button.select('rect')
-          .attr('fill', '#667eea')
+          .attr('fill', PATHWAY_CONFIG.colors.primary)
           .attr('stroke-width', 2);
       }
     });
     
     // Reset all arrow highlighting first
     this.g.selectAll('.connection')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      .attr('stroke', '#2c5f7c')
+      .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+      .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
+      .attr('stroke', PATHWAY_CONFIG.colors.secondary)
       .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
     
     // Highlight all arrows representing this reaction (by reaction_id, not nodeId)
-    this.highlightReactionArrows(reaction.id, 6);
+    this.highlightReactionArrows(reaction.id, PATHWAY_CONFIG.arrowSettings.strokeWidthHover);
     
     this.applyReactionHighlight(reaction);
     
@@ -3741,23 +3769,23 @@ export class MetabolismViewer {
    * Works for all node types: reaction circles, protein complexes, mobile carriers, and image backgrounds
    */
   resetAllNodeHighlights() {
-    // Reset regular reaction circles
-    this.reactionGroups.selectAll('.reaction-circle')
-      .attr('stroke-width', 2)
-      .attr('stroke', '#2c5f7c')
-      .attr('fill', '#5fa8d3');
+      // Reset regular reaction circles
+      this.reactionGroups.selectAll('.reaction-circle')
+        .attr('stroke-width', 2)
+        .attr('stroke', PATHWAY_CONFIG.colors.reactionCircleStroke)
+        .attr('fill', PATHWAY_CONFIG.colors.reactionCircle);
     
-    // Reset protein complex rectangles (ETC complexes)
-    this.reactionGroups.selectAll('.protein-complex')
-      .attr('stroke-width', 3)
-      .attr('stroke', '#8b6f47')
-      .attr('fill', '#d4a574');
+      // Reset protein complex rectangles (ETC complexes)
+      this.reactionGroups.selectAll('.protein-complex')
+        .attr('stroke-width', 3)
+        .attr('stroke', PATHWAY_CONFIG.colors.proteinComplexStroke)
+        .attr('fill', PATHWAY_CONFIG.colors.proteinComplex);
     
-    // Reset mobile carrier circles (ETC mobile carriers)
-    this.reactionGroups.selectAll('.mobile-carrier')
-      .attr('stroke-width', 2)
-      .attr('stroke', '#8b6f47')
-      .attr('fill', '#d4a574');
+      // Reset mobile carrier circles (ETC mobile carriers)
+      this.reactionGroups.selectAll('.mobile-carrier')
+        .attr('stroke-width', 2)
+        .attr('stroke', PATHWAY_CONFIG.colors.proteinComplexStroke)
+        .attr('fill', PATHWAY_CONFIG.colors.proteinComplex);
     
     // Reset image backgrounds
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -3776,21 +3804,21 @@ export class MetabolismViewer {
     // Color schemes for different highlight types
     const colors = {
       default: {
-        stroke: '#4ecdc4',  // Teal/cyan - for node selection
-        fill: '#6ee7e7',
-        bgStroke: '#4ecdc4',
+        stroke: PATHWAY_CONFIG.colors.reactant,
+        fill: PATHWAY_CONFIG.colors.reactantFill,
+        bgStroke: PATHWAY_CONFIG.colors.reactant,
         bgFill: '#f0fdfa'
       },
       reactant: {
-        stroke: '#4ecdc4',  // Teal/cyan - same as node selection color
-        fill: '#6ee7e7',
-        bgStroke: '#4ecdc4',
+        stroke: PATHWAY_CONFIG.colors.reactant,
+        fill: PATHWAY_CONFIG.colors.reactantFill,
+        bgStroke: PATHWAY_CONFIG.colors.reactant,
         bgFill: '#f0fdfa'
       },
       product: {
-        stroke: '#ff6b6b',  // Red for products
-        fill: '#ff8787',
-        bgStroke: '#ff6b6b',
+        stroke: PATHWAY_CONFIG.colors.product,
+        fill: PATHWAY_CONFIG.colors.productFill,
+        bgStroke: PATHWAY_CONFIG.colors.product,
         bgFill: this.getHighlightImageBgColor()
       }
     };
@@ -3977,7 +4005,8 @@ export class MetabolismViewer {
     // For CAC reactions, nodes display the previous reaction's product, not the substrate
     // So we need to ensure Step 15 node (displaying Oxaloacetate) is highlighted as reactant
     const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
-    const isCACStep1 = reaction.step === 15 && this.reactions.indexOf(reaction) === cacStartIndex;
+    const cacStep1Config = PATHWAY_CONFIG.specialReactions['rxn_cac_1'];
+    const isCACStep1 = cacStep1Config && reaction.step === cacStep1Config.step && this.reactions.indexOf(reaction) === cacStartIndex;
     
     if (isCACStep1) {
       // Ensure Step 1 node (Oxaloacetate) is in reactant list, not product list
@@ -3997,7 +4026,8 @@ export class MetabolismViewer {
     // Acetyl-CoA doesn't match it, so we need to ensure Step 4's node is highlighted as reactant
     const glycolysisLength_local = glycolysisReactions.length;
     const pyruvateOxStep4Index = glycolysisLength_local + 4; // Step 4 is at index glycolysisLength + 4
-    const isPyruvateOxStep4 = reaction.step === 14 && this.reactions.indexOf(reaction) === pyruvateOxStep4Index;
+    const pyruvateStep3Config = PATHWAY_CONFIG.specialReactions['rxn_pyruvate_3'];
+    const isPyruvateOxStep4 = pyruvateStep3Config && reaction.step === pyruvateStep3Config.step && this.reactions.indexOf(reaction) === pyruvateOxStep4Index;
     
     if (isPyruvateOxStep4) {
       // Ensure Step 4 node (displaying Dihydrolipoamide as substrate) is in reactant list
@@ -4208,7 +4238,7 @@ export class MetabolismViewer {
     // rather than zooming to a specific node (since they don't have dedicated nodes)
     if (!targetReaction || !targetMolecule) {
       // List of common by-molecules that don't have dedicated nodes
-      const commonByMolecules = ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP'];
+      const commonByMolecules = PATHWAY_CONFIG.commonByMolecules;
       const isCommonByMolecule = commonByMolecules.includes(moleculeName);
       
       // If this is a common by-molecule, always find all reactions where it appears 
@@ -4548,7 +4578,7 @@ export class MetabolismViewer {
     
     if (targetReaction && targetMolecule) {
       // Check again if this is a common by-molecule - if so, never zoom
-      const commonByMolecules = ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP'];
+      const commonByMolecules = PATHWAY_CONFIG.commonByMolecules;
       const isCommonByMolecule = commonByMolecules.includes(moleculeName);
       if (isCommonByMolecule) {
         options.skipZoom = true;
@@ -4613,16 +4643,16 @@ export class MetabolismViewer {
     this.pathways.forEach(pathway => {
       if (pathway.button) {
         pathway.button.select('rect')
-          .attr('fill', '#667eea')
+          .attr('fill', PATHWAY_CONFIG.colors.primary)
           .attr('stroke-width', 2);
       }
     });
     
     // Reset all arrow highlighting
     this.g.selectAll('.connection')
-      .attr('stroke-width', 4)
-      .attr('stroke-opacity', 0.7)
-      .attr('stroke', '#2c5f7c')
+      .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+      .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
+      .attr('stroke', PATHWAY_CONFIG.colors.secondary)
       .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
     
     this.applyMoleculeHighlight(molecule, reactionNode);
