@@ -182,6 +182,10 @@ export class MetabolismViewer {
         // Node data takes precedence over reaction data
         byreactant: node.byreactant !== undefined ? node.byreactant : (reaction ? reaction.byreactant : undefined),
         byproduct: node.byproduct !== undefined ? node.byproduct : (reaction ? reaction.byproduct : undefined),
+        // Display-only by-molecules (shown in Substrate → Product section but no arrows drawn)
+        // These come only from reaction data, not node data
+        displayByreactant: reaction ? reaction.displayByreactant : undefined,
+        displayByproduct: reaction ? reaction.displayByproduct : undefined,
         // Preserve by-molecule display properties from node or reaction
         byMoleculeAngle: node.byMoleculeAngle !== undefined ? node.byMoleculeAngle : (reaction ? reaction.byMoleculeAngle : undefined),
         hideByMoleculeLabels: node.hideByMoleculeLabels !== undefined ? node.hideByMoleculeLabels : (reaction ? reaction.hideByMoleculeLabels : undefined),
@@ -1478,8 +1482,26 @@ export class MetabolismViewer {
       
       // Find the processed reaction that matches this reaction_id
       // Since multiple reactions can have the same reaction_id (one per product node),
-      // we prefer the one at the target node, but any match will work
-      const processedReaction = this.reactions.find(r => r.id === arrowData.reaction_id);
+      // we prefer the one where the product matches the target node of the arrow
+      let processedReaction = this.reactions.find(r => 
+        r.id === arrowData.reaction_id && 
+        r.product && 
+        r.product.id === arrowData.to_id
+      );
+      
+      // If not found by product match, try to find by substrate matching source node
+      if (!processedReaction) {
+        processedReaction = this.reactions.find(r => 
+          r.id === arrowData.reaction_id && 
+          r.substrate && 
+          r.substrate.id === arrowData.from_id
+        );
+      }
+      
+      // If still not found, just find any reaction with matching reaction_id
+      if (!processedReaction) {
+        processedReaction = this.reactions.find(r => r.id === arrowData.reaction_id);
+      }
       
       // Use processed reaction if found (it has node data), otherwise use raw reaction
       const targetReaction = processedReaction || rawReaction;
@@ -1511,21 +1533,26 @@ export class MetabolismViewer {
       const coords = { x1, y1, x2, y2 };
       
       // Store arrow information for midpoint connections (if needed)
+      // Always use processed reaction if available (it has all the necessary data)
+      const reactionForArrowInfo = processedReaction || targetReaction;
       arrowInfoMap.set(arrowData.id, {
         ...coords,
-        targetReaction: targetReaction,
+        targetReaction: reactionForArrowInfo,
         arrowKey: getArrowKey(arrowData.from_id, arrowData.to_id)
       });
       
       // Create the arrow with the target reaction (or null if not found)
       if (targetReaction) {
         // Ensure the reaction in this.reactions has the arrowId added
-        // Find the reaction by matching reaction_id (not by nodeId), since the reaction
-        // occurs at the source node, not necessarily the target node
-        const reactionInArray = this.reactions.find(r => r.id === arrowData.reaction_id);
+        // Use the processed reaction we found, or find it again
+        const reactionInArray = processedReaction || this.reactions.find(r => r.id === arrowData.reaction_id);
         if (reactionInArray && !reactionInArray.arrowIds.includes(arrowData.id)) {
           reactionInArray.arrowIds.push(arrowData.id);
         }
+        
+        // Always use processed reaction if available (it has node data and all properties)
+        // Only fall back to raw reaction if processed reaction not found
+        const finalReaction = processedReaction || targetReaction;
         
         createArrowWithData(
           fromNode,
@@ -1533,7 +1560,7 @@ export class MetabolismViewer {
           coords,
           arrowData.id,
           '',
-          targetReaction
+          finalReaction
         );
       } else {
         // Draw arrow even if no reaction found (for visual completeness)
@@ -4218,49 +4245,24 @@ export class MetabolismViewer {
             }
           }
           // Check byproduct
-          else if (reaction.byproduct) {
-            let matches = false;
-            let byproductFormula = '';
-            let byproductId = null;
-            let byproductName = null;
-            
-            if (typeof reaction.byproduct === 'string' && reaction.byproduct === moleculeName) {
-              matches = true;
-              byproductName = reaction.byproduct;
-            } else if (Array.isArray(reaction.byproduct) && reaction.byproduct.includes(moleculeName)) {
-              matches = true;
-              byproductName = moleculeName;
-            } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
-              if (reaction.byproduct.molecules.includes(moleculeName)) {
-                matches = true;
-                byproductName = moleculeName;
+          else if (reaction.byproduct && 
+                   (reaction.byproduct.name === moleculeName || 
+                    (moleculeId && reaction.byproduct.id === moleculeId))) {
+            reactionsWithMolecule.push(reaction);
+            if (!moleculeInfo) {
+              moleculeInfo = {
+                name: reaction.byproduct.name,
+                formula: reaction.byproduct.formula || '',
+                id: reaction.byproduct.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+                description: '' // Let PubChem provide the description
+              };
+            } else {
+              // Merge: use formula/id from this reaction if current one is missing
+              if (!moleculeInfo.formula && reaction.byproduct.formula) {
+                moleculeInfo.formula = reaction.byproduct.formula;
               }
-            } else if (reaction.byproduct.name === moleculeName || 
-                      (moleculeId && reaction.byproduct.id === moleculeId)) {
-              matches = true;
-              byproductName = reaction.byproduct.name || moleculeName;
-              byproductFormula = reaction.byproduct.formula || '';
-              byproductId = reaction.byproduct.id;
-            }
-            
-            if (matches) {
-              reactionsWithMolecule.push(reaction);
-              
-              if (!moleculeInfo) {
-                moleculeInfo = {
-                  name: byproductName || moleculeName,
-                  formula: byproductFormula,
-                  id: byproductId || moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-                  description: '' // Let PubChem provide the description
-                };
-              } else {
-                // Merge: use formula/id from this reaction if current one is missing
-                if (!moleculeInfo.formula && byproductFormula) {
-                  moleculeInfo.formula = byproductFormula;
-                }
-                if (!moleculeInfo.id && byproductId) {
-                  moleculeInfo.id = byproductId;
-                }
+              if (!moleculeInfo.id && reaction.byproduct.id) {
+                moleculeInfo.id = reaction.byproduct.id;
               }
             }
           }
@@ -4405,31 +4407,6 @@ export class MetabolismViewer {
           }
           
           return;
-        } else if (isCommonByMolecule) {
-          // Even if no reactions found, create a basic molecule info for common by-molecules
-          // so the detail page can still be shown
-          const basicMoleculeInfo = {
-            name: moleculeName,
-            formula: '',
-            id: moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-            description: '' // Let PubChem provide the description
-          };
-          
-          // Set selected molecule
-          this.selectedMolecule = basicMoleculeInfo;
-          this.selectedNode = null;
-          this.selectedReaction = null;
-          
-          // Dispatch custom event for molecule detail view
-          const detailEvent = new CustomEvent('molecule-selected', {
-            detail: {
-              molecule: basicMoleculeInfo,
-              skipTabSwitch: options.skipTabSwitch || false
-            }
-          });
-          this.container.dispatchEvent(detailEvent);
-          
-          return;
         }
       }
       
@@ -4508,25 +4485,15 @@ export class MetabolismViewer {
           }
         }
         
-        // Check byproduct - handle string, array, object with name, or object with molecules array formats
+        // Check byproduct - handle both name and molecules array formats
         if (reaction.byproduct) {
           let byproductMatches = false;
           let byproductName = null;
           let byproductFormula = '';
           let byproductId = null;
           
-          // Handle string format
-          if (typeof reaction.byproduct === 'string' && reaction.byproduct === moleculeName) {
-            byproductMatches = true;
-            byproductName = reaction.byproduct;
-          }
-          // Handle array format
-          else if (Array.isArray(reaction.byproduct) && reaction.byproduct.includes(moleculeName)) {
-            byproductMatches = true;
-            byproductName = moleculeName;
-          }
           // Check if byproduct has molecules array
-          else if (reaction.byproduct.molecules) {
+          if (reaction.byproduct.molecules) {
             const molecules = Array.isArray(reaction.byproduct.molecules) 
               ? reaction.byproduct.molecules 
               : [reaction.byproduct.molecules];
@@ -4537,9 +4504,7 @@ export class MetabolismViewer {
               byproductMatches = true;
               byproductName = typeof matchingMolecule === 'string' ? matchingMolecule : moleculeName;
             }
-          }
-          // Handle object with name property
-          else if (reaction.byproduct.name === moleculeName || 
+          } else if (reaction.byproduct.name === moleculeName || 
                      (moleculeId && reaction.byproduct.id === moleculeId)) {
             byproductMatches = true;
             byproductName = reaction.byproduct.name;
@@ -4550,7 +4515,7 @@ export class MetabolismViewer {
           if (byproductMatches) {
             // Create a molecule object from byproduct data
             targetMolecule = {
-              name: byproductName || moleculeName,
+              name: byproductName,
               formula: byproductFormula,
               id: byproductId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
               description: '' // Let PubChem provide the description

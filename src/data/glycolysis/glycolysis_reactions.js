@@ -61,6 +61,7 @@ export const glycolysisReactions = [
   {
     id: 'rxn_glycolysis_4',
     name: 'Fructose-1,6-bisphosphate Cleavage',
+    displayByproduct: ['Dihydroxyacetone phosphate'],
     enzyme: {
       name: 'Aldolase',
       ecNumber: 'EC 4.1.2.13',

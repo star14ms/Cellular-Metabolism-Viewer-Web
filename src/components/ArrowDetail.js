@@ -49,10 +49,13 @@ export class ArrowDetail {
     
     // Check if the Substrate → Product section will have any by-molecules
     // If not, we'll hide the entire section for ETC reactions
+    // displayByreactant and displayByproduct are display-only (no arrows drawn)
     const hasCoSubstrate = reaction.coSubstrate && reaction.coSubstrate.name;
     const hasByreactant = reaction.byreactant && !arrowsStartFromNode;
     const hasByproduct = reaction.byproduct && !arrowsStartFromNode;
-    const hasByMolecules = hasCoSubstrate || hasByreactant || hasByproduct;
+    const hasDisplayByreactant = reaction.displayByreactant && !arrowsStartFromNode;
+    const hasDisplayByproduct = reaction.displayByproduct && !arrowsStartFromNode;
+    const hasByMolecules = hasCoSubstrate || hasByreactant || hasByproduct || hasDisplayByreactant || hasDisplayByproduct;
     
     // Helper function to get formula for a molecule name from PubChem (async)
     // This will be called after rendering to populate formulas in Substrate → Product section
@@ -188,6 +191,76 @@ export class ArrowDetail {
                 }
                 return '';
               })() : ''}
+              ${reaction.displayByreactant && !arrowsStartFromNode ? (() => {
+                // Handle displayByreactant (display-only, no arrows drawn)
+                // Same format support as byreactant: string, array, object with name, or object with molecules array
+                const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
+                
+                if (typeof reaction.displayByreactant === 'string') {
+                  // Skip if this displayByreactant matches coSubstrate
+                  if (coSubstrateName && removeCoefficients(reaction.displayByreactant) === removeCoefficients(coSubstrateName)) {
+                    return '';
+                  }
+                  const displayName = removeCoefficients(reaction.displayByreactant);
+                  return `
+                    <div class="reaction-molecule clickable-molecule co-reactant" 
+                         data-molecule-name="${reaction.displayByreactant}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                } else if (Array.isArray(reaction.displayByreactant)) {
+                  return reaction.displayByreactant
+                    .filter(mol => {
+                      // Filter out molecules that match coSubstrate
+                      return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
+                    })
+                    .map(mol => {
+                      const displayName = removeCoefficients(mol);
+                      return `
+                    <div class="reaction-molecule clickable-molecule co-reactant" 
+                         data-molecule-name="${mol}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                    }).join('');
+                } else if (reaction.displayByreactant.molecules && Array.isArray(reaction.displayByreactant.molecules)) {
+                  return reaction.displayByreactant.molecules
+                    .filter(mol => {
+                      // Filter out molecules that match coSubstrate
+                      return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
+                    })
+                    .map(mol => {
+                      const displayName = removeCoefficients(mol);
+                      return `
+                    <div class="reaction-molecule clickable-molecule co-reactant" 
+                         data-molecule-name="${mol}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                    }).join('');
+                } else if (reaction.displayByreactant.name) {
+                  // Skip if this displayByreactant matches coSubstrate
+                  if (coSubstrateName && removeCoefficients(reaction.displayByreactant.name) === removeCoefficients(coSubstrateName)) {
+                    return '';
+                  }
+                  const displayName = removeCoefficients(reaction.displayByreactant.name);
+                  return `
+                    <div class="reaction-molecule clickable-molecule co-reactant" 
+                         data-molecule-name="${reaction.displayByreactant.name}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                }
+                return '';
+              })() : ''}
             </div>
             <div class="reaction-arrow">→</div>
             <div class="reaction-products">
@@ -247,6 +320,56 @@ export class ArrowDetail {
                   `;
                 } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
                   return reaction.byproduct.molecules.map(mol => {
+                    const displayName = removeCoefficients(mol);
+                    return `
+                    <div class="reaction-molecule clickable-molecule co-product" 
+                         data-molecule-name="${mol}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                  }).join('');
+                }
+                return '';
+              })() : ''}
+              ${reaction.displayByproduct && !arrowsStartFromNode ? (() => {
+                // Handle displayByproduct (display-only, no arrows drawn)
+                // Same format support as byproduct: string, array, object with name, or object with molecules array
+                if (typeof reaction.displayByproduct === 'string') {
+                  const displayName = removeCoefficients(reaction.displayByproduct);
+                  return `
+                    <div class="reaction-molecule clickable-molecule co-product" 
+                         data-molecule-name="${reaction.displayByproduct}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                } else if (Array.isArray(reaction.displayByproduct)) {
+                  return reaction.displayByproduct.map(mol => {
+                    const displayName = removeCoefficients(mol);
+                    return `
+                    <div class="reaction-molecule clickable-molecule co-product" 
+                         data-molecule-name="${mol}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                  }).join('');
+                } else if (reaction.displayByproduct.name) {
+                  const displayName = removeCoefficients(reaction.displayByproduct.name);
+                  return `
+                    <div class="reaction-molecule clickable-molecule co-product" 
+                         data-molecule-name="${reaction.displayByproduct.name}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                } else if (reaction.displayByproduct.molecules && Array.isArray(reaction.displayByproduct.molecules)) {
+                  return reaction.displayByproduct.molecules.map(mol => {
                     const displayName = removeCoefficients(mol);
                     return `
                     <div class="reaction-molecule clickable-molecule co-product" 
@@ -435,6 +558,36 @@ export class ArrowDetail {
         let isByreactant = null;
         if (reaction.coSubstrate && reaction.coSubstrate.name === moleculeName) {
           isByreactant = true;
+        } else if (reaction.byreactant) {
+          // Handle different byreactant formats
+          let byreactantName = null;
+          if (typeof reaction.byreactant === 'string') {
+            byreactantName = reaction.byreactant;
+          } else if (Array.isArray(reaction.byreactant)) {
+            byreactantName = reaction.byreactant.includes(moleculeName) ? moleculeName : null;
+          } else if (reaction.byreactant.name) {
+            byreactantName = reaction.byreactant.name;
+          } else if (reaction.byreactant.molecules && Array.isArray(reaction.byreactant.molecules)) {
+            byreactantName = reaction.byreactant.molecules.includes(moleculeName) ? moleculeName : null;
+          }
+          if (byreactantName === moleculeName) {
+            isByreactant = true;
+          }
+        } else if (reaction.displayByreactant) {
+          // Handle displayByreactant (display-only)
+          let displayByreactantName = null;
+          if (typeof reaction.displayByreactant === 'string') {
+            displayByreactantName = reaction.displayByreactant;
+          } else if (Array.isArray(reaction.displayByreactant)) {
+            displayByreactantName = reaction.displayByreactant.includes(moleculeName) ? moleculeName : null;
+          } else if (reaction.displayByreactant.name) {
+            displayByreactantName = reaction.displayByreactant.name;
+          } else if (reaction.displayByreactant.molecules && Array.isArray(reaction.displayByreactant.molecules)) {
+            displayByreactantName = reaction.displayByreactant.molecules.includes(moleculeName) ? moleculeName : null;
+          }
+          if (displayByreactantName === moleculeName) {
+            isByreactant = true;
+          }
         } else if (reaction.byproduct) {
           // Handle different byproduct formats
           let byproductName = null;
@@ -448,6 +601,21 @@ export class ArrowDetail {
             byproductName = reaction.byproduct.molecules.includes(moleculeName) ? moleculeName : null;
           }
           if (byproductName === moleculeName) {
+            isByreactant = false;
+          }
+        } else if (reaction.displayByproduct) {
+          // Handle displayByproduct (display-only)
+          let displayByproductName = null;
+          if (typeof reaction.displayByproduct === 'string') {
+            displayByproductName = reaction.displayByproduct;
+          } else if (Array.isArray(reaction.displayByproduct)) {
+            displayByproductName = reaction.displayByproduct.includes(moleculeName) ? moleculeName : null;
+          } else if (reaction.displayByproduct.name) {
+            displayByproductName = reaction.displayByproduct.name;
+          } else if (reaction.displayByproduct.molecules && Array.isArray(reaction.displayByproduct.molecules)) {
+            displayByproductName = reaction.displayByproduct.molecules.includes(moleculeName) ? moleculeName : null;
+          }
+          if (displayByproductName === moleculeName) {
             isByreactant = false;
           }
         } else if (element.classList.contains('co-reactant')) {
@@ -478,9 +646,37 @@ export class ArrowDetail {
             byproductName = reaction.byproduct.molecules.includes(moleculeName) ? moleculeName : null;
           }
         }
+        // Check if molecule is in displayByreactant or displayByproduct
+        let displayByreactantName = null;
+        if (reaction.displayByreactant) {
+          if (typeof reaction.displayByreactant === 'string') {
+            displayByreactantName = reaction.displayByreactant;
+          } else if (Array.isArray(reaction.displayByreactant)) {
+            displayByreactantName = reaction.displayByreactant.includes(moleculeName) ? moleculeName : null;
+          } else if (reaction.displayByreactant.name) {
+            displayByreactantName = reaction.displayByreactant.name;
+          } else if (reaction.displayByreactant.molecules && Array.isArray(reaction.displayByreactant.molecules)) {
+            displayByreactantName = reaction.displayByreactant.molecules.includes(moleculeName) ? moleculeName : null;
+          }
+        }
+        let displayByproductName = null;
+        if (reaction.displayByproduct) {
+          if (typeof reaction.displayByproduct === 'string') {
+            displayByproductName = reaction.displayByproduct;
+          } else if (Array.isArray(reaction.displayByproduct)) {
+            displayByproductName = reaction.displayByproduct.includes(moleculeName) ? moleculeName : null;
+          } else if (reaction.displayByproduct.name) {
+            displayByproductName = reaction.displayByproduct.name;
+          } else if (reaction.displayByproduct.molecules && Array.isArray(reaction.displayByproduct.molecules)) {
+            displayByproductName = reaction.displayByproduct.molecules.includes(moleculeName) ? moleculeName : null;
+          }
+        }
+        
         const isByMolecule = isByreactant !== null || 
                             (reaction.coSubstrate && reaction.coSubstrate.name === moleculeName) ||
                             (byproductName === moleculeName) ||
+                            (displayByreactantName === moleculeName) ||
+                            (displayByproductName === moleculeName) ||
                             element.classList.contains('co-reactant') ||
                             element.classList.contains('co-product');
         
@@ -554,6 +750,48 @@ export class ArrowDetail {
           moleculeNames.add(reaction.byproduct.name);
         } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
           reaction.byproduct.molecules.forEach(mol => moleculeNames.add(mol));
+        }
+      }
+      
+      // Collect displayByreactant names (display-only, no arrows)
+      if (reaction.displayByreactant && !arrowsStartFromNode) {
+        if (typeof reaction.displayByreactant === 'string') {
+          const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
+          if (!coSubstrateName || removeCoefficients(reaction.displayByreactant) !== removeCoefficients(coSubstrateName)) {
+            moleculeNames.add(reaction.displayByreactant);
+          }
+        } else if (Array.isArray(reaction.displayByreactant)) {
+          const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
+          reaction.displayByreactant.forEach(mol => {
+            if (!coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName)) {
+              moleculeNames.add(mol);
+            }
+          });
+        } else if (reaction.displayByreactant.molecules && Array.isArray(reaction.displayByreactant.molecules)) {
+          const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
+          reaction.displayByreactant.molecules.forEach(mol => {
+            if (!coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName)) {
+              moleculeNames.add(mol);
+            }
+          });
+        } else if (reaction.displayByreactant.name) {
+          const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
+          if (!coSubstrateName || removeCoefficients(reaction.displayByreactant.name) !== removeCoefficients(coSubstrateName)) {
+            moleculeNames.add(reaction.displayByreactant.name);
+          }
+        }
+      }
+      
+      // Collect displayByproduct names (display-only, no arrows)
+      if (reaction.displayByproduct && !arrowsStartFromNode) {
+        if (typeof reaction.displayByproduct === 'string') {
+          moleculeNames.add(reaction.displayByproduct);
+        } else if (Array.isArray(reaction.displayByproduct)) {
+          reaction.displayByproduct.forEach(mol => moleculeNames.add(mol));
+        } else if (reaction.displayByproduct.name) {
+          moleculeNames.add(reaction.displayByproduct.name);
+        } else if (reaction.displayByproduct.molecules && Array.isArray(reaction.displayByproduct.molecules)) {
+          reaction.displayByproduct.molecules.forEach(mol => moleculeNames.add(mol));
         }
       }
       

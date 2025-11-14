@@ -7,6 +7,7 @@ export const citricAcidCycleReactions = [
     id: 'rxn_cac_1',
     name: 'Citrate Formation',
     byproduct: ['CoA'],
+    displayByreactant: ['Acetyl-CoA'],
     enzyme: {
       name: 'Citrate Synthase',
       ecNumber: '4.2.1.3',
