@@ -21,7 +21,7 @@ export function getAlternativeNames(moleculeName) {
     '1,3-Bisphosphoglycerate': ['1,3-BPG'],
     '3-Phosphoglycerate': ['3PG'],
     '2-Phosphoglycerate': ['2PG'],
-    'Phosphoenolpyruvate': ['PEP', 'Phosphoenolpyruvic acid'],
+    'Phosphoenolpyruvate (PEP)': ['Phosphoenolpyruvate'], // Reverse mapping for names with parentheses
     'Pyruvate': ['Pyruvic acid'],
     // Citric Acid Cycle compounds
     'Succinate': ['Succinic acid', 'Butanedioic acid', 'Ethylene succinic acid'],

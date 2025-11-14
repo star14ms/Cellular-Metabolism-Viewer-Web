@@ -10,12 +10,19 @@ import { loadCacheFromStorage, saveToStorage, getFromStorage } from './pubchemCa
 /**
  * Normalize molecule name for PubChem search
  * Handles CO₂/CO2 conversion and other special cases
+ * Also removes parenthetical abbreviations like "(PEP)" from names
  */
 export function normalizeMoleculeName(moleculeName) {
   if (moleculeName === 'CO₂' || moleculeName === 'CO2') {
     return 'Carbon dioxide';
   }
-  return moleculeName;
+  
+  // Remove parenthetical abbreviations like "(PEP)", "(ATP)", etc.
+  // This helps match names like "Phosphoenolpyruvate (PEP)" to "Phosphoenolpyruvate"
+  // Pattern: matches parentheses with optional spaces, e.g., " (PEP)", "(ATP)", etc.
+  const normalized = moleculeName.replace(/\s*\([^)]+\)\s*$/, '').trim();
+  
+  return normalized || moleculeName; // Return original if normalization results in empty string
 }
 
 /**

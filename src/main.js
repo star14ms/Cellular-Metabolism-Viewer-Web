@@ -3,10 +3,21 @@ import { MetabolismViewer } from './components/MetabolismViewer.js'
 import { ArrowDetail } from './components/ArrowDetail.js'
 import { NodeDetail } from './components/NodeDetail.js'
 import { PathwayDetail } from './components/PathwayDetail.js'
-import { glycolysisReactions, glycolysisSummary } from './data/glycolysis.js'
-import { pyruvateOxidationReactions, pyruvateOxidationSummary } from './data/pyruvateOxidation.js'
-import { citricAcidCycleReactions, citricAcidCycleSummary } from './data/citricAcidCycle.js'
-import { electronTransportChainReactions, electronTransportChainSummary } from './data/electronTransportChain.js'
+// New data format imports
+import { glycolysisData } from './data/glycolysis/glycolysis_index.js'
+import { pyruvateOxidationData } from './data/pyruvateOxidation/pyruvateOxidation_index.js'
+import { citricAcidCycleData } from './data/citricAcidCycle/citricAcidCycle_index.js'
+import { electronTransportChainData } from './data/electronTransportChain/electronTransportChain_index.js'
+
+// Legacy exports for backward compatibility (if needed)
+export const glycolysisReactions = glycolysisData.reactions
+export const glycolysisSummary = glycolysisData.summary
+export const pyruvateOxidationReactions = pyruvateOxidationData.reactions
+export const pyruvateOxidationSummary = pyruvateOxidationData.summary
+export const citricAcidCycleReactions = citricAcidCycleData.reactions
+export const citricAcidCycleSummary = citricAcidCycleData.summary
+export const electronTransportChainReactions = electronTransportChainData.reactions
+export const electronTransportChainSummary = electronTransportChainData.summary
 
 // Initialize theme IMMEDIATELY before anything else to prevent flash
 const initTheme = () => {

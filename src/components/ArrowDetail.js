@@ -211,7 +211,7 @@ export class ArrowDetail {
                 </div>
               `}
               ${reaction.byproduct && !arrowsStartFromNode ? (() => {
-                // Handle different byproduct formats: string, object with name, or object with molecules array
+                // Handle different byproduct formats: string, array, object with name, or object with molecules array
                 // Hide byproducts if arrows start from node (ETC complexes)
                 if (typeof reaction.byproduct === 'string') {
                   const displayName = removeCoefficients(reaction.byproduct);
@@ -223,6 +223,18 @@ export class ArrowDetail {
                       <strong>${displayName}</strong>
                     </div>
                   `;
+                } else if (Array.isArray(reaction.byproduct)) {
+                  return reaction.byproduct.map(mol => {
+                    const displayName = removeCoefficients(mol);
+                    return `
+                    <div class="reaction-molecule clickable-molecule co-product" 
+                         data-molecule-name="${mol}" 
+                         data-molecule-id=""
+                         style="cursor: pointer;">
+                      <strong>${displayName}</strong>
+                    </div>
+                  `;
+                  }).join('');
                 } else if (reaction.byproduct.name) {
                   const displayName = removeCoefficients(reaction.byproduct.name);
                   return `
@@ -303,6 +315,27 @@ export class ArrowDetail {
                     <div class="loading-indicator">Loading PubChem data...</div>
                   </div>
                 </div>
+              </div>
+            `;
+          } else if (Array.isArray(reaction.byproduct)) {
+            return `
+              <div class="detail-section">
+                <h3>Byproducts</h3>
+                ${reaction.byproduct.map((mol, idx) => {
+                  const displayName = removeCoefficients(mol);
+                  return `
+                  <div class="byproduct-info clickable-molecule" 
+                       id="byproduct-info-${idx}"
+                       data-molecule-name="${mol}" 
+                       data-molecule-id=""
+                       style="cursor: pointer; margin-bottom: 10px;">
+                    <div class="molecule-name">${displayName}</div>
+                    <div class="pubchem-loading" data-molecule="${mol}">
+                      <div class="loading-indicator">Loading PubChem data...</div>
+                    </div>
+                  </div>
+                `;
+                }).join('')}
               </div>
             `;
           } else if (reaction.byproduct.name) {
@@ -404,9 +437,16 @@ export class ArrowDetail {
           isByreactant = true;
         } else if (reaction.byproduct) {
           // Handle different byproduct formats
-          const byproductName = typeof reaction.byproduct === 'string' 
-            ? reaction.byproduct 
-            : (reaction.byproduct.name || (reaction.byproduct.molecules && reaction.byproduct.molecules.includes(moleculeName) ? moleculeName : null));
+          let byproductName = null;
+          if (typeof reaction.byproduct === 'string') {
+            byproductName = reaction.byproduct;
+          } else if (Array.isArray(reaction.byproduct)) {
+            byproductName = reaction.byproduct.includes(moleculeName) ? moleculeName : null;
+          } else if (reaction.byproduct.name) {
+            byproductName = reaction.byproduct.name;
+          } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
+            byproductName = reaction.byproduct.molecules.includes(moleculeName) ? moleculeName : null;
+          }
           if (byproductName === moleculeName) {
             isByreactant = false;
           }
@@ -426,11 +466,18 @@ export class ArrowDetail {
         // Dispatch event to select molecule in viewer
         // If it's a byreactant or byproduct, skip zoom to prevent frame movement
         // Check if molecule is a byproduct (handle different formats)
-        const byproductName = reaction.byproduct 
-          ? (typeof reaction.byproduct === 'string' 
-              ? reaction.byproduct 
-              : (reaction.byproduct.name || (reaction.byproduct.molecules && reaction.byproduct.molecules.includes(moleculeName) ? moleculeName : null)))
-          : null;
+        let byproductName = null;
+        if (reaction.byproduct) {
+          if (typeof reaction.byproduct === 'string') {
+            byproductName = reaction.byproduct;
+          } else if (Array.isArray(reaction.byproduct)) {
+            byproductName = reaction.byproduct.includes(moleculeName) ? moleculeName : null;
+          } else if (reaction.byproduct.name) {
+            byproductName = reaction.byproduct.name;
+          } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
+            byproductName = reaction.byproduct.molecules.includes(moleculeName) ? moleculeName : null;
+          }
+        }
         const isByMolecule = isByreactant !== null || 
                             (reaction.coSubstrate && reaction.coSubstrate.name === moleculeName) ||
                             (byproductName === moleculeName) ||
@@ -501,6 +548,8 @@ export class ArrowDetail {
       if (reaction.byproduct && !arrowsStartFromNode) {
         if (typeof reaction.byproduct === 'string') {
           moleculeNames.add(reaction.byproduct);
+        } else if (Array.isArray(reaction.byproduct)) {
+          reaction.byproduct.forEach(mol => moleculeNames.add(mol));
         } else if (reaction.byproduct.name) {
           moleculeNames.add(reaction.byproduct.name);
         } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
@@ -529,6 +578,12 @@ export class ArrowDetail {
       if (typeof reaction.byproduct === 'string') {
         const searchName = removeCoefficients(reaction.byproduct);
         await fetchAndDisplayPubChem(searchName, 'byproduct-info', this.pubchemCache);
+      } else if (Array.isArray(reaction.byproduct)) {
+        // Fetch data for each molecule in the array
+        for (let idx = 0; idx < reaction.byproduct.length; idx++) {
+          const searchName = removeCoefficients(reaction.byproduct[idx]);
+          await fetchAndDisplayPubChem(searchName, `byproduct-info-${idx}`, this.pubchemCache);
+        }
       } else if (reaction.byproduct.name) {
         const searchName = removeCoefficients(reaction.byproduct.name);
         await fetchAndDisplayPubChem(searchName, 'byproduct-info', this.pubchemCache);

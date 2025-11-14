@@ -43,19 +43,75 @@ export class NodeDetail {
     
     // Remove coefficients for display
     const displayName = removeCoefficients(molecule.name);
+    const moleculeNameWithoutCoeff = removeCoefficients(molecule.name);
     
     // Check if this is an enzyme/carrier node (protein complex or mobile carrier)
     // These nodes represent enzymes/carriers, not substrates/products
     // Only show "Substrate → Product" section for direct node clicks, not for by-molecule clicks
     const isEnzymeOrCarrierNode = isDirectNodeClick && reactionNode && (reactionNode.isProteinComplex === true || reactionNode.isMobileCarrier === true);
     
+    // Check if the current molecule is itself a by-molecule
+    // If so, don't show the "Substrate → Product" section
+    let isByMolecule = false;
+    if (reactionNode) {
+      // Check common by-molecules list
+      const commonByMolecules = ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP', 'O₂', 'H+', 'H⁺'];
+      isByMolecule = commonByMolecules.includes(moleculeNameWithoutCoeff);
+      
+      // Also check if molecule matches any by-molecules in the reactionNode
+      if (!isByMolecule) {
+        // Check coSubstrate
+        if (reactionNode.coSubstrate && reactionNode.coSubstrate.name) {
+          const coSubstrateName = removeCoefficients(reactionNode.coSubstrate.name);
+          if (coSubstrateName === moleculeNameWithoutCoeff) {
+            isByMolecule = true;
+          }
+        }
+        
+        // Check byreactant
+        if (!isByMolecule && reactionNode.byreactant) {
+          const checkByreactant = (byreactant) => {
+            if (typeof byreactant === 'string') {
+              return removeCoefficients(byreactant) === moleculeNameWithoutCoeff;
+            } else if (Array.isArray(byreactant)) {
+              return byreactant.some(mol => removeCoefficients(mol) === moleculeNameWithoutCoeff);
+            } else if (byreactant.molecules && Array.isArray(byreactant.molecules)) {
+              return byreactant.molecules.some(mol => removeCoefficients(mol) === moleculeNameWithoutCoeff);
+            } else if (byreactant.name) {
+              return removeCoefficients(byreactant.name) === moleculeNameWithoutCoeff;
+            }
+            return false;
+          };
+          isByMolecule = checkByreactant(reactionNode.byreactant);
+        }
+        
+        // Check byproduct
+        if (!isByMolecule && reactionNode.byproduct) {
+          const checkByproduct = (byproduct) => {
+            if (typeof byproduct === 'string') {
+              return removeCoefficients(byproduct) === moleculeNameWithoutCoeff;
+            } else if (Array.isArray(byproduct)) {
+              return byproduct.some(mol => removeCoefficients(mol) === moleculeNameWithoutCoeff);
+            } else if (byproduct.molecules && Array.isArray(byproduct.molecules)) {
+              return byproduct.molecules.some(mol => removeCoefficients(mol) === moleculeNameWithoutCoeff);
+            } else if (byproduct.name) {
+              return removeCoefficients(byproduct.name) === moleculeNameWithoutCoeff;
+            }
+            return false;
+          };
+          isByMolecule = checkByproduct(reactionNode.byproduct);
+        }
+      }
+    }
+    
     // Check if there are any by-molecules to display in the Substrate → Product section
     // For ETC reactions, only show the section if there are by-molecules
+    // But don't show it if the current molecule is itself a by-molecule
     const hasCoSubstrate = !!(reactionNode && reactionNode.coSubstrate && reactionNode.coSubstrate.name);
     const hasByreactant = !!(reactionNode && reactionNode.byreactant);
     const hasByproduct = !!(reactionNode && reactionNode.byproduct);
     const hasByMolecules = hasCoSubstrate || hasByreactant || hasByproduct;
-    const shouldShowSection = isEnzymeOrCarrierNode && hasByMolecules;
+    const shouldShowSection = isEnzymeOrCarrierNode && hasByMolecules && !isByMolecule;
     
     // Helper function to get formula for a molecule name from PubChem (async)
     // This will be called after rendering to populate formulas
@@ -158,7 +214,7 @@ export class NodeDetail {
               <div class="reaction-arrow">→</div>
               <div class="reaction-products">
                 ${reactionNode.byproduct ? (() => {
-                  // Handle different byproduct formats: string, object with name, or object with molecules array
+                  // Handle different byproduct formats: string, array, object with name, or object with molecules array
                   // Show coefficients in Substrate → Product section
                   if (typeof reactionNode.byproduct === 'string') {
                     return `
@@ -168,6 +224,16 @@ export class NodeDetail {
                         <strong>${reactionNode.byproduct}</strong>
                       </div>
                     `;
+                  } else if (Array.isArray(reactionNode.byproduct)) {
+                    return reactionNode.byproduct.map(mol => {
+                      return `
+                      <div class="reaction-molecule clickable-molecule co-product" 
+                           data-molecule-name="${mol}" 
+                           data-molecule-id="">
+                        <strong>${mol}</strong>
+                      </div>
+                    `;
+                    }).join('');
                   } else if (reactionNode.byproduct.name) {
                     return `
                       <div class="reaction-molecule clickable-molecule co-product" 
@@ -222,8 +288,12 @@ export class NodeDetail {
       const moleculeElements = this.container.querySelectorAll('.clickable-molecule');
       moleculeElements.forEach(element => {
         element.addEventListener('click', (e) => {
-          const moleculeName = element.dataset.moleculeName;
+          const moleculeNameWithCoefficient = element.dataset.moleculeName;
           const moleculeId = element.dataset.moleculeId;
+          
+          // Remove coefficients before searching for molecule detail page
+          // The display shows coefficients, but detail page should show only the molecule name
+          const moleculeName = removeCoefficients(moleculeNameWithCoefficient);
           
           // Determine if this is a byreactant or byproduct
           // Since we only show by-molecules in complex nodes, all clicks are for by-molecules
@@ -282,6 +352,8 @@ export class NodeDetail {
         if (reactionNode.byproduct) {
           if (typeof reactionNode.byproduct === 'string') {
             moleculeNames.add(reactionNode.byproduct);
+          } else if (Array.isArray(reactionNode.byproduct)) {
+            reactionNode.byproduct.forEach(mol => moleculeNames.add(mol));
           } else if (reactionNode.byproduct.name) {
             moleculeNames.add(reactionNode.byproduct.name);
           } else if (reactionNode.byproduct.molecules && Array.isArray(reactionNode.byproduct.molecules)) {

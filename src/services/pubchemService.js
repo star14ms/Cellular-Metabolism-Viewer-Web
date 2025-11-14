@@ -226,9 +226,11 @@ export async function fetchCompoundWithFallback(compoundName, alternativeNames =
     } catch (error) {
       console.warn(`Failed to fetch ${name}, trying next...`);
       continue;
+
     }
   }
   
   throw new Error(`Could not fetch compound data for any of: ${namesToTry.join(', ')}`);
 }
+
 
