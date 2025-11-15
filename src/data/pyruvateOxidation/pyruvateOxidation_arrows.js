@@ -45,7 +45,6 @@ export const pyruvateOxidationArrows = [
   {
     id: 'arrow_pyruvate_1-1',
     from_id: 'pyruvate',
-    to_id: 'hydroxyethyl-tpp',
     reaction_id: 'rxn_pyruvate_1',
     curved: true,
     flipped: true,
@@ -56,7 +55,6 @@ export const pyruvateOxidationArrows = [
   {
     id: 'arrow_pyruvate_1-2',
     from_id: 'thiamine-pyrophosphate',
-    to_id: 'hydroxyethyl-tpp',
     reaction_id: 'rxn_pyruvate_1',
     curved: true,
     x_scale: 1.5,

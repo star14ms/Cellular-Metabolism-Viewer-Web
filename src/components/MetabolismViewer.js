@@ -2239,8 +2239,11 @@ export class MetabolismViewer {
       // Also check for curved arrows (which may not have toNodeId or fromNodeId)
       // For curved arrows, we can draw by-arrows even if there's no from_id or to_id
       for (const arrowData of candidateArrows) {
-        if (arrowData.isCurved === true && 
-            !arrowData.isMidpointConnection) {
+        // Check both arrowData.isCurved and raw arrow data for curved property
+        const rawArrow = this.arrowMap.get(arrowData.connectionId);
+        const isCurved = arrowData.isCurved === true || (rawArrow && rawArrow.curved === true);
+        
+        if (isCurved && !arrowData.isMidpointConnection) {
           return arrowData; // Return curved arrow even if no fromNodeId or toNodeId
         }
       }
@@ -2429,7 +2432,130 @@ export class MetabolismViewer {
             x2: reaction.position.x + nodeWidth / 2,
             y2: reaction.position.y
           };
+        } else if (hasCurvedArrow) {
+          // For curved arrows, try to find the curved arrow and get coords from it
+          // Even if mainArrow is null, we can still draw by-arrows for curved arrows
+          let curvedArrowData = null;
+          let curvedRawArrow = null;
+          
+          // Try to find the curved arrow from arrowDataMap
+          if (reaction.arrowIds && reaction.arrowIds.length > 0) {
+            for (const arrowId of reaction.arrowIds) {
+              // Check raw arrow first
+              const rawArrow = this.arrowMap.get(arrowId);
+              if (rawArrow && rawArrow.curved === true) {
+                curvedRawArrow = rawArrow;
+                // Try to find it in arrowDataMap
+                for (const [key, arrowData] of this.arrowDataMap.entries()) {
+                  if (arrowData.connectionId === arrowId && 
+                      arrowData.targetReaction && 
+                      arrowData.targetReaction.id === reaction.id) {
+                    curvedArrowData = arrowData;
+                    break;
+                  }
+                }
+                break;
+              }
+            }
+          }
+          
+          // If we found curved arrow data, use it
+          if (curvedArrowData && curvedArrowData.coords) {
+            coords = curvedArrowData.coords;
+            attachmentPointX = null;
+            attachmentPointY = null;
+          } else if (curvedRawArrow) {
+            // If we have raw arrow but no arrowData, calculate coords from from_id
+            const fromNodeId = curvedRawArrow.from_id;
+            const toNodeId = curvedRawArrow.to_id;
+            
+            if (fromNodeId) {
+              const fromNode = this.nodeMap.get(fromNodeId);
+              if (fromNode && fromNode.position) {
+                const getNodeRadius = (node) => {
+                  if (!node) return 30;
+                  if (node.isProteinComplex) return 40;
+                  if (node.isMobileCarrier) return 20;
+                  return 30;
+                };
+                const nodeRadius = getNodeRadius(fromNode);
+                const arrowLength = PATHWAY_CONFIG.arrowSettings.byMoleculeLength * 1.5;
+                const startX = fromNode.position.x + nodeRadius;
+                const startY = fromNode.position.y;
+                coords = {
+                  x1: startX,
+                  y1: startY,
+                  x2: startX + arrowLength,
+                  y2: startY
+                };
+                attachmentPointX = null;
+                attachmentPointY = null;
+              } else {
+                // Fallback to reaction position
+                const nodeRadius = 30;
+                const arrowLength = PATHWAY_CONFIG.arrowSettings.byMoleculeLength * 1.5;
+                coords = {
+                  x1: reaction.position.x - nodeRadius,
+                  y1: reaction.position.y,
+                  x2: reaction.position.x + nodeRadius + arrowLength,
+                  y2: reaction.position.y
+                };
+                attachmentPointX = null;
+                attachmentPointY = null;
+              }
+            } else if (toNodeId) {
+              const toNode = this.nodeMap.get(toNodeId);
+              if (toNode && toNode.position) {
+                const getNodeRadius = (node) => {
+                  if (!node) return 30;
+                  if (node.isProteinComplex) return 40;
+                  if (node.isMobileCarrier) return 20;
+                  return 30;
+                };
+                const nodeRadius = getNodeRadius(toNode);
+                const arrowLength = PATHWAY_CONFIG.arrowSettings.byMoleculeLength * 1.5;
+                const endX = toNode.position.x - nodeRadius;
+                const endY = toNode.position.y;
+                coords = {
+                  x1: endX - arrowLength,
+                  y1: endY,
+                  x2: endX,
+                  y2: endY
+                };
+                attachmentPointX = null;
+                attachmentPointY = null;
+              } else {
+                // Fallback to reaction position
+                const nodeRadius = 30;
+                const arrowLength = PATHWAY_CONFIG.arrowSettings.byMoleculeLength * 1.5;
+                coords = {
+                  x1: reaction.position.x - nodeRadius - arrowLength,
+                  y1: reaction.position.y,
+                  x2: reaction.position.x - nodeRadius,
+                  y2: reaction.position.y
+                };
+                attachmentPointX = null;
+                attachmentPointY = null;
+              }
+            } else {
+              // No from_id or to_id - use reaction position
+              const nodeRadius = 30;
+              const arrowLength = PATHWAY_CONFIG.arrowSettings.byMoleculeLength * 1.5;
+              coords = {
+                x1: reaction.position.x - nodeRadius,
+                y1: reaction.position.y,
+                x2: reaction.position.x + nodeRadius + arrowLength,
+                y2: reaction.position.y
+              };
+              attachmentPointX = null;
+              attachmentPointY = null;
+            }
+          } else {
+            // Curved arrow but couldn't find it - skip warning but return
+            return;
+          }
         } else {
+          // For non-curved arrows, it's an error if main arrow is not found
           console.warn(`Main arrow not found for reaction:`, reaction.name, 'ArrowIds:', reaction.arrowIds);
           return;
         }
@@ -2447,15 +2573,43 @@ export class MetabolismViewer {
       }
       
       // Check if main arrow is curved - if so, use from_id position as midpoint
-      const isMainArrowCurved = mainArrow && mainArrow.isCurved === true;
+      // Check both arrowData.isCurved and raw arrow data for curved property
+      // Also check if we found a curved arrow in the previous block
+      const rawMainArrow = mainArrow ? this.arrowMap.get(mainArrow.connectionId) : null;
+      let isMainArrowCurved = mainArrow && (mainArrow.isCurved === true || (rawMainArrow && rawMainArrow.curved === true));
+      
+      // If mainArrow is null but we have hasCurvedArrow, check if we found curved arrow data
+      if (!isMainArrowCurved && hasCurvedArrow && !mainArrow) {
+        // Check if any arrow for this reaction is curved
+        if (reaction.arrowIds && reaction.arrowIds.length > 0) {
+          for (const arrowId of reaction.arrowIds) {
+            const rawArrow = this.arrowMap.get(arrowId);
+            if (rawArrow && rawArrow.curved === true) {
+              isMainArrowCurved = true;
+              break;
+            }
+          }
+        }
+      }
       
       // For curved arrows, recalculate coords if needed
       if (isMainArrowCurved && !dataFromNode && attachmentPointX === null) {
         // For curved arrows, use from_id position if available, otherwise use reaction position
-        let fromNode = mainArrow.fromReaction;
-        if (!fromNode && mainArrow.targetReaction) {
+        let fromNode = mainArrow ? mainArrow.fromReaction : null;
+        if (!fromNode && mainArrow && mainArrow.targetReaction) {
           // If no fromNode, use the reaction position as the base
           fromNode = mainArrow.targetReaction;
+        }
+        
+        // If mainArrow is null, try to find fromNode from the curved arrow data
+        if (!fromNode && hasCurvedArrow && reaction.arrowIds && reaction.arrowIds.length > 0) {
+          for (const arrowId of reaction.arrowIds) {
+            const rawArrow = this.arrowMap.get(arrowId);
+            if (rawArrow && rawArrow.curved === true && rawArrow.from_id) {
+              fromNode = this.nodeMap.get(rawArrow.from_id);
+              if (fromNode) break;
+            }
+          }
         }
         
         const getNodeRadius = (node) => {
@@ -2478,7 +2632,7 @@ export class MetabolismViewer {
             x2: fromEdgeX + 100, // Arbitrary length for calculations
             y2: fromEdgeY
           };
-        } else if (mainArrow.coords) {
+        } else if (mainArrow && mainArrow.coords) {
           // Use stored coords from the curved arrow if available
           coords = mainArrow.coords;
         } else if (reaction.position) {
@@ -2555,24 +2709,42 @@ export class MetabolismViewer {
         // Enzyme/carrier node with reaction data: use node position
         midX = attachmentPointX;
         midY = attachmentPointY;
-      } else if (isMainArrowCurved && mainArrow.fromReaction) {
+      } else if (isMainArrowCurved) {
         // For curved arrows with from_id, use from_id position as midpoint
         // This works even if to_id doesn't exist - by-arrows should still be drawn
-        const fromNode = mainArrow.fromReaction;
-        const getNodeRadius = (node) => {
-          if (!node) return 30;
-          if (node.isProteinComplex) return 40;
-          if (node.isMobileCarrier) return 20;
-          return 30;
-        };
-        const fromRadius = getNodeRadius(fromNode);
-        // Calculate position at the edge of the from_id node (going right)
-        const fromEdgeX = fromNode.position.x + fromRadius;
-        const fromEdgeY = fromNode.position.y;
+        let fromNode = mainArrow ? mainArrow.fromReaction : null;
         
-        // Use from_id edge position as the midpoint
-        midX = fromEdgeX;
-        midY = fromEdgeY;
+        // If mainArrow is null, try to find fromNode from the curved arrow data
+        if (!fromNode && hasCurvedArrow && reaction.arrowIds && reaction.arrowIds.length > 0) {
+          for (const arrowId of reaction.arrowIds) {
+            const rawArrow = this.arrowMap.get(arrowId);
+            if (rawArrow && rawArrow.curved === true && rawArrow.from_id) {
+              fromNode = this.nodeMap.get(rawArrow.from_id);
+              if (fromNode) break;
+            }
+          }
+        }
+        
+        if (fromNode) {
+          const getNodeRadius = (node) => {
+            if (!node) return 30;
+            if (node.isProteinComplex) return 40;
+            if (node.isMobileCarrier) return 20;
+            return 30;
+          };
+          const fromRadius = getNodeRadius(fromNode);
+          // Calculate position at the edge of the from_id node (going right)
+          const fromEdgeX = fromNode.position.x + fromRadius;
+          const fromEdgeY = fromNode.position.y;
+          
+          // Use from_id edge position as the midpoint
+          midX = fromEdgeX;
+          midY = fromEdgeY;
+        } else {
+          // Fallback: use calculated coords midpoint
+          midX = (coords.x1 + coords.x2) / 2;
+          midY = (coords.y1 + coords.y2) / 2;
+        }
       } else {
         // Regular reaction: use arrow midpoint
         midX = (coords.x1 + coords.x2) / 2;
@@ -2883,38 +3055,139 @@ export class MetabolismViewer {
       }
       
       // For curved arrows, translate the entire by-arrow so byreactant end is at bottom of node
-      if (isMainArrowCurved && mainArrow.fromReaction && drawByreactant) {
-        const fromNode = mainArrow.fromReaction;
-        const getNodeRadius = (node) => {
-          if (!node) return 30;
-          if (node.isProteinComplex) return 40;
-          if (node.isMobileCarrier) return 20;
-          return 30;
-        };
-        const nodeRadius = getNodeRadius(fromNode);
+      if (isMainArrowCurved && drawByreactant) {
+        let fromNode = mainArrow ? mainArrow.fromReaction : null;
         
-        // Check if the specific main arrow has flipped: true
-        let isFlipped = false;
-        if (mainArrow && mainArrow.connectionId) {
-          const rawArrow = this.arrowMap.get(mainArrow.connectionId);
-          if (rawArrow && rawArrow.flipped === true) {
-            isFlipped = true;
+        // If mainArrow is null, try to find fromNode from the curved arrow data
+        if (!fromNode && hasCurvedArrow && reaction.arrowIds && reaction.arrowIds.length > 0) {
+          for (const arrowId of reaction.arrowIds) {
+            const rawArrow = this.arrowMap.get(arrowId);
+            if (rawArrow && rawArrow.curved === true && rawArrow.from_id) {
+              fromNode = this.nodeMap.get(rawArrow.from_id);
+              if (fromNode) break;
+            }
           }
         }
         
-        // If flipped: true, flip the whole by-arrow vertically (mirror across horizontal line through midpoint)
-        if (isFlipped) {
-          // Flip byreactant arrow points vertically
-          byreactantControlY = 2 * midY - byreactantControlY;
-          byreactantEndY = 2 * midY - byreactantEndY;
+        if (fromNode) {
+          const getNodeRadius = (node) => {
+            if (!node) return 30;
+            if (node.isProteinComplex) return 40;
+            if (node.isMobileCarrier) return 20;
+            return 30;
+          };
+          const nodeRadius = getNodeRadius(fromNode);
           
-          // Flip byproduct arrow points vertically (if exists)
-          if (drawByproduct) {
-            byproductControlY = 2 * midY - byproductControlY;
-            byproductEndY = 2 * midY - byproductEndY;
+          // Check if the specific main arrow has flipped: true
+          let isFlipped = false;
+          if (mainArrow && mainArrow.connectionId) {
+            const rawArrow = this.arrowMap.get(mainArrow.connectionId);
+            if (rawArrow && rawArrow.flipped === true) {
+              isFlipped = true;
+            }
+          } else if (hasCurvedArrow && reaction.arrowIds && reaction.arrowIds.length > 0) {
+            // If mainArrow is null, check raw arrow for flipped property
+            for (const arrowId of reaction.arrowIds) {
+              const rawArrow = this.arrowMap.get(arrowId);
+              if (rawArrow && rawArrow.curved === true && rawArrow.flipped === true) {
+                isFlipped = true;
+                break;
+              }
+            }
           }
           
-          // Update paths with flipped points
+          // If flipped: true, flip the whole by-arrow vertically (mirror across horizontal line through midpoint)
+          if (isFlipped) {
+            // Flip byreactant arrow points vertically
+            byreactantControlY = 2 * midY - byreactantControlY;
+            byreactantEndY = 2 * midY - byreactantEndY;
+            
+            // Flip byproduct arrow points vertically (if exists)
+            if (drawByproduct) {
+              byproductControlY = 2 * midY - byproductControlY;
+              byproductEndY = 2 * midY - byproductEndY;
+            }
+            
+            // Update paths with flipped points
+            if (drawByreactant && byreactantPath) {
+              byreactantPath = `M ${midX} ${midY} Q ${byreactantControlX} ${byreactantControlY}, ${byreactantEndX} ${byreactantEndY}`;
+              byreactantArrow.attr('d', byreactantPath);
+            }
+            
+            if (drawByproduct && byproductPath) {
+              byproductPath = `M ${midX} ${midY} Q ${byproductControlX} ${byproductControlY}, ${byproductEndX} ${byproductEndY}`;
+              byproductArrow.attr('d', byproductPath);
+            }
+          }
+          
+          // Calculate offset direction based on byMoleculeAngle
+          // When NOT flipped:
+          //   0 degrees = bottom (-90 degrees in standard math)
+          //   90 degrees = left (180 degrees in standard math)
+          //   180 degrees = top (90 degrees in standard math)
+          //   270 degrees = right (0 degrees in standard math)
+          // When flipped:
+          //   0 degrees = top (90 degrees in standard math)
+          //   90 degrees = right (0 degrees in standard math)
+          //   180 degrees = bottom (-90 degrees in standard math)
+          //   270 degrees = left (180 degrees in standard math)
+          let offsetAngle = -Math.PI / 2; // Default: bottom (0 degrees = -90 degrees)
+          if (reaction.byMoleculeAngle !== undefined) {
+            // Normalize angle to 0-360 range
+            let normalizedAngle = reaction.byMoleculeAngle % 360;
+            if (normalizedAngle < 0) normalizedAngle += 360;
+            
+            if (isFlipped) {
+              // When flipped: 0° → top (90°), 90° → right (0°), 180° → bottom (-90°), 270° → left (180°)
+              // Formula: offsetAngle = (270 - normalizedAngle) * PI / 180
+              // When normalizedAngle = 0: offsetAngle = 270 * PI/180 = 3*PI/2 = -PI/2 (bottom) ✓
+              // When normalizedAngle = 90: offsetAngle = 180 * PI/180 = PI (left) ✓
+              // When normalizedAngle = 180: offsetAngle = 90 * PI/180 = PI/2 (top) ✓
+              // When normalizedAngle = 270: offsetAngle = 0 * PI/180 = 0 (right) ✓
+              offsetAngle = (270 - normalizedAngle) * Math.PI / 180;
+            } else {
+              // When NOT flipped: 0° → bottom (-90°), 90° → left (180°), 180° → top (90°), 270° → right (0°)
+              // Formula: offsetAngle = (90 - normalizedAngle) * PI / 180
+              // When normalizedAngle = 0: offsetAngle = 90 * PI/180 = PI/2 (top) ✓
+              // When normalizedAngle = 90: offsetAngle = 0 * PI/180 = 0 (right) ✓
+              // When normalizedAngle = 180: offsetAngle = -90 * PI/180 = -PI/2 (bottom) ✓
+              // When normalizedAngle = 270: offsetAngle = -180 * PI/180 = -PI = PI (left) ✓
+              offsetAngle = (90 - normalizedAngle) * Math.PI / 180;
+            }
+          }
+          
+          // Calculate direction vector
+          const offsetDirX = Math.cos(offsetAngle);
+          const offsetDirY = Math.sin(offsetAngle);
+          
+          // Calculate node surface point in the offset direction
+          const nodeSurfaceX = fromNode.position.x + nodeRadius * offsetDirX;
+          const nodeSurfaceY = fromNode.position.y + nodeRadius * offsetDirY;
+          
+          // Calculate translation offset: move the byreactant end point to the node surface
+          const translateX = nodeSurfaceX - byreactantEndX;
+          const translateY = nodeSurfaceY - byreactantEndY;
+          
+          // Apply translation to all points to preserve the shape
+          // Translate midpoint (start point for both arrows)
+          midX += translateX;
+          midY += translateY;
+          
+          // Translate byreactant arrow points
+          byreactantControlX += translateX;
+          byreactantControlY += translateY;
+          byreactantEndX += translateX;
+          byreactantEndY += translateY;
+          
+          // Translate byproduct arrow points (if byproduct exists)
+          if (drawByproduct) {
+            byproductControlX += translateX;
+            byproductControlY += translateY;
+            byproductEndX += translateX;
+            byproductEndY += translateY;
+          }
+          
+          // Update paths with translated points
           if (drawByreactant && byreactantPath) {
             byreactantPath = `M ${midX} ${midY} Q ${byreactantControlX} ${byreactantControlY}, ${byreactantEndX} ${byreactantEndY}`;
             byreactantArrow.attr('d', byreactantPath);
@@ -2924,84 +3197,6 @@ export class MetabolismViewer {
             byproductPath = `M ${midX} ${midY} Q ${byproductControlX} ${byproductControlY}, ${byproductEndX} ${byproductEndY}`;
             byproductArrow.attr('d', byproductPath);
           }
-        }
-        
-        // Calculate offset direction based on byMoleculeAngle
-        // When NOT flipped:
-        //   0 degrees = bottom (-90 degrees in standard math)
-        //   90 degrees = left (180 degrees in standard math)
-        //   180 degrees = top (90 degrees in standard math)
-        //   270 degrees = right (0 degrees in standard math)
-        // When flipped:
-        //   0 degrees = top (90 degrees in standard math)
-        //   90 degrees = right (0 degrees in standard math)
-        //   180 degrees = bottom (-90 degrees in standard math)
-        //   270 degrees = left (180 degrees in standard math)
-        let offsetAngle = -Math.PI / 2; // Default: bottom (0 degrees = -90 degrees)
-        if (reaction.byMoleculeAngle !== undefined) {
-          // Normalize angle to 0-360 range
-          let normalizedAngle = reaction.byMoleculeAngle % 360;
-          if (normalizedAngle < 0) normalizedAngle += 360;
-          
-          if (isFlipped) {
-            // When flipped: 0° → top (90°), 90° → right (0°), 180° → bottom (-90°), 270° → left (180°)
-            // Formula: offsetAngle = (270 - normalizedAngle) * PI / 180
-            // When normalizedAngle = 0: offsetAngle = 270 * PI/180 = 3*PI/2 = -PI/2 (bottom) ✓
-            // When normalizedAngle = 90: offsetAngle = 180 * PI/180 = PI (left) ✓
-            // When normalizedAngle = 180: offsetAngle = 90 * PI/180 = PI/2 (top) ✓
-            // When normalizedAngle = 270: offsetAngle = 0 * PI/180 = 0 (right) ✓
-            offsetAngle = (270 - normalizedAngle) * Math.PI / 180;
-          } else {
-            // When NOT flipped: 0° → bottom (-90°), 90° → left (180°), 180° → top (90°), 270° → right (0°)
-            // Formula: offsetAngle = (90 - normalizedAngle) * PI / 180
-            // When normalizedAngle = 0: offsetAngle = 90 * PI/180 = PI/2 (top) ✓
-            // When normalizedAngle = 90: offsetAngle = 0 * PI/180 = 0 (right) ✓
-            // When normalizedAngle = 180: offsetAngle = -90 * PI/180 = -PI/2 (bottom) ✓
-            // When normalizedAngle = 270: offsetAngle = -180 * PI/180 = -PI = PI (left) ✓
-            offsetAngle = (90 - normalizedAngle) * Math.PI / 180;
-          }
-        }
-        
-        // Calculate direction vector
-        const offsetDirX = Math.cos(offsetAngle);
-        const offsetDirY = Math.sin(offsetAngle);
-        
-        // Calculate node surface point in the offset direction
-        const nodeSurfaceX = fromNode.position.x + nodeRadius * offsetDirX;
-        const nodeSurfaceY = fromNode.position.y + nodeRadius * offsetDirY;
-        
-        // Calculate translation offset: move the byreactant end point to the node surface
-        const translateX = nodeSurfaceX - byreactantEndX;
-        const translateY = nodeSurfaceY - byreactantEndY;
-        
-        // Apply translation to all points to preserve the shape
-        // Translate midpoint (start point for both arrows)
-        midX += translateX;
-        midY += translateY;
-        
-        // Translate byreactant arrow points
-        byreactantControlX += translateX;
-        byreactantControlY += translateY;
-        byreactantEndX += translateX;
-        byreactantEndY += translateY;
-        
-        // Translate byproduct arrow points (if byproduct exists)
-        if (drawByproduct) {
-          byproductControlX += translateX;
-          byproductControlY += translateY;
-          byproductEndX += translateX;
-          byproductEndY += translateY;
-        }
-        
-        // Update paths with translated points
-        if (drawByreactant && byreactantPath) {
-          byreactantPath = `M ${midX} ${midY} Q ${byreactantControlX} ${byreactantControlY}, ${byreactantEndX} ${byreactantEndY}`;
-          byreactantArrow.attr('d', byreactantPath);
-        }
-        
-        if (drawByproduct && byproductPath) {
-          byproductPath = `M ${midX} ${midY} Q ${byproductControlX} ${byproductControlY}, ${byproductEndX} ${byproductEndY}`;
-          byproductArrow.attr('d', byproductPath);
         }
       }
       

@@ -6,15 +6,27 @@
 const CACHE_KEY = 'pubchem_data_cache';
 const CACHE_VERSION = '1.0.0'; // Increment to invalidate old cache
 
+// Singleton in-memory cache to avoid reloading from localStorage on every access
+let inMemoryCache = null;
+let cacheLoaded = false;
+
 /**
  * Get all cached PubChem data from localStorage
+ * Uses singleton pattern to load only once
  * @returns {Map<string, Object>} Map of molecule names to PubChem data
  */
 export function loadCacheFromStorage() {
+  // Return cached instance if already loaded
+  if (cacheLoaded && inMemoryCache !== null) {
+    return inMemoryCache;
+  }
+  
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (!cached) {
-      return new Map();
+      inMemoryCache = new Map();
+      cacheLoaded = true;
+      return inMemoryCache;
     }
     
     const parsed = JSON.parse(cached);
@@ -23,16 +35,21 @@ export function loadCacheFromStorage() {
     if (parsed.version !== CACHE_VERSION) {
       console.log('PubChem cache version mismatch, clearing cache');
       clearCache();
-      return new Map();
+      inMemoryCache = new Map();
+      cacheLoaded = true;
+      return inMemoryCache;
     }
     
     // Convert array of [key, value] pairs back to Map
-    const cacheMap = new Map(parsed.data || []);
-    console.log(`Loaded ${cacheMap.size} PubChem entries from localStorage`);
-    return cacheMap;
+    inMemoryCache = new Map(parsed.data || []);
+    console.log(`Loaded ${inMemoryCache.size} PubChem entries from localStorage`);
+    cacheLoaded = true;
+    return inMemoryCache;
   } catch (error) {
     console.warn('Error loading PubChem cache from localStorage:', error);
-    return new Map();
+    inMemoryCache = new Map();
+    cacheLoaded = true;
+    return inMemoryCache;
   }
 }
 
@@ -85,6 +102,9 @@ export function getFromStorage(moleculeName) {
 export function clearCache() {
   try {
     localStorage.removeItem(CACHE_KEY);
+    // Reset in-memory cache
+    inMemoryCache = new Map();
+    cacheLoaded = true;
     console.log('PubChem cache cleared from localStorage');
   } catch (error) {
     console.warn('Error clearing PubChem cache from localStorage:', error);
