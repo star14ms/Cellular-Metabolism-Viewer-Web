@@ -10,9 +10,8 @@
  * 
  * Optional fields:
  * - curved: Boolean - If true, the arrow will be drawn as a curved arrow (same style as by-molecule arrows).
- *   For curved arrows, you need either from_id OR to_id (not both):
+ *   For curved arrows, from_id is required:
  *   - If from_id is provided: arrow draws to the right from the from_id position
- *   - If to_id is provided: arrow draws from the left to the to_id position
  * - flipped: Boolean - If true, the by-molecule arrow starting position is flipped.
  *   When flipped: true, 0 degrees starts from top instead of bottom.
  *   The endpoint remains the same (right). If byMoleculeAngle rotates the arrow, the flipped value flips the rotation.
