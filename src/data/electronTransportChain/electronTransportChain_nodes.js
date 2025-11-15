@@ -1,6 +1,14 @@
 /**
  * Electron Transport Chain - Nodes Data
+ * 
+ * Positions are relative to the first node (complex_i) using unit_space notation.
+ * unit_space = 150 (standard spacing between nodes)
+ * Note: The ETC is arranged horizontally, with complex_ii slightly offset vertically.
  */
+
+const unit_space = 150;
+const base_x = 65;
+const base_y = 2603; // Continuation from citric acid cycle
 
 export const electronTransportChainNodes = [
   // Protein complexes
@@ -15,7 +23,7 @@ export const electronTransportChainNodes = [
     complexSize: { width: 80, height: 60 },
     byreactant: ['NADH'],
     byproduct: ['NAD⁺'],
-    position: { x: -35, y: 2678 }
+    position: { x: base_x, y: base_y }
   },
   {
     id: 'complex_ii',
@@ -29,8 +37,9 @@ export const electronTransportChainNodes = [
     byreactant: ['FADH₂'],
     byproduct: ['FAD'],
     byMoleculeAngle: 25,
-    hideByMoleculeLabels: true, // Hide labels but keep arrows
-    position: { x: 115, y: 2578 }
+    hideByreactantLabels: true, // Hide byreactant labels but keep arrows
+    hideByproductLabels: true, // Hide byproduct labels but keep arrows
+    position: { x: base_x + unit_space * 1, y: base_y - unit_space * 0.67 }
   },
   {
     id: 'complex_iii',
@@ -41,7 +50,7 @@ export const electronTransportChainNodes = [
     reaction_id: 'rxn_etc_4',
     complexNumber: 'III',
     complexSize: { width: 80, height: 60 },
-    position: { x: 415, y: 2678 }
+    position: { x: base_x + unit_space * 3, y: base_y }
   },
   {
     id: 'complex_iv',
@@ -54,7 +63,7 @@ export const electronTransportChainNodes = [
     complexSize: { width: 80, height: 60 },
     byreactant: ['1/2 O₂', '2 H+'],
     byproduct: ['H₂O'],
-    position: { x: 715, y: 2678 }
+    position: { x: base_x + unit_space * 5, y: base_y }
   },
   {
     id: 'complex_v',
@@ -68,7 +77,7 @@ export const electronTransportChainNodes = [
     isIndependent: true, // ATP Synthase is independent, not directly connected from Complex IV
     byreactant: ['ADP', 'Pi'],
     byproduct: ['ATP'],
-    position: { x: 865, y: 2678 }
+    position: { x: base_x + unit_space * 6, y: base_y }
   },
   // Mobile carriers
   {
@@ -78,7 +87,7 @@ export const electronTransportChainNodes = [
     formula: 'C₅₉H₉₂O₄',
     description: 'Coenzyme Q (CoQ), also known as ubiquinone, is a mobile electron carrier embedded in the inner mitochondrial membrane. It exists in oxidized (ubiquinone, Q) and reduced (ubiquinol, QH₂) forms.',
     smiles: 'CC1=C(C(=O)C(=C(C1=O)OC)OC)CC=C(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCCC(C)CCC',
-    position: { x: 265, y: 2678 }
+    position: { x: base_x + unit_space * 2, y: base_y }
   },
   {
     id: 'cytochrome_c',
@@ -87,7 +96,7 @@ export const electronTransportChainNodes = [
     formula: 'C₄₂H₅₆FeN₈O₆S₂',
     description: 'Cytochrome c is a small mobile electron carrier protein located in the intermembrane space of mitochondria. It exists in reduced (Fe²⁺) and oxidized (Fe³⁺) forms. Cytochrome c receives electrons from Complex III and transfers them to Complex IV, completing the electron transport chain.',
     smiles: '[Fe+2]',
-    position: { x: 565, y: 2678 }
+    position: { x: base_x + unit_space * 4, y: base_y }
   },
 ];
 

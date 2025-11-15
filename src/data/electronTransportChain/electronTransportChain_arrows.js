@@ -39,12 +39,6 @@ export const electronTransportChainArrows = [
     from_id: 'complex_iv',
     to_id: 'complex_v', // Note: Complex V is independent but shown connected
     reaction_id: 'rxn_etc_6'
-  },
-  {
-    id: 'arrow_etc_7',
-    from_id: 'complex_v',
-    to_id: 'atp_etc',
-    reaction_id: 'rxn_etc_7'
   }
 ];
 

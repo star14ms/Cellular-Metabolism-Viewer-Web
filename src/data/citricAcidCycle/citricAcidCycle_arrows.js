@@ -10,7 +10,8 @@ export const citricAcidCycleArrows = [
     id: 'arrow_cac_1',
     from_id: 'oxaloacetate',
     to_id: 'citrate',
-    reaction_id: 'rxn_cac_1'
+    reaction_id: 'rxn_cac_1',
+    flipped: true
   },
   {
     id: 'arrow_cac_2',
@@ -53,14 +54,6 @@ export const citricAcidCycleArrows = [
     from_id: 'malate',
     to_id: 'oxaloacetate', // CYCLIC: connects back to the first node
     reaction_id: 'rxn_cac_8'
-  },
-  
-  // Acetyl-CoA input (to midpoint of first arrow)
-  {
-    id: 'arrow_acetyl_coa_to_cac',
-    from_id: 'acetyl-coa',
-    to_id: 'arrow_cac_1', // End at midpoint of arrow_cac_1
-    reaction_id: 'rxn_cac_1'
   }
 ];
 

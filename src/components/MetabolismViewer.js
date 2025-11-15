@@ -215,12 +215,12 @@ export class MetabolismViewer {
       
       if (arrowsFromNode.length > 0) {
         // Node is a source - it's the substrate
-        const targetNode = this.nodeMap.get(arrowsFromNode[0].to_id);
+        const targetNode = arrowsFromNode[0].to_id ? this.nodeMap.get(arrowsFromNode[0].to_id) : null;
         substrate = { id: node.id, name: node.name, formula: node.formula, description: node.description, smiles: node.smiles };
         product = targetNode ? { id: targetNode.id, name: targetNode.name, formula: targetNode.formula, description: targetNode.description, smiles: targetNode.smiles } : null;
       } else if (arrowsToNode.length > 0) {
         // Node is a target - it's the product
-        const sourceNode = this.nodeMap.get(arrowsToNode[0].from_id);
+        const sourceNode = arrowsToNode[0].from_id ? this.nodeMap.get(arrowsToNode[0].from_id) : null;
         substrate = sourceNode ? { id: sourceNode.id, name: sourceNode.name, formula: sourceNode.formula, description: sourceNode.description, smiles: sourceNode.smiles } : null;
         product = { id: node.id, name: node.name, formula: node.formula, description: node.description, smiles: node.smiles };
       } else {
@@ -281,6 +281,8 @@ export class MetabolismViewer {
         // Preserve by-molecule display properties from node or reaction
         byMoleculeAngle: node.byMoleculeAngle !== undefined ? node.byMoleculeAngle : (reaction ? reaction.byMoleculeAngle : undefined),
         hideByMoleculeLabels: node.hideByMoleculeLabels !== undefined ? node.hideByMoleculeLabels : (reaction ? reaction.hideByMoleculeLabels : undefined),
+        hideByreactantLabels: node.hideByreactantLabels !== undefined ? node.hideByreactantLabels : (reaction ? reaction.hideByreactantLabels : undefined),
+        hideByproductLabels: node.hideByproductLabels !== undefined ? node.hideByproductLabels : (reaction ? reaction.hideByproductLabels : undefined),
         // Preserve etcSubArrows for ETC complexes (needed for drawing H+ arrows)
         etcSubArrows: reaction ? reaction.etcSubArrows : undefined,
         arrowIds: arrowIds,
@@ -1348,17 +1350,24 @@ export class MetabolismViewer {
     
     // Helper function to check if from_id or to_id refers to an arrow (midpoint connection)
     const getIdType = (id) => {
+      if (!id) return null; // Return null if id is undefined or null
       if (id.startsWith('arrow_')) return 'arrow';
       return 'node';
     };
     
     // Separate arrows into node-to-node and midpoint connections
-    const nodeToNodeArrows = allArrows.filter(arrow => 
-      getIdType(arrow.from_id) === 'node' && getIdType(arrow.to_id) === 'node'
-    );
-    const midpointArrows = allArrows.filter(arrow => 
-      getIdType(arrow.from_id) === 'arrow' || getIdType(arrow.to_id) === 'arrow'
-    );
+    const nodeToNodeArrows = allArrows.filter(arrow => {
+      const fromType = getIdType(arrow.from_id);
+      const toType = getIdType(arrow.to_id);
+      // Both must be nodes (not null, not arrows)
+      return fromType === 'node' && toType === 'node';
+    });
+    const midpointArrows = allArrows.filter(arrow => {
+      const fromType = getIdType(arrow.from_id);
+      const toType = getIdType(arrow.to_id);
+      // At least one must be an arrow (midpoint connection)
+      return fromType === 'arrow' || toType === 'arrow';
+    });
     
     // Store arrow information for midpoint connections
     // Maps arrow connection IDs to their coordinates and target reactions
@@ -1557,16 +1566,31 @@ export class MetabolismViewer {
     // Draw ALL arrows from arrow data files (node-to-node arrows)
     // Simplified: just draw all arrows, find reactions by target node
     nodeToNodeArrows.forEach((arrowData) => {
-      const fromNode = this.nodeMap.get(arrowData.from_id);
-      const toNode = this.nodeMap.get(arrowData.to_id);
+      const fromNode = arrowData.from_id ? this.nodeMap.get(arrowData.from_id) : null;
+      const toNode = arrowData.to_id ? this.nodeMap.get(arrowData.to_id) : null;
       
-      if (!fromNode || !toNode) {
-        console.warn(`Arrow ${arrowData.id}: Missing node(s) - from: ${arrowData.from_id}, to: ${arrowData.to_id}`);
-        return;
+      // Check if this is a curved arrow (which can have only from_id or only to_id)
+      const isCurved = arrowData.curved === true;
+      
+      if (!isCurved) {
+        // For non-curved arrows, both nodes are required
+        if (!fromNode || !toNode) {
+          console.warn(`Arrow ${arrowData.id}: Missing node(s) - from: ${arrowData.from_id}, to: ${arrowData.to_id}`);
+          return;
+        }
+        
+        // Skip if nodes are hidden
+        if (fromNode.hidden || toNode.hidden) return;
+      } else {
+        // For curved arrows, at least one node is required
+        if (!fromNode && !toNode) {
+          console.warn(`Arrow ${arrowData.id}: Curved arrow requires either from_id or to_id`);
+          return;
+        }
+        
+        // Skip if the provided node is hidden
+        if ((fromNode && fromNode.hidden) || (toNode && toNode.hidden)) return;
       }
-      
-      // Skip if nodes are hidden
-      if (fromNode.hidden || toNode.hidden) return;
       
       // Find the reaction that this arrow represents (by reaction_id from arrow data)
       // The arrow's reaction_id tells us which reaction this arrow represents
@@ -1604,25 +1628,98 @@ export class MetabolismViewer {
       }
       
       // Calculate coordinates from node positions
-      const fromRadius = getNodeRadius(fromNode, arrowData.from_id);
-      const toRadius = getNodeRadius(toNode, arrowData.to_id);
-      const dx = toNode.position.x - fromNode.position.x;
-      const dy = toNode.position.y - fromNode.position.y;
-      const angle = Math.atan2(dy, dx);
-      
-      let x1 = fromNode.position.x + fromRadius * Math.cos(angle);
-      let y1 = fromNode.position.y + fromRadius * Math.sin(angle);
-      if (dy > 0) {
-        y1 = Math.min(y1, fromNode.position.y + 35);
+      // For curved arrows with only one node, calculate proper coords for by-molecule arrows
+      let coords;
+      if (isCurved && (!fromNode || !toNode)) {
+        // For curved arrows with only one node, calculate proper coords
+        // This ensures by-molecule arrows can be drawn correctly
+        const node = fromNode || toNode;
+        if (node) {
+          const getNodeRadius = (node) => {
+            if (!node) return 30;
+            if (node.isProteinComplex) return 40;
+            if (node.isMobileCarrier) return 20;
+            return 30;
+          };
+          const nodeRadius = getNodeRadius(node);
+          const arrowLength = PATHWAY_CONFIG.arrowSettings.byMoleculeLength * 1.5;
+          
+          if (fromNode && !toNode) {
+            // Only from_id: arrow goes to the right from from_id
+            const startX = node.position.x + nodeRadius;
+            const startY = node.position.y;
+            coords = {
+              x1: startX,
+              y1: startY,
+              x2: startX + arrowLength,
+              y2: startY
+            };
+          } else if (toNode && !fromNode) {
+            // Only to_id: arrow comes from the left to to_id
+            const endX = node.position.x - nodeRadius;
+            const endY = node.position.y;
+            coords = {
+              x1: endX - arrowLength,
+              y1: endY,
+              x2: endX,
+              y2: endY
+            };
+          } else {
+            // Fallback: use placeholder
+            coords = {
+              x1: node.position.x,
+              y1: node.position.y,
+              x2: node.position.x,
+              y2: node.position.y
+            };
+          }
+        } else {
+          // No node at all - try to use reaction position if available
+          const rawReaction = this.reactionMap.get(arrowData.reaction_id);
+          const processedReactionForCoords = this.reactions.find(r => r.id === arrowData.reaction_id);
+          const reactionForCoords = processedReactionForCoords || rawReaction;
+          
+          if (reactionForCoords && reactionForCoords.position) {
+            const nodeRadius = 30;
+            const arrowLength = PATHWAY_CONFIG.arrowSettings.byMoleculeLength * 1.5;
+            coords = {
+              x1: reactionForCoords.position.x - nodeRadius,
+              y1: reactionForCoords.position.y,
+              x2: reactionForCoords.position.x + nodeRadius + arrowLength,
+              y2: reactionForCoords.position.y
+            };
+          } else {
+            // Fallback: use placeholder
+            coords = { 
+              x1: 0, 
+              y1: 0, 
+              x2: 0, 
+              y2: 0 
+            };
+          }
+        }
+      } else {
+        // Normal coordinate calculation for non-curved arrows or curved arrows with both nodes
+        const fromRadius = getNodeRadius(fromNode, arrowData.from_id);
+        const toRadius = getNodeRadius(toNode, arrowData.to_id);
+        const dx = toNode.position.x - fromNode.position.x;
+        const dy = toNode.position.y - fromNode.position.y;
+        const angle = Math.atan2(dy, dx);
+        
+        let x1 = fromNode.position.x + fromRadius * Math.cos(angle);
+        let y1 = fromNode.position.y + fromRadius * Math.sin(angle);
+        if (dy > 0) {
+          y1 = Math.min(y1, fromNode.position.y + 35);
+        }
+        
+        let x2 = toNode.position.x - toRadius * Math.cos(angle);
+        let y2 = toNode.position.y - toRadius * Math.sin(angle);
+        if (dy < 0) {
+          y2 = Math.max(y2, toNode.position.y - 35);
+        }
+        
+        coords = { x1, y1, x2, y2 };
       }
-      
-      let x2 = toNode.position.x - toRadius * Math.cos(angle);
-      let y2 = toNode.position.y - toRadius * Math.sin(angle);
-      if (dy < 0) {
-        y2 = Math.max(y2, toNode.position.y - 35);
-      }
-      
-      const coords = { x1, y1, x2, y2 };
       
       // Store arrow information for midpoint connections (if needed)
       // Always use processed reaction if available (it has all the necessary data)
@@ -1630,8 +1727,28 @@ export class MetabolismViewer {
       arrowInfoMap.set(arrowData.id, {
         ...coords,
         targetReaction: reactionForArrowInfo,
-        arrowKey: getArrowKey(arrowData.from_id, arrowData.to_id)
+        arrowKey: getArrowKey(arrowData.from_id || '', arrowData.to_id || '')
       });
+      
+      // For curved arrows, check if we have from_id or to_id (or both)
+      if (isCurved) {
+        // For curved arrows, we always draw by-arrows even if from_id or to_id doesn't exist
+        // The main arrow is skipped, but by-arrows will still be drawn
+        
+        // Get reaction for curved arrow
+        const finalReaction = targetReaction ? (processedReaction || targetReaction) : null;
+        if (targetReaction) {
+          const reactionInArray = processedReaction || this.reactions.find(r => r.id === arrowData.reaction_id);
+          if (reactionInArray && !reactionInArray.arrowIds.includes(arrowData.id)) {
+            reactionInArray.arrowIds.push(arrowData.id);
+          }
+        }
+        
+        // Draw curved arrow (handles both from_id and to_id cases, or neither)
+        // This will skip the main arrow but still set up data for by-arrows
+        this.createCurvedArrow(fromNode, toNode, coords, arrowData.id, finalReaction, arrowData);
+        return;
+      }
       
       // Create the arrow with the target reaction (or null if not found)
       if (targetReaction) {
@@ -1646,6 +1763,7 @@ export class MetabolismViewer {
         // Only fall back to raw reaction if processed reaction not found
         const finalReaction = processedReaction || targetReaction;
         
+        // Draw straight arrow (normal behavior)
         createArrowWithData(
           fromNode,
           toNode,
@@ -1669,14 +1787,17 @@ export class MetabolismViewer {
       let fromArrowId = null;
       
       // Determine source (node or arrow)
-      if (getIdType(arrowData.from_id) === 'node') {
+      const fromType = getIdType(arrowData.from_id);
+      if (fromType === 'node') {
         fromNode = this.nodeMap.get(arrowData.from_id);
-      } else {
+      } else if (fromType === 'arrow') {
         fromArrowId = arrowData.from_id;
       }
+      // If fromType is null (undefined from_id), both fromNode and fromArrowId remain null
       
       // Determine target (node or arrow)
-      if (getIdType(arrowData.to_id) === 'arrow') {
+      const toType = getIdType(arrowData.to_id);
+      if (toType === 'arrow') {
         toArrowId = arrowData.to_id;
       }
       
@@ -1688,7 +1809,7 @@ export class MetabolismViewer {
       if (toArrowId) {
         // For arrows that connect to other arrows, find by reaction_id
         processedReaction = this.reactions.find(r => r.id === arrowData.reaction_id);
-      } else {
+      } else if (toType === 'node' && arrowData.to_id) {
         // For arrows that connect to nodes, find by target nodeId
         const toNode = this.nodeMap.get(arrowData.to_id);
         if (toNode) {
@@ -1952,6 +2073,112 @@ export class MetabolismViewer {
    * Draw U-shaped arrows for byreactants and byproducts
    * These arrows are attached to the main reaction arrows
    */
+  /**
+   * Create a curved arrow (same style as by-molecule arrows)
+   * If from_id is provided: draw arrow to the right from from_id
+   * If to_id is provided (and no from_id): draw arrow from the left to to_id
+   */
+  createCurvedArrow(fromNode, toNode, coords, connectionId, targetReaction, arrowData) {
+    const arrowLength = PATHWAY_CONFIG.arrowSettings.byMoleculeLength * 1.5; // Length of the arrow
+    let startX, startY, endX, endY;
+    
+    // Helper to get node radius
+    const getNodeRadius = (node) => {
+      if (!node) return 30;
+      if (node.isProteinComplex) return 40;
+      if (node.isMobileCarrier) return 20;
+      return 30;
+    };
+    
+    if (fromNode && arrowData.from_id) {
+      // Case 1: from_id is provided - draw arrow to the right from from_id
+      const fromRadius = getNodeRadius(fromNode);
+      const arrowAngle = 0; // Always pointing right
+      
+      // Start at from_id position with proper offset (same as regular arrows)
+      startX = fromNode.position.x + fromRadius * Math.cos(arrowAngle);
+      startY = fromNode.position.y + fromRadius * Math.sin(arrowAngle);
+      
+      // Apply the same y-axis constraint as regular arrows
+      if (0 > 0) { // dy = 0 for horizontal, but keep logic
+        startY = Math.min(startY, fromNode.position.y + 35);
+      }
+      
+      // Calculate end point: always to the right from the starting point
+      endX = startX + arrowLength;
+      endY = startY;
+    } else if (toNode && arrowData.to_id) {
+      // Case 2: only to_id is provided - draw arrow from the left to to_id
+      const toRadius = getNodeRadius(toNode);
+      const arrowAngle = Math.PI; // Pointing left (180 degrees)
+      
+      // End at to_id position with proper offset (same as regular arrows)
+      endX = toNode.position.x + toRadius * Math.cos(arrowAngle); // Negative offset (left side)
+      endY = toNode.position.y + toRadius * Math.sin(arrowAngle);
+      
+      // Apply the same y-axis constraint as regular arrows
+      if (0 < 0) { // dy = 0 for horizontal, but keep logic
+        endY = Math.max(endY, toNode.position.y - 35);
+      }
+      
+      // Calculate start point: always to the left from the ending point
+      startX = endX - arrowLength;
+      startY = endY;
+    } else {
+      // For curved arrows, even if from_id or to_id doesn't exist, 
+      // we still need to calculate coords for by-arrows
+      // Use placeholder coordinates based on reaction position if available
+      if (targetReaction && targetReaction.position) {
+        const nodeRadius = 30;
+        startX = targetReaction.position.x - nodeRadius;
+        startY = targetReaction.position.y;
+        endX = targetReaction.position.x + nodeRadius;
+        endY = targetReaction.position.y;
+      } else {
+        // Fallback: use placeholder coordinates
+        startX = 0;
+        startY = 0;
+        endX = arrowLength;
+        endY = 0;
+      }
+    }
+    
+    // For curved arrows, skip drawing the main arrow - only by-arrows will be drawn
+    // The main arrow line is not drawn when curved: true
+    const curvedArrow = null;
+    const hitArea = null;
+    
+    // Store arrow data in arrowDataMap
+    // Use the actual drawn coordinates
+    const fromNodeId = fromNode ? fromNode.id : null;
+    const toNodeId = toNode ? toNode.id : null;
+    const arrowKey = fromNodeId && toNodeId ? `${fromNodeId}-${toNodeId}` : (fromNodeId || toNodeId || 'curved');
+    const reactantId = fromNodeId || null;
+    const productId = toNodeId || null;
+    const moleculeKey = `${arrowKey}-${reactantId || 'none'}-${productId || 'none'}`;
+    
+    const storedArrowData = {
+      fromNodeId: fromNodeId,
+      toNodeId: toNodeId,
+      fromReaction: fromNode,
+      toReaction: toNode,
+      targetReaction: targetReaction,
+      reactantMoleculeId: reactantId,
+      productMoleculeId: productId,
+      coords: { x1: startX, y1: startY, x2: endX, y2: endY }, // Store actual drawn coordinates
+      connectionId: connectionId,
+      isCurved: true
+    };
+    this.arrowDataMap.set(moleculeKey, storedArrowData);
+    
+    // Add connection ID to target reaction's arrowIds array
+    if (targetReaction && !targetReaction.arrowIds.includes(connectionId)) {
+      targetReaction.arrowIds.push(connectionId);
+    }
+    
+    return { curvedArrow, hitArea };
+  }
+  
   drawByreactantByproductArrows() {
     // Helper function to determine pathway for a reaction
     const getPathwayName = (reaction) => {
@@ -2009,6 +2236,15 @@ export class MetabolismViewer {
         }
       }
       
+      // Also check for curved arrows (which may not have toNodeId or fromNodeId)
+      // For curved arrows, we can draw by-arrows even if there's no from_id or to_id
+      for (const arrowData of candidateArrows) {
+        if (arrowData.isCurved === true && 
+            !arrowData.isMidpointConnection) {
+          return arrowData; // Return curved arrow even if no fromNodeId or toNodeId
+        }
+      }
+      
       // If no node-to-node arrow found, return null (don't draw by-molecule arrows on midpoint connections)
       return null;
     };
@@ -2019,28 +2255,103 @@ export class MetabolismViewer {
       if (reaction.isProductNode) return;
       
       // Get by-molecules from node data (source of truth) or reaction data (fallback)
+      // For curved arrows, also check arrow data for byproduct/byreactant
       const nodeByreactant = reaction.node?.byreactant;
       const nodeByproduct = reaction.node?.byproduct;
       
       // Determine if data comes from node or reaction
       const dataFromNode = (nodeByreactant !== undefined) || (nodeByproduct !== undefined);
       
-      // Fallback to reaction.byreactant/byproduct for backward compatibility (other pathways)
-      const byreactant = nodeByreactant !== undefined ? nodeByreactant : reaction.byreactant;
-      const byproduct = nodeByproduct !== undefined ? nodeByproduct : reaction.byproduct;
-      
-      // Check if node/reaction has byreactant or byproduct fields for display
-      const hasByreactantField = byreactant !== undefined;
-      const hasByproductField = byproduct !== undefined;
-      
-      if (!hasByreactantField && !hasByproductField) {
-        return; // Skip reactions without by-molecule display fields
+      // Check if any arrow for this reaction has curved: true
+      let hasCurvedArrow = false;
+      if (reaction.arrowIds && reaction.arrowIds.length > 0) {
+        // Check raw arrow data to see if any arrow has curved: true
+        for (const arrowId of reaction.arrowIds) {
+          const rawArrow = this.arrowMap.get(arrowId);
+          if (rawArrow && rawArrow.curved === true) {
+            hasCurvedArrow = true;
+            break;
+          }
+        }
       }
       
       // Find the main arrow for this reaction (needed for positioning by-molecule arrows)
       // Only needed if data comes from reaction (for arrow midpoint attachment)
       // If data comes from node, we'll attach directly to the node
       const mainArrow = dataFromNode ? null : findMainArrow(reaction);
+      
+      // Check if the main arrow has byproduct/byreactant
+      // For curved arrows: if arrow doesn't have byproduct/byreactant, don't fall back to reaction data
+      // For non-curved arrows: fall back to reaction data if arrow doesn't have byproduct/byreactant
+      let arrowByreactant = undefined;
+      let arrowByproduct = undefined;
+      let arrowDataChecked = false; // Track if we successfully checked arrow data
+      let isArrowCurved = false; // Track if the arrow is curved
+      let arrowXScale = 1.0; // Default x scale
+      let arrowYScale = 1.0; // Default y scale
+      let arrowHideByreactantLabels = undefined; // Hide byreactant labels from arrow data
+      let arrowHideByproductLabels = undefined; // Hide byproduct labels from arrow data
+      if (mainArrow) {
+        // Get the arrow ID from the main arrow
+        const mainArrowId = mainArrow.connectionId;
+        if (mainArrowId) {
+          const rawArrow = this.arrowMap.get(mainArrowId);
+          if (rawArrow) {
+            arrowDataChecked = true; // We successfully checked the arrow
+            isArrowCurved = rawArrow.curved === true; // Check if arrow is curved
+            arrowByreactant = rawArrow.byreactant;
+            arrowByproduct = rawArrow.byproduct;
+            // Get x_scale and y_scale from arrow data (default to 1.0 if not provided)
+            arrowXScale = rawArrow.x_scale !== undefined ? rawArrow.x_scale : 1.0;
+            arrowYScale = rawArrow.y_scale !== undefined ? rawArrow.y_scale : 1.0;
+            // Get hideByreactantLabels and hideByproductLabels from arrow data
+            arrowHideByreactantLabels = rawArrow.hideByreactantLabels;
+            arrowHideByproductLabels = rawArrow.hideByproductLabels;
+          }
+        }
+      } else if (hasCurvedArrow && reaction.arrowIds && reaction.arrowIds.length > 0) {
+        // For curved arrows without mainArrow, get arrow data from the first curved arrow
+        for (const arrowId of reaction.arrowIds) {
+          const rawArrow = this.arrowMap.get(arrowId);
+          if (rawArrow && rawArrow.curved === true) {
+            arrowDataChecked = true;
+            isArrowCurved = true;
+            arrowByreactant = rawArrow.byreactant;
+            arrowByproduct = rawArrow.byproduct;
+            // Get x_scale and y_scale from arrow data (default to 1.0 if not provided)
+            arrowXScale = rawArrow.x_scale !== undefined ? rawArrow.x_scale : 1.0;
+            arrowYScale = rawArrow.y_scale !== undefined ? rawArrow.y_scale : 1.0;
+            // Get hideByreactantLabels and hideByproductLabels from arrow data
+            arrowHideByreactantLabels = rawArrow.hideByreactantLabels;
+            arrowHideByproductLabels = rawArrow.hideByproductLabels;
+            break; // Use the first curved arrow found
+          }
+        }
+      }
+      
+      // Priority: node data > arrow data > reaction data
+      // For curved arrows: if arrow was checked but doesn't have byproduct/byreactant, use undefined (don't show anything)
+      // For non-curved arrows: if arrow doesn't have byproduct/byreactant, fall back to reaction data
+      // Only fall back to reaction data if we couldn't check the arrow data OR if arrow is not curved
+      const byreactant = nodeByreactant !== undefined ? nodeByreactant : 
+                        (arrowDataChecked && isArrowCurved ? arrowByreactant : 
+                         (arrowByreactant !== undefined ? arrowByreactant : reaction.byreactant));
+      const byproduct = nodeByproduct !== undefined ? nodeByproduct : 
+                       (arrowDataChecked && isArrowCurved ? arrowByproduct : 
+                        (arrowByproduct !== undefined ? arrowByproduct : reaction.byproduct));
+      
+      // Check if node/reaction has byreactant or byproduct fields for display
+      const hasByreactantField = byreactant !== undefined;
+      const hasByproductField = byproduct !== undefined;
+      
+      // Note: displayByreactant and displayByproduct are NOT used for drawing arrows or labels
+      // They are only for the detail page
+      
+      // Draw by-molecule arrows if there are by-molecules OR if there's a curved arrow
+      // (curved arrows should always draw by-molecule arrows, even without explicit by-molecule data)
+      if (!hasByreactantField && !hasByproductField && !hasCurvedArrow) {
+        return; // Skip reactions without by-molecule fields and without curved arrows
+      }
       
       // Get pathway name
       // For ETC complexes, try to find pathway by nodeId first (more reliable than index-based)
@@ -2135,6 +2446,53 @@ export class MetabolismViewer {
         }
       }
       
+      // Check if main arrow is curved - if so, use from_id position as midpoint
+      const isMainArrowCurved = mainArrow && mainArrow.isCurved === true;
+      
+      // For curved arrows, recalculate coords if needed
+      if (isMainArrowCurved && !dataFromNode && attachmentPointX === null) {
+        // For curved arrows, use from_id position if available, otherwise use reaction position
+        let fromNode = mainArrow.fromReaction;
+        if (!fromNode && mainArrow.targetReaction) {
+          // If no fromNode, use the reaction position as the base
+          fromNode = mainArrow.targetReaction;
+        }
+        
+        const getNodeRadius = (node) => {
+          if (!node) return 30;
+          if (node.isProteinComplex) return 40;
+          if (node.isMobileCarrier) return 20;
+          return 30;
+        };
+        
+        if (fromNode && fromNode.position) {
+          const fromRadius = getNodeRadius(fromNode);
+          // Calculate position at the edge of the from_id node (going right)
+          const fromEdgeX = fromNode.position.x + fromRadius;
+          const fromEdgeY = fromNode.position.y;
+          
+          // Create virtual coords for calculations (horizontal arrow going right)
+          coords = {
+            x1: fromEdgeX,
+            y1: fromEdgeY,
+            x2: fromEdgeX + 100, // Arbitrary length for calculations
+            y2: fromEdgeY
+          };
+        } else if (mainArrow.coords) {
+          // Use stored coords from the curved arrow if available
+          coords = mainArrow.coords;
+        } else if (reaction.position) {
+          // Fallback: use reaction position
+          const nodeRadius = 30;
+          coords = {
+            x1: reaction.position.x - nodeRadius,
+            y1: reaction.position.y,
+            x2: reaction.position.x + nodeRadius + 100,
+            y2: reaction.position.y
+          };
+        }
+      }
+      
       // Calculate arrow properties
       dx = coords.x2 - coords.x1;
       dy = coords.y2 - coords.y1;
@@ -2197,6 +2555,24 @@ export class MetabolismViewer {
         // Enzyme/carrier node with reaction data: use node position
         midX = attachmentPointX;
         midY = attachmentPointY;
+      } else if (isMainArrowCurved && mainArrow.fromReaction) {
+        // For curved arrows with from_id, use from_id position as midpoint
+        // This works even if to_id doesn't exist - by-arrows should still be drawn
+        const fromNode = mainArrow.fromReaction;
+        const getNodeRadius = (node) => {
+          if (!node) return 30;
+          if (node.isProteinComplex) return 40;
+          if (node.isMobileCarrier) return 20;
+          return 30;
+        };
+        const fromRadius = getNodeRadius(fromNode);
+        // Calculate position at the edge of the from_id node (going right)
+        const fromEdgeX = fromNode.position.x + fromRadius;
+        const fromEdgeY = fromNode.position.y;
+        
+        // Use from_id edge position as the midpoint
+        midX = fromEdgeX;
+        midY = fromEdgeY;
       } else {
         // Regular reaction: use arrow midpoint
         midX = (coords.x1 + coords.x2) / 2;
@@ -2296,12 +2672,23 @@ export class MetabolismViewer {
         }
       }
       
+      // Note: displayByreactant and displayByproduct are NOT included in labels
+      // They are only for the detail page, not for drawing on the map
+      
       const hasByreactant = byreactants.length > 0;
       const hasByproduct = byproducts.length > 0;
       
-      if (!hasByreactant && !hasByproduct) {
-        return; // Skip if neither is provided
+      // If main arrow is curved, always draw the full arrow (both sides) even without data
+      // hasCurvedArrow is already calculated earlier in the function
+      const shouldDrawFullArrow = isMainArrowCurved || hasCurvedArrow;
+      
+      if (!hasByreactant && !hasByproduct && !shouldDrawFullArrow) {
+        return; // Skip if neither is provided and not a curved arrow
       }
+      
+      // For curved arrows, treat as if both sides exist for drawing purposes
+      const drawByreactant = hasByreactant || shouldDrawFullArrow;
+      const drawByproduct = hasByproduct || shouldDrawFullArrow;
       
       // Generalized approach: 
       // 1. Define curve path with turning point at midpoint of main arrow
@@ -2314,13 +2701,13 @@ export class MetabolismViewer {
       // These points are offset from the midpoint along the main arrow direction and perpendicular direction
       let curveStartX, curveStartY, curveEndX, curveEndY;
       
-      if (hasByreactant && hasByproduct) {
-        // Both exist: curve goes from start point to end point, touching midpoint
+      if (drawByreactant && drawByproduct) {
+        // Both exist (or curved arrow): curve goes from start point to end point, touching midpoint
         curveStartX = midX - curveSpacing * Math.cos(arrowAngle) + finalOffset * Math.cos(perpAngle);
         curveStartY = midY - curveSpacing * Math.sin(arrowAngle) + finalOffset * Math.sin(perpAngle);
         curveEndX = midX + curveSpacing * Math.cos(arrowAngle) + finalOffset * Math.cos(perpAngle);
         curveEndY = midY + curveSpacing * Math.sin(arrowAngle) + finalOffset * Math.sin(perpAngle);
-      } else if (hasByreactant) {
+      } else if (drawByreactant) {
         // Only byreactant: curve from start point to midpoint
         curveStartX = midX - curveSpacing * Math.cos(arrowAngle) + finalOffset * Math.cos(perpAngle);
         curveStartY = midY - curveSpacing * Math.sin(arrowAngle) + finalOffset * Math.sin(perpAngle);
@@ -2350,6 +2737,16 @@ export class MetabolismViewer {
       let byreactantControlX, byreactantControlY;
       let byreactantStartX, byreactantStartY; // Declare outside if block for scope
       
+      // Check if the specific main arrow has flipped: true (applies to all arrows)
+      // Check this early so we can apply flip before rotation
+      let isFlipped = false;
+      if (mainArrow && mainArrow.connectionId) {
+        const rawArrow = this.arrowMap.get(mainArrow.connectionId);
+        if (rawArrow && rawArrow.flipped === true) {
+          isFlipped = true;
+        }
+      }
+      
       // Create the arrow group
       const uArrowGroup = this.g.append('g')
         .attr('class', 'byreactant-byproduct-arrow')
@@ -2364,7 +2761,7 @@ export class MetabolismViewer {
       // Simple, basic parabola y = x^2
       let byreactantArrow = null;
       let byreactantPath = null;
-      if (hasByreactant) {
+      if (drawByreactant) {
         // Draw basic parabola y = x^2
         // Turning point at (0, 0) with horizontal tangent
         // We'll draw the right half: from (0, 0) to (x, x^2) where x > 0
@@ -2380,19 +2777,27 @@ export class MetabolismViewer {
         const perpDirX = Math.cos(perpAngle);
         const perpDirY = Math.sin(perpAngle);
         
-        // Byreactant arrow: start at midpoint, curve away (standard behavior for all pathways)
-        const x = -byArrowLength * 0.75; // Distance along x-axis (negative = left/opposite)
-        const y = byArrowLength * 1.0; // Height (y = x^2, scaled)
+        // Byreactant arrow: start at midpoint, curve away (opposite to main arrow direction)
+        // Direction should follow main arrow: byreactant always goes opposite to main arrow direction
+        // Use the arrow angle directly: byreactant goes in -arrowAngle direction
+        const xBase = -byArrowLength * 0.75; // Base distance (will be projected along opposite of main arrow)
+        const x = xBase * arrowXScale; // Apply x_scale from arrow data (default 1.0)
+        // If flipped: true and curved is false, negate y to flip relative to main arrow direction
+        const yBase = (isFlipped && !isMainArrowCurved) ? -byArrowLength * 1.0 : byArrowLength * 1.0; // Height (y = x^2, scaled)
+        const y = yBase * arrowYScale; // Apply y_scale from arrow data (default 1.0)
         
         // Start is at midpoint
         byreactantStartX = midX;
         byreactantStartY = midY;
         
         // Control point at (x/2, 0) - ensures horizontal tangent at start
+        // x is negative, so we project it along the opposite of main arrow direction
         byreactantControlX = midX + (x / 2) * Math.cos(arrowAngle);
         byreactantControlY = midY + (x / 2) * Math.sin(arrowAngle);
         
         // Endpoint at (x, y) - follows parabola y = x^2, direction follows perpAngle
+        // x is negative, so when multiplied by cos/sin of arrowAngle, it goes opposite to main arrow
+        // When flipped, y is negative, which flips the perpendicular component relative to main arrow
         byreactantEndX = midX + x * Math.cos(arrowAngle) + y * perpDirX;
         byreactantEndY = midY + x * Math.sin(arrowAngle) + y * perpDirY;
         
@@ -2422,7 +2827,7 @@ export class MetabolismViewer {
       let byproductArrow = null;
       let byproductPath = null;
       let byproductControlX, byproductControlY;
-      if (hasByproduct) {
+      if (drawByproduct) {
         // Draw basic parabola y = x^2
         // Turning point at (0, 0) with horizontal tangent
         // We'll draw the right half: from (0, 0) to (x, x^2) where x > 0
@@ -2437,16 +2842,22 @@ export class MetabolismViewer {
         // - y-axis: perpendicular direction based on perpAngle (like citric acid cycle)
         const perpDirX = Math.cos(perpAngle);
         const perpDirY = Math.sin(perpAngle);
-        const x = byArrowLength * 0.75; // Distance along x-axis (positive = forward/same as main arrow)
-        const y = byArrowLength * 1.0; // Height (y = x^2, scaled)
+        // Byproduct arrow: follows main arrow direction (same direction as main arrow)
+        // Use the arrow angle directly: byproduct goes in the same direction as main arrow
+        const xBase = byArrowLength * 0.75; // Base distance (will be projected along same direction as main arrow)
+        const x = xBase * arrowXScale; // Apply x_scale from arrow data (default 1.0)
+        // If flipped: true and curved is false, negate y to flip relative to main arrow direction
+        const yBase = (isFlipped && !isMainArrowCurved) ? -byArrowLength * 1.0 : byArrowLength * 1.0; // Height (y = x^2, scaled)
+        const y = yBase * arrowYScale; // Apply y_scale from arrow data (default 1.0)
         
         // Control point at (x/2, 0) - ensures horizontal tangent at start
-        // x is positive, so x/2 is also positive (forward/same as main arrow direction)
+        // x is positive, so we project it along the same direction as main arrow
         byproductControlX = midX + (x / 2) * Math.cos(arrowAngle);
         byproductControlY = midY + (x / 2) * Math.sin(arrowAngle);
         
         // Endpoint at (x, y) - follows parabola y = x^2, direction follows perpAngle
-        // x is positive (forward/same as main arrow), y direction follows perpAngle
+        // x is positive, so when multiplied by cos/sin of arrowAngle, it goes same direction as main arrow
+        // When flipped, y is negative, which flips the perpendicular component relative to main arrow
         byproductEndX = midX + x * Math.cos(arrowAngle) + y * perpDirX;
         byproductEndY = midY + x * Math.sin(arrowAngle) + y * perpDirY;
         
@@ -2469,6 +2880,129 @@ export class MetabolismViewer {
           .attr('stroke', arrowColor)
           .attr('stroke-width', arrowStrokeWidth)
           .attr('stroke-opacity', arrowOpacity);
+      }
+      
+      // For curved arrows, translate the entire by-arrow so byreactant end is at bottom of node
+      if (isMainArrowCurved && mainArrow.fromReaction && drawByreactant) {
+        const fromNode = mainArrow.fromReaction;
+        const getNodeRadius = (node) => {
+          if (!node) return 30;
+          if (node.isProteinComplex) return 40;
+          if (node.isMobileCarrier) return 20;
+          return 30;
+        };
+        const nodeRadius = getNodeRadius(fromNode);
+        
+        // Check if the specific main arrow has flipped: true
+        let isFlipped = false;
+        if (mainArrow && mainArrow.connectionId) {
+          const rawArrow = this.arrowMap.get(mainArrow.connectionId);
+          if (rawArrow && rawArrow.flipped === true) {
+            isFlipped = true;
+          }
+        }
+        
+        // If flipped: true, flip the whole by-arrow vertically (mirror across horizontal line through midpoint)
+        if (isFlipped) {
+          // Flip byreactant arrow points vertically
+          byreactantControlY = 2 * midY - byreactantControlY;
+          byreactantEndY = 2 * midY - byreactantEndY;
+          
+          // Flip byproduct arrow points vertically (if exists)
+          if (drawByproduct) {
+            byproductControlY = 2 * midY - byproductControlY;
+            byproductEndY = 2 * midY - byproductEndY;
+          }
+          
+          // Update paths with flipped points
+          if (drawByreactant && byreactantPath) {
+            byreactantPath = `M ${midX} ${midY} Q ${byreactantControlX} ${byreactantControlY}, ${byreactantEndX} ${byreactantEndY}`;
+            byreactantArrow.attr('d', byreactantPath);
+          }
+          
+          if (drawByproduct && byproductPath) {
+            byproductPath = `M ${midX} ${midY} Q ${byproductControlX} ${byproductControlY}, ${byproductEndX} ${byproductEndY}`;
+            byproductArrow.attr('d', byproductPath);
+          }
+        }
+        
+        // Calculate offset direction based on byMoleculeAngle
+        // When NOT flipped:
+        //   0 degrees = bottom (-90 degrees in standard math)
+        //   90 degrees = left (180 degrees in standard math)
+        //   180 degrees = top (90 degrees in standard math)
+        //   270 degrees = right (0 degrees in standard math)
+        // When flipped:
+        //   0 degrees = top (90 degrees in standard math)
+        //   90 degrees = right (0 degrees in standard math)
+        //   180 degrees = bottom (-90 degrees in standard math)
+        //   270 degrees = left (180 degrees in standard math)
+        let offsetAngle = -Math.PI / 2; // Default: bottom (0 degrees = -90 degrees)
+        if (reaction.byMoleculeAngle !== undefined) {
+          // Normalize angle to 0-360 range
+          let normalizedAngle = reaction.byMoleculeAngle % 360;
+          if (normalizedAngle < 0) normalizedAngle += 360;
+          
+          if (isFlipped) {
+            // When flipped: 0° → top (90°), 90° → right (0°), 180° → bottom (-90°), 270° → left (180°)
+            // Formula: offsetAngle = (270 - normalizedAngle) * PI / 180
+            // When normalizedAngle = 0: offsetAngle = 270 * PI/180 = 3*PI/2 = -PI/2 (bottom) ✓
+            // When normalizedAngle = 90: offsetAngle = 180 * PI/180 = PI (left) ✓
+            // When normalizedAngle = 180: offsetAngle = 90 * PI/180 = PI/2 (top) ✓
+            // When normalizedAngle = 270: offsetAngle = 0 * PI/180 = 0 (right) ✓
+            offsetAngle = (270 - normalizedAngle) * Math.PI / 180;
+          } else {
+            // When NOT flipped: 0° → bottom (-90°), 90° → left (180°), 180° → top (90°), 270° → right (0°)
+            // Formula: offsetAngle = (90 - normalizedAngle) * PI / 180
+            // When normalizedAngle = 0: offsetAngle = 90 * PI/180 = PI/2 (top) ✓
+            // When normalizedAngle = 90: offsetAngle = 0 * PI/180 = 0 (right) ✓
+            // When normalizedAngle = 180: offsetAngle = -90 * PI/180 = -PI/2 (bottom) ✓
+            // When normalizedAngle = 270: offsetAngle = -180 * PI/180 = -PI = PI (left) ✓
+            offsetAngle = (90 - normalizedAngle) * Math.PI / 180;
+          }
+        }
+        
+        // Calculate direction vector
+        const offsetDirX = Math.cos(offsetAngle);
+        const offsetDirY = Math.sin(offsetAngle);
+        
+        // Calculate node surface point in the offset direction
+        const nodeSurfaceX = fromNode.position.x + nodeRadius * offsetDirX;
+        const nodeSurfaceY = fromNode.position.y + nodeRadius * offsetDirY;
+        
+        // Calculate translation offset: move the byreactant end point to the node surface
+        const translateX = nodeSurfaceX - byreactantEndX;
+        const translateY = nodeSurfaceY - byreactantEndY;
+        
+        // Apply translation to all points to preserve the shape
+        // Translate midpoint (start point for both arrows)
+        midX += translateX;
+        midY += translateY;
+        
+        // Translate byreactant arrow points
+        byreactantControlX += translateX;
+        byreactantControlY += translateY;
+        byreactantEndX += translateX;
+        byreactantEndY += translateY;
+        
+        // Translate byproduct arrow points (if byproduct exists)
+        if (drawByproduct) {
+          byproductControlX += translateX;
+          byproductControlY += translateY;
+          byproductEndX += translateX;
+          byproductEndY += translateY;
+        }
+        
+        // Update paths with translated points
+        if (drawByreactant && byreactantPath) {
+          byreactantPath = `M ${midX} ${midY} Q ${byreactantControlX} ${byreactantControlY}, ${byreactantEndX} ${byreactantEndY}`;
+          byreactantArrow.attr('d', byreactantPath);
+        }
+        
+        if (drawByproduct && byproductPath) {
+          byproductPath = `M ${midX} ${midY} Q ${byproductControlX} ${byproductControlY}, ${byproductEndX} ${byproductEndY}`;
+          byproductArrow.attr('d', byproductPath);
+        }
       }
       
       // Calculate label positions based on arrow endpoints and tangent angles
@@ -2520,7 +3054,7 @@ export class MetabolismViewer {
       let byreactantTipX = byreactantEndX;
       let byreactantTipY = byreactantEndY;
       let byreactantTangentAngle = 0;
-      if (hasByreactant) {
+      if (drawByreactant) {
         // Standard: tangent from control to end (after rotation)
         byreactantTangentAngle = Math.atan2(byreactantEndY - byreactantControlY, byreactantEndX - byreactantControlX);
         const strokeOffset = arrowStrokeWidth;
@@ -2532,7 +3066,7 @@ export class MetabolismViewer {
       let byproductTipX = byproductEndX;
       let byproductTipY = byproductEndY;
       let byproductTangentAngle = 0;
-      if (hasByproduct) {
+      if (drawByproduct) {
         // Calculate tangent angle at endpoint (after rotation)
         // For quadratic Bezier Q(P0, P1, P2), tangent at P2 is in direction P1->P2
         // Use the same calculation for all pathways including ETC
@@ -2608,30 +3142,40 @@ export class MetabolismViewer {
       };
       
       // Calculate label offsets for each arrow
+      // Use hasByreactant/hasByproduct for offset calculation (needs array for width estimation)
+      // But use drawByreactant/drawByproduct for positioning (based on whether arrows are drawn)
       const byreactantLabelOffset = hasByreactant ? calculateLabelOffset(byreactantTangentAngle, byreactants) : baseLabelOffset;
       const byproductLabelOffset = hasByproduct ? calculateLabelOffset(byproductTangentAngle, byproducts) : baseLabelOffset;
       
       // Calculate label positions from the rotated end points
       // When byMoleculeRotationAngle is set, the end points are already rotated,
       // so labels calculated from them are already in the correct position
-      if (hasByreactant && hasByproduct) {
-        // Both exist: position labels at the effective end of each arrow along tangent direction
+      // Use drawByreactant/drawByproduct for positioning (not hasByreactant/hasByproduct)
+      // This ensures labels are positioned at arrow endpoints even when arrays are empty
+      if (drawByreactant && drawByproduct) {
+        // Both arrows drawn: position labels at the effective end of each arrow along tangent direction
         byreactantLabelX = byreactantTipX + byreactantLabelOffset * Math.cos(byreactantTangentAngle);
         byreactantLabelY = byreactantTipY + byreactantLabelOffset * Math.sin(byreactantTangentAngle);
         byproductLabelX = byproductTipX + byproductLabelOffset * Math.cos(byproductTangentAngle);
         byproductLabelY = byproductTipY + byproductLabelOffset * Math.sin(byproductTangentAngle);
-      } else if (hasByreactant) {
-        // Only byreactant
+      } else if (drawByreactant) {
+        // Only byreactant arrow drawn
         byreactantLabelX = byreactantTipX + byreactantLabelOffset * Math.cos(byreactantTangentAngle);
         byreactantLabelY = byreactantTipY + byreactantLabelOffset * Math.sin(byreactantTangentAngle);
         byproductLabelX = midX;
         byproductLabelY = midY;
-      } else {
-        // Only byproduct
+      } else if (drawByproduct) {
+        // Only byproduct arrow drawn
         byreactantLabelX = midX;
         byreactantLabelY = midY;
         byproductLabelX = byproductTipX + byproductLabelOffset * Math.cos(byproductTangentAngle);
         byproductLabelY = byproductTipY + byproductLabelOffset * Math.sin(byproductTangentAngle);
+      } else {
+        // Neither arrow drawn (shouldn't happen, but handle gracefully)
+        byreactantLabelX = midX;
+        byreactantLabelY = midY;
+        byproductLabelX = midX;
+        byproductLabelY = midY;
       }
       
       // Note: When byMoleculeRotationAngle is set, the arrow end points (byproductEndX/Y, byreactantEndX/Y)
@@ -2643,7 +3187,7 @@ export class MetabolismViewer {
       const arrowheadSize = PATHWAY_CONFIG.arrowSettings.arrowheadSize;
       
       // Add triangle arrowhead at the end of the byproduct arrow (only on byproduct side)
-      if (hasByproduct) {
+      if (drawByproduct) {
         // Use the already-calculated byproductTangentAngle which accounts for:
         // - Rotation (byMoleculeRotationAngle) if set
         // - Bezier curve tangent (control to end)
@@ -2668,6 +3212,18 @@ export class MetabolismViewer {
       }
       if (hasByproduct && byproductPath) {
         hitAreaPaths.push(byproductPath);
+      }
+      
+      // For curved arrows, create a hit area even if there are no by-arrows
+      // This ensures curved arrows are clickable even without labels
+      if (isMainArrowCurved && hitAreaPaths.length === 0) {
+        // Create a simple line hit area along the arrow direction from midpoint
+        const hitAreaLength = arrowLength * 0.5; // Half the arrow length for hit area
+        const hitAreaStartX = midX - hitAreaLength * 0.5 * Math.cos(arrowAngle);
+        const hitAreaStartY = midY - hitAreaLength * 0.5 * Math.sin(arrowAngle);
+        const hitAreaEndX = midX + hitAreaLength * 0.5 * Math.cos(arrowAngle);
+        const hitAreaEndY = midY + hitAreaLength * 0.5 * Math.sin(arrowAngle);
+        hitAreaPaths.push(`M ${hitAreaStartX} ${hitAreaStartY} L ${hitAreaEndX} ${hitAreaEndY}`);
       }
       
       if (hitAreaPaths.length > 0) {
@@ -2825,13 +3381,61 @@ export class MetabolismViewer {
       };
       
       // Add byreactant label(s) if they exist and labels are not hidden
-      if (hasByreactant && !reaction.hideByMoleculeLabels) {
-        createMultiMoleculeLabel(byreactants, byreactantLabelX, byreactantLabelY, true);
+      // For curved arrows, exclude displayByreactant and displayByproduct from labels
+      // Priority: arrow data > reaction data
+      // Check specific hideByreactantLabels first, then fall back to hideByMoleculeLabels
+      const shouldHideByreactantLabels = arrowHideByreactantLabels !== undefined
+        ? arrowHideByreactantLabels
+        : (reaction.hideByreactantLabels !== undefined 
+          ? reaction.hideByreactantLabels 
+          : (reaction.hideByMoleculeLabels || false));
+      if (hasByreactant && !shouldHideByreactantLabels) {
+        let labelByreactants = byreactants;
+        if (isMainArrowCurved && reaction.displayByreactant) {
+          // Filter out displayByreactant molecules from labels when curved
+          const displayByreactantList = Array.isArray(reaction.displayByreactant) 
+            ? reaction.displayByreactant 
+            : (typeof reaction.displayByreactant === 'string' 
+              ? [reaction.displayByreactant] 
+              : (reaction.displayByreactant.molecules 
+                ? (Array.isArray(reaction.displayByreactant.molecules) 
+                  ? reaction.displayByreactant.molecules 
+                  : [reaction.displayByreactant.molecules])
+                : (reaction.displayByreactant.name ? [reaction.displayByreactant.name] : [])));
+          labelByreactants = byreactants.filter(mol => !displayByreactantList.includes(mol));
+        }
+        if (labelByreactants.length > 0) {
+          createMultiMoleculeLabel(labelByreactants, byreactantLabelX, byreactantLabelY, true);
+        }
       }
       
       // Add byproduct label(s) if they exist and labels are not hidden
-      if (hasByproduct && !reaction.hideByMoleculeLabels) {
-        createMultiMoleculeLabel(byproducts, byproductLabelX, byproductLabelY, false);
+      // For curved arrows, exclude displayByreactant and displayByproduct from labels
+      // Priority: arrow data > reaction data
+      // Check specific hideByproductLabels first, then fall back to hideByMoleculeLabels
+      const shouldHideByproductLabels = arrowHideByproductLabels !== undefined
+        ? arrowHideByproductLabels
+        : (reaction.hideByproductLabels !== undefined 
+          ? reaction.hideByproductLabels 
+          : (reaction.hideByMoleculeLabels || false));
+      if (hasByproduct && !shouldHideByproductLabels) {
+        let labelByproducts = byproducts;
+        if (isMainArrowCurved && reaction.displayByproduct) {
+          // Filter out displayByproduct molecules from labels when curved
+          const displayByproductList = Array.isArray(reaction.displayByproduct) 
+            ? reaction.displayByproduct 
+            : (typeof reaction.displayByproduct === 'string' 
+              ? [reaction.displayByproduct] 
+              : (reaction.displayByproduct.molecules 
+                ? (Array.isArray(reaction.displayByproduct.molecules) 
+                  ? reaction.displayByproduct.molecules 
+                  : [reaction.displayByproduct.molecules])
+                : (reaction.displayByproduct.name ? [reaction.displayByproduct.name] : [])));
+          labelByproducts = byproducts.filter(mol => !displayByproductList.includes(mol));
+        }
+        if (labelByproducts.length > 0) {
+          createMultiMoleculeLabel(labelByproducts, byproductLabelX, byproductLabelY, false);
+        }
       }
       
       // Raise arrows above labels so arrows appear in front
@@ -3739,6 +4343,20 @@ export class MetabolismViewer {
     
     this.applyReactionHighlight(reaction);
     
+    // Check if this reaction has any curved arrows
+    let hasCurvedArrow = false;
+    if (reaction.arrowIds && reaction.arrowIds.length > 0) {
+      for (const arrowId of reaction.arrowIds) {
+        const rawArrow = this.arrowMap.get(arrowId);
+        if (rawArrow && rawArrow.curved === true) {
+          hasCurvedArrow = true;
+          break;
+        }
+      }
+    }
+    // Add hasCurvedArrow property to reaction for ArrowDetail to use
+    reaction.hasCurvedArrow = hasCurvedArrow;
+    
     // Dispatch custom event for reaction detail view
     const detailEvent = new CustomEvent('reaction-selected', {
       detail: {
@@ -4275,24 +4893,46 @@ export class MetabolismViewer {
             }
           }
           // Check byproduct
-          else if (reaction.byproduct && 
-                   (reaction.byproduct.name === moleculeName || 
-                    (moleculeId && reaction.byproduct.id === moleculeId))) {
-            reactionsWithMolecule.push(reaction);
-            if (!moleculeInfo) {
-              moleculeInfo = {
-                name: reaction.byproduct.name,
-                formula: reaction.byproduct.formula || '',
-                id: reaction.byproduct.id || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
-                description: '' // Let PubChem provide the description
-              };
-            } else {
-              // Merge: use formula/id from this reaction if current one is missing
-              if (!moleculeInfo.formula && reaction.byproduct.formula) {
-                moleculeInfo.formula = reaction.byproduct.formula;
+          else if (reaction.byproduct) {
+            let matches = false;
+            let byproductFormula = '';
+            let byproductId = null;
+            
+            if (typeof reaction.byproduct === 'string' && reaction.byproduct === moleculeName) {
+              matches = true;
+            } else if (Array.isArray(reaction.byproduct) && reaction.byproduct.includes(moleculeName)) {
+              matches = true;
+            } else if (reaction.byproduct.molecules) {
+              const molecules = Array.isArray(reaction.byproduct.molecules) 
+                ? reaction.byproduct.molecules 
+                : [reaction.byproduct.molecules];
+              if (molecules.includes(moleculeName)) {
+                matches = true;
               }
-              if (!moleculeInfo.id && reaction.byproduct.id) {
-                moleculeInfo.id = reaction.byproduct.id;
+            } else if (reaction.byproduct.name === moleculeName || 
+                      (moleculeId && reaction.byproduct.id === moleculeId)) {
+              matches = true;
+              byproductFormula = reaction.byproduct.formula || '';
+              byproductId = reaction.byproduct.id;
+            }
+            
+            if (matches) {
+              reactionsWithMolecule.push(reaction);
+              if (!moleculeInfo) {
+                moleculeInfo = {
+                  name: moleculeName,
+                  formula: byproductFormula,
+                  id: byproductId || moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+                  description: '' // Let PubChem provide the description
+                };
+              } else {
+                // Merge: use formula/id from this reaction if current one is missing
+                if (!moleculeInfo.formula && byproductFormula) {
+                  moleculeInfo.formula = byproductFormula;
+                }
+                if (!moleculeInfo.id && byproductId) {
+                  moleculeInfo.id = byproductId;
+                }
               }
             }
           }
@@ -4341,6 +4981,80 @@ export class MetabolismViewer {
                 }
                 if (!moleculeInfo.id && byreactantId) {
                   moleculeInfo.id = byreactantId;
+                }
+              }
+            }
+          }
+        }
+        
+        // Also check arrow data for byproducts/byreactants (for curved arrows)
+        // This is needed because curved arrows can have byproducts in arrow data, not reaction data
+        if (this.arrowMap && (reactionsWithMolecule.length === 0 || !moleculeInfo)) {
+          for (const [arrowId, rawArrow] of this.arrowMap.entries()) {
+            if (!rawArrow.reaction_id) continue;
+            
+            // Find the reaction for this arrow
+            const reaction = this.reactions.find(r => r.id === rawArrow.reaction_id);
+            if (!reaction || reactionsWithMolecule.includes(reaction)) continue;
+            
+            // Check byproduct in arrow data
+            if (rawArrow.byproduct) {
+              let matches = false;
+              if (typeof rawArrow.byproduct === 'string' && rawArrow.byproduct === moleculeName) {
+                matches = true;
+              } else if (Array.isArray(rawArrow.byproduct) && rawArrow.byproduct.includes(moleculeName)) {
+                matches = true;
+              } else if (rawArrow.byproduct.molecules) {
+                const molecules = Array.isArray(rawArrow.byproduct.molecules) 
+                  ? rawArrow.byproduct.molecules 
+                  : [rawArrow.byproduct.molecules];
+                if (molecules.includes(moleculeName)) {
+                  matches = true;
+                }
+              } else if (rawArrow.byproduct.name === moleculeName) {
+                matches = true;
+              }
+              
+              if (matches) {
+                reactionsWithMolecule.push(reaction);
+                if (!moleculeInfo) {
+                  moleculeInfo = {
+                    name: moleculeName,
+                    formula: rawArrow.byproduct.formula || '',
+                    id: rawArrow.byproduct.id || moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+                    description: ''
+                  };
+                }
+              }
+            }
+            
+            // Check byreactant in arrow data
+            if (rawArrow.byreactant) {
+              let matches = false;
+              if (typeof rawArrow.byreactant === 'string' && rawArrow.byreactant === moleculeName) {
+                matches = true;
+              } else if (Array.isArray(rawArrow.byreactant) && rawArrow.byreactant.includes(moleculeName)) {
+                matches = true;
+              } else if (rawArrow.byreactant.molecules) {
+                const molecules = Array.isArray(rawArrow.byreactant.molecules) 
+                  ? rawArrow.byreactant.molecules 
+                  : [rawArrow.byreactant.molecules];
+                if (molecules.includes(moleculeName)) {
+                  matches = true;
+                }
+              } else if (rawArrow.byreactant.name === moleculeName) {
+                matches = true;
+              }
+              
+              if (matches && !reactionsWithMolecule.includes(reaction)) {
+                reactionsWithMolecule.push(reaction);
+                if (!moleculeInfo) {
+                  moleculeInfo = {
+                    name: moleculeName,
+                    formula: rawArrow.byreactant.formula || '',
+                    id: rawArrow.byreactant.id || moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
+                    description: ''
+                  };
                 }
               }
             }

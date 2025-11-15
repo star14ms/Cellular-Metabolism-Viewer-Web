@@ -26,10 +26,15 @@ export class ArrowDetail {
     this.currentReaction = null;
     this.pubchemCache = new Map();
     this.viewerContainer = null; // Will be set to the metabolism viewer container
+    this.viewer = null; // Will be set to the MetabolismViewer instance
   }
   
   setViewerContainer(viewerContainer) {
     this.viewerContainer = viewerContainer;
+  }
+  
+  setViewer(viewer) {
+    this.viewer = viewer;
   }
   
   render(reaction) {
@@ -47,12 +52,18 @@ export class ArrowDetail {
     const arrowsStartFromNode = reaction.isProteinComplex === true || reaction.isMobileCarrier === true;
     const isEnzymeOrCarrierNode = arrowsStartFromNode; // Same check - used for section title
     
+    // Note: byproduct and byreactant from arrow data are NOT included in the detail page
+    // Arrow data byproduct/byreactant is only used for drawing labels on specific arrows
+    // The detail page only shows byproduct/byreactant from reaction data
+    const mergedByreactant = reaction.byreactant;
+    const mergedByproduct = reaction.byproduct;
+    
     // Check if the Substrate → Product section will have any by-molecules
     // If not, we'll hide the entire section for ETC reactions
     // displayByreactant and displayByproduct are display-only (no arrows drawn)
     const hasCoSubstrate = reaction.coSubstrate && reaction.coSubstrate.name;
-    const hasByreactant = reaction.byreactant && !arrowsStartFromNode;
-    const hasByproduct = reaction.byproduct && !arrowsStartFromNode;
+    const hasByreactant = mergedByreactant && !arrowsStartFromNode;
+    const hasByproduct = mergedByproduct && !arrowsStartFromNode;
     const hasDisplayByreactant = reaction.displayByreactant && !arrowsStartFromNode;
     const hasDisplayByproduct = reaction.displayByproduct && !arrowsStartFromNode;
     const hasByMolecules = hasCoSubstrate || hasByreactant || hasByproduct || hasDisplayByreactant || hasDisplayByproduct;
@@ -105,6 +116,7 @@ export class ArrowDetail {
           <h3>${isEnzymeOrCarrierNode ? 'Departure → Destination' : 'Substrate → Product'}</h3>
           <div class="reaction-flow">
             <div class="reaction-reactants">
+              ${!reaction.hasCurvedArrow ? `
               <div class="reaction-molecule clickable-molecule" 
                    data-molecule-name="${reaction.substrate.name}" 
                    data-molecule-id="${reaction.substrate.id || ''}"
@@ -112,6 +124,7 @@ export class ArrowDetail {
                 <strong>${reaction.substrate.name}</strong>
                 ${reaction.substrate.formula ? `<div class="molecule-formula">${reaction.substrate.formula}</div>` : ''}
               </div>
+              ` : ''}
               ${reaction.coSubstrate ? `
                 <div class="reaction-molecule clickable-molecule co-reactant" 
                      data-molecule-name="${reaction.coSubstrate.name}" 
@@ -120,28 +133,15 @@ export class ArrowDetail {
                   <strong>${removeCoefficients(reaction.coSubstrate.name)}</strong>
                 </div>
               ` : ''}
-              ${reaction.byreactant && !arrowsStartFromNode ? (() => {
+              ${mergedByreactant && !arrowsStartFromNode ? (() => {
                 // Handle different byreactant formats: string, array, or object with molecules array
                 // Hide byreactants if arrows start from node (ETC complexes)
                 // Skip byreactants that have the same name as coSubstrate to avoid duplication
                 const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
                 
-                if (typeof reaction.byreactant === 'string') {
-                  // Skip if this byreactant matches coSubstrate
-                  if (coSubstrateName && removeCoefficients(reaction.byreactant) === removeCoefficients(coSubstrateName)) {
-                    return '';
-                  }
-                  const displayName = removeCoefficients(reaction.byreactant);
-                  return `
-                    <div class="reaction-molecule clickable-molecule co-reactant" 
-                         data-molecule-name="${reaction.byreactant}" 
-                         data-molecule-id=""
-                         style="cursor: pointer;">
-                      <strong>${displayName}</strong>
-                    </div>
-                  `;
-                } else if (Array.isArray(reaction.byreactant)) {
-                  return reaction.byreactant
+                // mergedByreactant is always an array (from mergeByMolecules)
+                if (Array.isArray(mergedByreactant)) {
+                  return mergedByreactant
                     .filter(mol => {
                       // Filter out molecules that match coSubstrate
                       return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
@@ -157,37 +157,6 @@ export class ArrowDetail {
                     </div>
                   `;
                     }).join('');
-                } else if (reaction.byreactant.molecules && Array.isArray(reaction.byreactant.molecules)) {
-                  return reaction.byreactant.molecules
-                    .filter(mol => {
-                      // Filter out molecules that match coSubstrate
-                      return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
-                    })
-                    .map(mol => {
-                      const displayName = removeCoefficients(mol);
-                      return `
-                    <div class="reaction-molecule clickable-molecule co-reactant" 
-                         data-molecule-name="${mol}" 
-                         data-molecule-id=""
-                         style="cursor: pointer;">
-                      <strong>${displayName}</strong>
-                    </div>
-                  `;
-                    }).join('');
-                } else if (reaction.byreactant.name) {
-                  // Skip if this byreactant matches coSubstrate
-                  if (coSubstrateName && removeCoefficients(reaction.byreactant.name) === removeCoefficients(coSubstrateName)) {
-                    return '';
-                  }
-                  const displayName = removeCoefficients(reaction.byreactant.name);
-                  return `
-                    <div class="reaction-molecule clickable-molecule co-reactant" 
-                         data-molecule-name="${reaction.byreactant.name}" 
-                         data-molecule-id=""
-                         style="cursor: pointer;">
-                      <strong>${displayName}</strong>
-                    </div>
-                  `;
                 }
                 return '';
               })() : ''}
@@ -262,9 +231,10 @@ export class ArrowDetail {
                 return '';
               })() : ''}
             </div>
-            <div class="reaction-arrow">→</div>
+            ${!reaction.hasCurvedArrow ? '<div class="reaction-arrow">→</div>' : ''}
             <div class="reaction-products">
-              ${reaction.products && Array.isArray(reaction.products) ? `
+              ${!reaction.hasCurvedArrow ? (
+                reaction.products && Array.isArray(reaction.products) ? `
                 ${reaction.products.map(p => `
                   <div class="reaction-molecule clickable-molecule" 
                        data-molecule-name="${p.name}" 
@@ -282,44 +252,12 @@ export class ArrowDetail {
                   <strong>${reaction.product.name}</strong>
                   ${reaction.product.formula ? `<div class="molecule-formula">${reaction.product.formula}</div>` : ''}
                 </div>
-              `}
-              ${reaction.byproduct && !arrowsStartFromNode ? (() => {
-                // Handle different byproduct formats: string, array, object with name, or object with molecules array
-                // Hide byproducts if arrows start from node (ETC complexes)
-                if (typeof reaction.byproduct === 'string') {
-                  const displayName = removeCoefficients(reaction.byproduct);
-                  return `
-                    <div class="reaction-molecule clickable-molecule co-product" 
-                         data-molecule-name="${reaction.byproduct}" 
-                         data-molecule-id=""
-                         style="cursor: pointer;">
-                      <strong>${displayName}</strong>
-                    </div>
-                  `;
-                } else if (Array.isArray(reaction.byproduct)) {
-                  return reaction.byproduct.map(mol => {
-                    const displayName = removeCoefficients(mol);
-                    return `
-                    <div class="reaction-molecule clickable-molecule co-product" 
-                         data-molecule-name="${mol}" 
-                         data-molecule-id=""
-                         style="cursor: pointer;">
-                      <strong>${displayName}</strong>
-                    </div>
-                  `;
-                  }).join('');
-                } else if (reaction.byproduct.name) {
-                  const displayName = removeCoefficients(reaction.byproduct.name);
-                  return `
-                    <div class="reaction-molecule clickable-molecule co-product" 
-                         data-molecule-name="${reaction.byproduct.name}" 
-                         data-molecule-id=""
-                         style="cursor: pointer;">
-                      <strong>${displayName}</strong>
-                    </div>
-                  `;
-                } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
-                  return reaction.byproduct.molecules.map(mol => {
+              `
+              ) : ''}
+              ${mergedByproduct && !arrowsStartFromNode ? (() => {
+                // mergedByproduct is always an array (from mergeByMolecules)
+                if (Array.isArray(mergedByproduct)) {
+                  return mergedByproduct.map(mol => {
                     const displayName = removeCoefficients(mol);
                     return `
                     <div class="reaction-molecule clickable-molecule co-product" 
@@ -388,12 +326,13 @@ export class ArrowDetail {
         </div>
         ` : ''}
         
+        ${reaction.enzyme ? `
         <div class="detail-section">
           <h3>Enzyme</h3>
           <div class="enzyme-info">
-            <div class="enzyme-name">${reaction.enzyme.name}</div>
-            <div class="enzyme-ec">EC Number: ${reaction.enzyme.ecNumber}</div>
-            <div class="enzyme-description">${reaction.enzyme.description}</div>
+            <div class="enzyme-name">${reaction.enzyme.name || 'N/A'}</div>
+            <div class="enzyme-ec">EC Number: ${reaction.enzyme.ecNumber || 'N/A'}</div>
+            <div class="enzyme-description">${reaction.enzyme.description || ''}</div>
             ${reaction.enzyme.cofactors && reaction.enzyme.cofactors.length > 0 && reaction.enzyme.cofactors[0] !== 'None' ? `
               <div class="enzyme-cofactors">
                 <strong>Cofactors:</strong> ${reaction.enzyme.cofactors.join(', ')}
@@ -401,6 +340,7 @@ export class ArrowDetail {
             ` : ''}
           </div>
         </div>
+        ` : ''}
         
         ${reaction.coSubstrate ? `
           <div class="detail-section">
@@ -413,7 +353,7 @@ export class ArrowDetail {
               <div class="molecule-name">${removeCoefficients(reaction.coSubstrate.name)}</div>
               ${reaction.coSubstrate.formula ? `<div class="molecule-formula">${reaction.coSubstrate.formula}</div>` : ''}
               ${reaction.coSubstrate.consumed ? '<div class="consumed-badge">Consumed</div>' : ''}
-              ${reaction.coSubstrate.reduced ? '<div class="reduced-badge">Reduced to ' + (typeof reaction.byproduct === 'string' ? reaction.byproduct : (reaction.byproduct?.name || 'product')) + '</div>' : ''}
+              ${reaction.coSubstrate.reduced ? '<div class="reduced-badge">Reduced to ' + (mergedByproduct && Array.isArray(mergedByproduct) && mergedByproduct.length > 0 ? mergedByproduct[0] : 'product') + '</div>' : ''}
               <div class="pubchem-loading" data-molecule="${reaction.coSubstrate.name}">
                 <div class="loading-indicator">Loading PubChem data...</div>
               </div>
@@ -421,30 +361,35 @@ export class ArrowDetail {
           </div>
         ` : ''}
         
-        ${reaction.byproduct ? (() => {
-          // Handle different byproduct formats for the byproduct section
-          if (typeof reaction.byproduct === 'string') {
-            const displayName = removeCoefficients(reaction.byproduct);
-            return `
+        ${mergedByproduct ? (() => {
+          // Handle merged byproduct (from reaction and arrow data) for the byproduct section
+          // mergedByproduct is always an array
+          if (Array.isArray(mergedByproduct)) {
+            if (mergedByproduct.length === 1) {
+              // Single byproduct
+              const mol = mergedByproduct[0];
+              const displayName = removeCoefficients(mol);
+              return `
               <div class="detail-section">
                 <h3>Byproduct</h3>
                 <div class="byproduct-info clickable-molecule" 
                      id="byproduct-info"
-                     data-molecule-name="${reaction.byproduct}" 
+                     data-molecule-name="${mol}" 
                      data-molecule-id=""
                      style="cursor: pointer;">
                   <div class="molecule-name">${displayName}</div>
-                  <div class="pubchem-loading" data-molecule="${reaction.byproduct}">
+                  <div class="pubchem-loading" data-molecule="${mol}">
                     <div class="loading-indicator">Loading PubChem data...</div>
                   </div>
                 </div>
               </div>
             `;
-          } else if (Array.isArray(reaction.byproduct)) {
-            return `
+            } else {
+              // Multiple byproducts
+              return `
               <div class="detail-section">
                 <h3>Byproducts</h3>
-                ${reaction.byproduct.map((mol, idx) => {
+                ${mergedByproduct.map((mol, idx) => {
                   const displayName = removeCoefficients(mol);
                   return `
                   <div class="byproduct-info clickable-molecule" 
@@ -461,49 +406,12 @@ export class ArrowDetail {
                 }).join('')}
               </div>
             `;
-          } else if (reaction.byproduct.name) {
-            const displayName = removeCoefficients(reaction.byproduct.name);
-            return `
-              <div class="detail-section">
-                <h3>Byproduct</h3>
-                <div class="byproduct-info clickable-molecule" 
-                     id="byproduct-info"
-                     data-molecule-name="${reaction.byproduct.name}" 
-                     data-molecule-id=""
-                     style="cursor: pointer;">
-                  <div class="molecule-name">${displayName}</div>
-                  ${reaction.byproduct.formula ? `<div class="molecule-formula">${reaction.byproduct.formula}</div>` : ''}
-                  <div class="pubchem-loading" data-molecule="${reaction.byproduct.name}">
-                    <div class="loading-indicator">Loading PubChem data...</div>
-                  </div>
-                </div>
-              </div>
-            `;
-          } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
-            return `
-              <div class="detail-section">
-                <h3>Byproducts</h3>
-                ${reaction.byproduct.molecules.map((mol, idx) => {
-                  const displayName = removeCoefficients(mol);
-                  return `
-                  <div class="byproduct-info clickable-molecule" 
-                       id="byproduct-info-${idx}"
-                       data-molecule-name="${mol}" 
-                       data-molecule-id=""
-                       style="cursor: pointer; margin-bottom: 10px;">
-                    <div class="molecule-name">${displayName}</div>
-                    <div class="pubchem-loading" data-molecule="${mol}">
-                      <div class="loading-indicator">Loading PubChem data...</div>
-                    </div>
-                  </div>
-                `;
-                }).join('')}
-              </div>
-            `;
+            }
           }
           return '';
         })() : ''}
         
+        ${reaction.conditions ? `
         <div class="detail-section">
           <h3>Reaction Conditions</h3>
           <div class="conditions-info">
@@ -542,6 +450,7 @@ export class ArrowDetail {
             ` : ''}
           </div>
         </div>
+        ` : ''}
       </div>
     `;
     
@@ -558,20 +467,12 @@ export class ArrowDetail {
         let isByreactant = null;
         if (reaction.coSubstrate && reaction.coSubstrate.name === moleculeName) {
           isByreactant = true;
-        } else if (reaction.byreactant) {
-          // Handle different byreactant formats
-          let byreactantName = null;
-          if (typeof reaction.byreactant === 'string') {
-            byreactantName = reaction.byreactant;
-          } else if (Array.isArray(reaction.byreactant)) {
-            byreactantName = reaction.byreactant.includes(moleculeName) ? moleculeName : null;
-          } else if (reaction.byreactant.name) {
-            byreactantName = reaction.byreactant.name;
-          } else if (reaction.byreactant.molecules && Array.isArray(reaction.byreactant.molecules)) {
-            byreactantName = reaction.byreactant.molecules.includes(moleculeName) ? moleculeName : null;
-          }
-          if (byreactantName === moleculeName) {
-            isByreactant = true;
+        } else if (mergedByreactant) {
+          // Check merged byreactant (from reaction and arrow data)
+          if (Array.isArray(mergedByreactant)) {
+            if (mergedByreactant.includes(moleculeName)) {
+              isByreactant = true;
+            }
           }
         } else if (reaction.displayByreactant) {
           // Handle displayByreactant (display-only)
@@ -588,20 +489,12 @@ export class ArrowDetail {
           if (displayByreactantName === moleculeName) {
             isByreactant = true;
           }
-        } else if (reaction.byproduct) {
-          // Handle different byproduct formats
-          let byproductName = null;
-          if (typeof reaction.byproduct === 'string') {
-            byproductName = reaction.byproduct;
-          } else if (Array.isArray(reaction.byproduct)) {
-            byproductName = reaction.byproduct.includes(moleculeName) ? moleculeName : null;
-          } else if (reaction.byproduct.name) {
-            byproductName = reaction.byproduct.name;
-          } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
-            byproductName = reaction.byproduct.molecules.includes(moleculeName) ? moleculeName : null;
-          }
-          if (byproductName === moleculeName) {
-            isByreactant = false;
+        } else if (mergedByproduct) {
+          // Check merged byproduct (from reaction and arrow data)
+          if (Array.isArray(mergedByproduct)) {
+            if (mergedByproduct.includes(moleculeName)) {
+              isByreactant = false;
+            }
           }
         } else if (reaction.displayByproduct) {
           // Handle displayByproduct (display-only)
@@ -633,17 +526,11 @@ export class ArrowDetail {
         
         // Dispatch event to select molecule in viewer
         // If it's a byreactant or byproduct, skip zoom to prevent frame movement
-        // Check if molecule is a byproduct (handle different formats)
+        // Check if molecule is a byproduct (handle merged byproduct from reaction and arrow data)
         let byproductName = null;
-        if (reaction.byproduct) {
-          if (typeof reaction.byproduct === 'string') {
-            byproductName = reaction.byproduct;
-          } else if (Array.isArray(reaction.byproduct)) {
-            byproductName = reaction.byproduct.includes(moleculeName) ? moleculeName : null;
-          } else if (reaction.byproduct.name) {
-            byproductName = reaction.byproduct.name;
-          } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
-            byproductName = reaction.byproduct.molecules.includes(moleculeName) ? moleculeName : null;
+        if (mergedByproduct) {
+          if (Array.isArray(mergedByproduct)) {
+            byproductName = mergedByproduct.includes(moleculeName) ? moleculeName : null;
           }
         }
         // Check if molecule is in displayByreactant or displayByproduct
@@ -680,16 +567,62 @@ export class ArrowDetail {
                             element.classList.contains('co-reactant') ||
                             element.classList.contains('co-product');
         
+        // Check if this by-molecule has a node (if it does, treat it like a main molecule)
+        let hasNode = false;
+        if (isByMolecule && this.viewer) {
+          // Check if there's a node with this molecule name or id
+          if (this.viewer.nodeMap) {
+            // Check nodeMap for matching node
+            for (const [nodeId, node] of this.viewer.nodeMap.entries()) {
+              if (node.name === moleculeName || (moleculeId && node.id === moleculeId)) {
+                hasNode = true;
+                break;
+              }
+            }
+          }
+          // Also check reactions for nodes that match (both product nodes and regular nodes)
+          if (!hasNode && this.viewer.reactions) {
+            for (const r of this.viewer.reactions) {
+              // Check product nodes
+              if (r.isProductNode && r.substrate && 
+                  (r.substrate.name === moleculeName || (moleculeId && r.substrate.id === moleculeId))) {
+                hasNode = true;
+                break;
+              }
+              // Check regular nodes (substrate or product)
+              if (r.substrate && (r.substrate.name === moleculeName || (moleculeId && r.substrate.id === moleculeId))) {
+                hasNode = true;
+                break;
+              }
+              if (r.product && (r.product.name === moleculeName || (moleculeId && r.product.id === moleculeId))) {
+                hasNode = true;
+                break;
+              }
+              if (r.products && Array.isArray(r.products)) {
+                if (r.products.some(p => p.name === moleculeName || (moleculeId && p.id === moleculeId))) {
+                  hasNode = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+        
+        // If by-molecule has a node, treat it like a main molecule (move frame, don't pass reaction context)
+        const shouldSkipZoom = isByMolecule && !hasNode;
+        const shouldPassReaction = isMainMolecule ? null : (hasNode ? null : reaction);
+        
         if (this.viewerContainer) {
           const selectEvent = new CustomEvent('select-molecule-by-name', {
             detail: { 
               moleculeName: moleculeName,
               moleculeId: moleculeId,
-              // For substrate/product (main molecules), don't pass reaction context so it finds the correct node
-              // For by-molecules, pass reaction context
-              reaction: isMainMolecule ? null : reaction,
-              isByreactant: isMainMolecule ? null : isByreactant,
-              skipZoom: isByMolecule // Don't move frame for byreactants/byproducts
+              // For substrate/product (main molecules) or by-molecules with nodes, 
+              // don't pass reaction context so it finds the correct node
+              // For by-molecules without nodes, pass reaction context
+              reaction: shouldPassReaction,
+              isByreactant: isMainMolecule ? null : (hasNode ? null : isByreactant),
+              skipZoom: shouldSkipZoom // Don't move frame only for by-molecules without nodes
             }
           });
           this.viewerContainer.dispatchEvent(selectEvent);
@@ -711,45 +644,22 @@ export class ArrowDetail {
       }
       
       // Collect all by-molecule names from the reaction flow section
-      if (reaction.byreactant && !arrowsStartFromNode) {
-        if (typeof reaction.byreactant === 'string') {
+      if (mergedByreactant && !arrowsStartFromNode) {
+        // mergedByreactant is always an array
+        if (Array.isArray(mergedByreactant)) {
           const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
-          // Skip if this byreactant matches coSubstrate
-          if (!coSubstrateName || removeCoefficients(reaction.byreactant) !== removeCoefficients(coSubstrateName)) {
-            moleculeNames.add(reaction.byreactant);
-          }
-        } else if (Array.isArray(reaction.byreactant)) {
-          const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
-          reaction.byreactant.forEach(mol => {
+          mergedByreactant.forEach(mol => {
             if (!coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName)) {
               moleculeNames.add(mol);
             }
           });
-        } else if (reaction.byreactant.molecules && Array.isArray(reaction.byreactant.molecules)) {
-          const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
-          reaction.byreactant.molecules.forEach(mol => {
-            if (!coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName)) {
-              moleculeNames.add(mol);
-            }
-          });
-        } else if (reaction.byreactant.name) {
-          const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
-          // Skip if this byreactant matches coSubstrate
-          if (!coSubstrateName || removeCoefficients(reaction.byreactant.name) !== removeCoefficients(coSubstrateName)) {
-            moleculeNames.add(reaction.byreactant.name);
-          }
         }
       }
       
-      if (reaction.byproduct && !arrowsStartFromNode) {
-        if (typeof reaction.byproduct === 'string') {
-          moleculeNames.add(reaction.byproduct);
-        } else if (Array.isArray(reaction.byproduct)) {
-          reaction.byproduct.forEach(mol => moleculeNames.add(mol));
-        } else if (reaction.byproduct.name) {
-          moleculeNames.add(reaction.byproduct.name);
-        } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
-          reaction.byproduct.molecules.forEach(mol => moleculeNames.add(mol));
+      if (mergedByproduct && !arrowsStartFromNode) {
+        // mergedByproduct is always an array
+        if (Array.isArray(mergedByproduct)) {
+          mergedByproduct.forEach(mol => moleculeNames.add(mol));
         }
       }
       
@@ -812,23 +722,24 @@ export class ArrowDetail {
     
     // Fetch data for byproduct (handle different formats)
     // Remove coefficients before searching PubChem
+    // Convert byproduct to array format for consistent handling
+    let byproductArray = [];
     if (reaction.byproduct) {
-      if (typeof reaction.byproduct === 'string') {
-        const searchName = removeCoefficients(reaction.byproduct);
+      if (Array.isArray(reaction.byproduct)) {
+        byproductArray = reaction.byproduct;
+      } else if (typeof reaction.byproduct === 'string') {
+        byproductArray = [reaction.byproduct];
+      }
+    }
+    
+    if (byproductArray.length > 0) {
+      if (byproductArray.length === 1) {
+        const searchName = removeCoefficients(byproductArray[0]);
         await fetchAndDisplayPubChem(searchName, 'byproduct-info', this.pubchemCache);
-      } else if (Array.isArray(reaction.byproduct)) {
+      } else {
         // Fetch data for each molecule in the array
-        for (let idx = 0; idx < reaction.byproduct.length; idx++) {
-          const searchName = removeCoefficients(reaction.byproduct[idx]);
-          await fetchAndDisplayPubChem(searchName, `byproduct-info-${idx}`, this.pubchemCache);
-        }
-      } else if (reaction.byproduct.name) {
-        const searchName = removeCoefficients(reaction.byproduct.name);
-        await fetchAndDisplayPubChem(searchName, 'byproduct-info', this.pubchemCache);
-      } else if (reaction.byproduct.molecules && Array.isArray(reaction.byproduct.molecules)) {
-        // Fetch data for each molecule in the array
-        for (let idx = 0; idx < reaction.byproduct.molecules.length; idx++) {
-          const searchName = removeCoefficients(reaction.byproduct.molecules[idx]);
+        for (let idx = 0; idx < byproductArray.length; idx++) {
+          const searchName = removeCoefficients(byproductArray[idx]);
           await fetchAndDisplayPubChem(searchName, `byproduct-info-${idx}`, this.pubchemCache);
         }
       }

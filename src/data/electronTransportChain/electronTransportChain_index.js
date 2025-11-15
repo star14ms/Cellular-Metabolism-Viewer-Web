@@ -23,7 +23,7 @@ export const electronTransportChainData = {
     keyRegulatorySteps: [
       { id: 'nadh', text: 'Complex I: Entry point for NADH from glycolysis, pyruvate oxidation, and citric acid cycle' },
       { id: 'fadh2', text: 'Complex II: Entry point for FADH₂ from citric acid cycle' },
-      { id: 'atp_etc', text: 'ATP Synthase: Final step producing ATP from proton gradient' }
+      { id: 'complex_v', text: 'ATP Synthase: Final step producing ATP from proton gradient' }
     ]
   },
 };

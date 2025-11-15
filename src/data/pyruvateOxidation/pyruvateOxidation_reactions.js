@@ -3,13 +3,20 @@
  * 
  * Reactions represent enzymatic transformations
  * Each reaction has a unique ID and references node IDs for substrates/products
+ * 
+ * Optional fields:
+ * - hideMainArrow: Boolean - If true, the main arrow for this reaction will not be drawn,
+ *   but by-molecule arrows (byreactant/byproduct) will still be drawn if they exist
  */
 
 export const pyruvateOxidationReactions = [
   {
     id: 'rxn_pyruvate_1',
-    name: 'Pyruvate Decarboxylation',
+    name: 'Pyruvate Decarboxylation & Activation of TPP',
     byproduct: ['CO₂'],
+    displayByreactant: ['Pyruvate','Thiamine pyrophosphate'],
+    displayByproduct: ['Hydroxyethyl-TPP'],
+    byMoleculeAngle: 180,
     enzyme: {
       name: 'Pyruvate Dehydrogenase (E1)',
       ecNumber: '1.2.4.1',
@@ -25,6 +32,10 @@ export const pyruvateOxidationReactions = [
   {
     id: 'rxn_pyruvate_2',
     name: 'Oxidation and Transfer',
+    byreactant: ['Hydroxyethyl-TPP'],
+    byproduct: ['Thiamine pyrophosphate'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
     enzyme: {
       name: 'Dihydrolipoyl Transacetylase (E2)',
       ecNumber: '2.3.1.12',
@@ -41,6 +52,7 @@ export const pyruvateOxidationReactions = [
     id: 'rxn_pyruvate_3',
     name: 'Acetyl-CoA Formation',
     byreactant: ['CoA'],
+    byproduct: ['Acetyl-CoA'],
     enzyme: {
       name: 'Dihydrolipoyl Transacetylase (E2)',
       ecNumber: '2.3.1.12',

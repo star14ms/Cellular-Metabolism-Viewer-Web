@@ -151,6 +151,7 @@ if (!app) {
       // Set viewer container reference for pathway view, arrow detail, and node detail to enable selection
       pathwayView.setViewerContainer(viewerContainer)
       arrowDetail.setViewerContainer(viewerContainer)
+      arrowDetail.setViewer(viewer) // Set viewer instance to access arrowMap
       nodeDetail.setViewerContainer(viewerContainer)
 
       // Tab switching
