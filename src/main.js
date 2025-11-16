@@ -9,6 +9,7 @@ import { pyruvateOxidationData } from './data/pyruvateOxidation/pyruvateOxidatio
 import { citricAcidCycleData } from './data/citricAcidCycle/citricAcidCycle_index.js'
 import { electronTransportChainData } from './data/electronTransportChain/electronTransportChain_index.js'
 import { fermentationData } from './data/fermentation/fermentation_index.js'
+import { purineSynthesisData } from './data/purineSynthesis/purineSynthesis_index.js'
 
 // Legacy exports for backward compatibility (if needed)
 export const glycolysisReactions = glycolysisData.reactions
@@ -21,6 +22,8 @@ export const electronTransportChainReactions = electronTransportChainData.reacti
 export const electronTransportChainSummary = electronTransportChainData.summary
 export const fermentationReactions = fermentationData.reactions
 export const fermentationSummary = fermentationData.summary
+export const purineSynthesisReactions = purineSynthesisData.reactions
+export const purineSynthesisSummary = purineSynthesisData.summary
 
 // Initialize theme IMMEDIATELY before anything else to prevent flash
 const initTheme = () => {

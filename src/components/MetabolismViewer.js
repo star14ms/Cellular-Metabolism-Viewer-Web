@@ -14,6 +14,7 @@ import { lactateFermentationNodes, lactateFermentationReactions, lactateFermenta
 import { ethanolFermentationNodes, ethanolFermentationReactions, ethanolFermentationArrows, ethanolFermentationData } from '../data/ethanolFermentation/ethanolFermentation_index.js';
 import { nucleosideSalvageNodes, nucleosideSalvageReactions, nucleosideSalvageArrows, nucleosideSalvageData } from '../data/nucleosideSalvage/nucleosideSalvage_index.js';
 import { pyrimidineSynthesisNodes, pyrimidineSynthesisReactions, pyrimidineSynthesisArrows, pyrimidineSynthesisData } from '../data/pyrimidineSynthesis/pyrimidineSynthesis_index.js';
+import { purineSynthesisNodes, purineSynthesisReactions, purineSynthesisArrows, purineSynthesisData } from '../data/purineSynthesis/purineSynthesis_index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
@@ -49,7 +50,8 @@ const PATHWAY_CONFIG = {
     'lactate-fermentation': 'Lactate Fermentation',
     'ethanol-fermentation': 'Ethanol Fermentation',
     'nucleoside-salvage': 'Nucleoside Salvage',
-    'pyrimidine-synthesis': 'Pyrimidine Synthesis'
+    'pyrimidine-synthesis': 'Pyrimidine Synthesis',
+    'purine-synthesis': 'Purine Synthesis'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -94,11 +96,16 @@ const PATHWAY_CONFIG = {
       rotationAngle: Math.PI * 2, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
+    },
+    'purine-synthesis': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
     }
   },
   
   // Common by-molecules that don't have dedicated nodes
-  commonByMolecules: ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP', 'NH₄⁺', 'NH4+'],
+  commonByMolecules: ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'PPi', 'H₂O', 'GDP', 'GTP', 'NH₄⁺', 'NH4+', 'Glutamine', 'Glutamate', 'Glycine', 'Aspartate', 'Fumarate', 'N¹⁰-formyl-THF', 'THF'],
   
   // Node ID patterns for special node types
   nodeIdPatterns: {
@@ -183,7 +190,8 @@ export class MetabolismViewer {
       ...lactateFermentationNodes,
       ...ethanolFermentationNodes,
       ...nucleosideSalvageNodes,
-      ...pyrimidineSynthesisNodes
+      ...pyrimidineSynthesisNodes,
+      ...purineSynthesisNodes
     ];
     
     // Filter out hidden nodes for drawing (but keep all in nodeMap for arrow lookups)
@@ -198,7 +206,8 @@ export class MetabolismViewer {
       ...lactateFermentationReactions,
       ...ethanolFermentationReactions,
       ...nucleosideSalvageReactions,
-      ...pyrimidineSynthesisReactions
+      ...pyrimidineSynthesisReactions,
+      ...purineSynthesisReactions
     ];
     
     // Combine all arrows
@@ -210,7 +219,8 @@ export class MetabolismViewer {
       ...lactateFermentationArrows,
       ...ethanolFermentationArrows,
       ...nucleosideSalvageArrows,
-      ...pyrimidineSynthesisArrows
+      ...pyrimidineSynthesisArrows,
+      ...purineSynthesisArrows
     ];
     
     // Create node ID to node mapping for quick lookup
@@ -418,6 +428,7 @@ export class MetabolismViewer {
     const ethanolFermentationReactionCount = ethanolFermentationReactions.length;
     const nucleosideSalvageReactionCount = nucleosideSalvageReactions.length;
     const pyrimidineSynthesisReactionCount = pyrimidineSynthesisReactions.length;
+    const purineSynthesisReactionCount = purineSynthesisReactions.length;
     
     this.pathways = [
       {
@@ -491,6 +502,15 @@ export class MetabolismViewer {
         summary: pyrimidineSynthesisData.summary,
         startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount,
         endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount
+      },
+      {
+        id: 'purine-synthesis',
+        name: 'Purine Synthesis',
+        reactions: purineSynthesisReactions,
+        nodes: purineSynthesisNodes,
+        summary: purineSynthesisData.summary,
+        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount,
+        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount
       }
     ];
     
@@ -1463,7 +1483,8 @@ export class MetabolismViewer {
       ...lactateFermentationArrows,
       ...ethanolFermentationArrows,
       ...nucleosideSalvageArrows,
-      ...pyrimidineSynthesisArrows
+      ...pyrimidineSynthesisArrows,
+      ...purineSynthesisArrows
     ];
     
     // Define pathway lengths for legacy code compatibility (if needed)
@@ -6094,12 +6115,26 @@ export class MetabolismViewer {
           }
         }
         
-        // If we found reactions with this by-molecule, highlight them and show molecule info
-        if (reactionsWithMolecule.length > 0 && moleculeInfo) {
+        // If moleculeInfo is still null but this is a common by-molecule, create a basic moleculeInfo
+        // This ensures common by-molecules can still show a detail page even if not found in reactions
+        if (!moleculeInfo && isCommonByMolecule) {
+          moleculeInfo = {
+            name: moleculeName,
+            formula: '', // Will be filled by PubChem
+            id: moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+').replace(/¹⁰/g, '10'),
+            description: '' // Will be filled by PubChem
+          };
+        }
+        
+        // If we have moleculeInfo, show the detail page
+        // Highlight reactions if any were found, but still show detail page even if none found
+        if (moleculeInfo) {
           // Highlight all reactions where this molecule appears (highlight arrows, not nodes)
-          reactionsWithMolecule.forEach(reaction => {
-            this.applyReactionHighlight(reaction);
-          });
+          if (reactionsWithMolecule.length > 0) {
+            reactionsWithMolecule.forEach(reaction => {
+              this.applyReactionHighlight(reaction);
+            });
+          }
           
           // Set selected molecule without highlighting any node (since by-molecules don't have dedicated nodes)
           this.selectedMolecule = moleculeInfo;

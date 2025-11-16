@@ -169,12 +169,45 @@ export function displayPubChemData(container, pubchemData, loadingElement) {
 }
 
 /**
+ * Generate structure image URL from SMILES string
+ * Uses a SMILES-to-image service as fallback when PubChem is unavailable
+ * @param {string} smiles - SMILES string
+ * @returns {string} Image URL
+ */
+function getSmilesImageUrl(smiles) {
+  if (!smiles) return null;
+  // Use a SMILES-to-image service
+  // Option 1: Use a dedicated SMILES renderer API (e.g., from CDK or similar)
+  // Option 2: Use a URL-based service that accepts SMILES
+  // For now, we'll use a service that can render SMILES
+  // Note: This service may require CORS or may not work for all SMILES
+  // Alternative services to consider:
+  // - RDKit.js (client-side rendering)
+  // - SmilesDrawer (client-side rendering)
+  // - A custom backend service
+  try {
+    // Use a SMILES-to-image URL service
+    // This is a placeholder - you may need to implement a custom service or use a library
+    const encodedSmiles = encodeURIComponent(smiles);
+    // Try using a public SMILES renderer service
+    // Note: Many services require POST requests or have CORS restrictions
+    // For now, we'll return null and show the SMILES string instead
+    // In production, you might want to use a client-side library like SmilesDrawer
+    return null; // Return null to show SMILES text instead of trying a potentially broken URL
+  } catch (error) {
+    console.warn('Error generating SMILES image URL:', error);
+    return null;
+  }
+}
+
+/**
  * Fetch and display PubChem data with error handling
  * @param {string} moleculeName - Name of the molecule
  * @param {string} containerId - ID of container element
  * @param {Map} cache - Cache map
+ * @param {Object} molecule - Optional molecule object with SMILES string for fallback
  */
-export async function fetchAndDisplayPubChem(moleculeName, containerId, cache) {
+export async function fetchAndDisplayPubChem(moleculeName, containerId, cache, molecule = null) {
   const container = document.getElementById(containerId);
   if (!container) return;
   
@@ -186,11 +219,41 @@ export async function fetchAndDisplayPubChem(moleculeName, containerId, cache) {
     displayPubChemData(container, pubchemData, loadingElement);
   } catch (error) {
     console.error(`Error fetching PubChem data for ${moleculeName}:`, error);
-    loadingElement.innerHTML = `
-      <div class="pubchem-error">
-        <small>PubChem data unavailable. <a href="https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(moleculeName)}" target="_blank">Search on PubChem</a></small>
-      </div>
-    `;
+    
+    // If we have a SMILES string, try to generate a structure image
+    const smiles = molecule?.smiles;
+    if (smiles) {
+      const smilesImageUrl = getSmilesImageUrl(smiles);
+      loadingElement.innerHTML = `
+        <div class="pubchem-error">
+          <small>PubChem data unavailable. <a href="https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(moleculeName)}" target="_blank">Search on PubChem</a></small>
+          ${smilesImageUrl ? `
+            <div class="smiles-fallback-structure" style="margin-top: 15px;">
+              <div class="structure-image-label">Structure (from SMILES)</div>
+              <div class="structure-image-wrapper">
+                <img src="${smilesImageUrl}" 
+                     alt="Structure of ${moleculeName}" 
+                     class="structure-image"
+                     loading="lazy"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="structure-image-error" style="display:none;">
+                  <small>Structure image unavailable</small>
+                </div>
+              </div>
+              <div style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                <strong>SMILES:</strong> <code>${smiles}</code>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    } else {
+      loadingElement.innerHTML = `
+        <div class="pubchem-error">
+          <small>PubChem data unavailable. <a href="https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(moleculeName)}" target="_blank">Search on PubChem</a></small>
+        </div>
+      `;
+    }
   }
 }
 

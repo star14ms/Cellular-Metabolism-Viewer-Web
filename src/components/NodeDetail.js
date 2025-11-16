@@ -55,7 +55,7 @@ export class NodeDetail {
     let isByMolecule = false;
     if (reactionNode) {
       // Check common by-molecules list
-      const commonByMolecules = ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP', 'O₂', 'H+', 'H⁺'];
+      const commonByMolecules = ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'PPi', 'H₂O', 'GDP', 'GTP', 'O₂', 'H+', 'H⁺', 'Glutamine', 'Glutamate', 'Glycine', 'Aspartate', 'Fumarate', 'N¹⁰-formyl-THF', 'THF'];
       isByMolecule = commonByMolecules.includes(moleculeNameWithoutCoeff);
       
       // Also check if molecule matches any by-molecules in the reactionNode
@@ -372,7 +372,8 @@ export class NodeDetail {
   async fetchPubChemData(moleculeName) {
     // Remove coefficients before searching PubChem
     const searchName = removeCoefficients(moleculeName);
-    await fetchAndDisplayPubChem(searchName, 'molecule-info', this.pubchemCache);
+    // Pass the current molecule object to enable SMILES fallback
+    await fetchAndDisplayPubChem(searchName, 'molecule-info', this.pubchemCache, this.currentMolecule);
   }
   
   renderStructure(molecule) {

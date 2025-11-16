@@ -6,7 +6,7 @@
  * Positioned in upper right side of the canvas
  */
 
-const unit_space = 150;
+const unit_space = 200;
 const base_x = 4000; // Upper right position
 const base_y = 100; // Start below top to avoid overlap
 
@@ -28,7 +28,7 @@ export const pyrimidineSynthesisNodes = [
     formula: 'C₄H₇NO₄⁻',
     smiles: 'C(C(C(=O)O)N)C(=O)[O-]',
     description: 'Amino acid used in the synthesis of N-carbamoyl aspartate',
-    position: { x: base_x - unit_space * 0.75, y: base_y + unit_space * 1.15 }
+    position: { x: base_x - unit_space * 0.5, y: base_y + unit_space * 1.15 }
   },
   {
     id: 'prpp',
@@ -37,7 +37,7 @@ export const pyrimidineSynthesisNodes = [
     formula: 'C₅H₁₃O₁₄P₃',
     smiles: 'C1C(C(C(O1)COP(=O)(O)OP(=O)(O)O)O)O',
     description: '5-Phosphoribosyl-1-pyrophosphate, a key intermediate in nucleotide synthesis',
-    position: { x: base_x - unit_space * 0.75, y: base_y + unit_space * 4.15 }
+    position: { x: base_x - unit_space * 0.5, y: base_y + unit_space * 4.15 }
   },
   
   // Pathway intermediates

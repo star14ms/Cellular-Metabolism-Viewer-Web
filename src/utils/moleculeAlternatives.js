@@ -61,6 +61,15 @@ export function getAlternativeNames(moleculeName) {
     'Deoxyuridine-5\'-monophosphate': ['dUMP', '2\'-deoxyuridine 5\'-monophosphate', 'Deoxyuridine monophosphate'],
     // Pyrimidine synthesis compounds
     'N-carbamoyl aspartate': ['N-carbamoylaspartate', 'Ureidosuccinic acid', 'Carbamoylaspartic acid', 'N-carbamoyl-L-aspartate'],
+    // Purine synthesis intermediates
+    'Formyl-GAR (FGAR)': ['FGAR', 'N-Formylglycinamide ribonucleotide', '5-Formylamino-1-(5-phospho-D-ribosyl)imidazole-4-carboxamide', 'N-Formylglycinamide ribotide'],
+    'Formiminoglycinamidine ribonucleotide (FGAM)': ['FGAM', 'N-Formimidoylglycinamidine ribonucleotide', '5-Formamido-1-(5-phospho-D-ribosyl)imidazole-4-carboxamidine'],
+    'Succinylaminoimidazole carboxamide ribonucleotide (SAICAR)': ['SAICAR', 'N-Succinyl-5-aminoimidazole-4-carboxamide ribonucleotide', 'Succinyl-5-aminoimidazole-4-carboxamide ribotide', 'N-Succinyl-5-aminoimidazole-4-carboxamide ribotide'],
+    'Formaminoimidazole carboxamide ribonucleotide (FAICAR)': ['FAICAR', 'N-Formamidoimidazole-4-carboxamide ribonucleotide', '5-Formamidoimidazole-4-carboxamide ribonucleotide', 'N-Formylaminoimidazole-4-carboxamide ribonucleotide'],
+    'Aminoimidazole carboxamide ribonucleotide (AICAR)': ['AICAR', '5-Aminoimidazole-4-carboxamide ribonucleotide', '5-Aminoimidazole-4-carboxamide ribotide', 'AICA ribonucleotide'],
+    'Glycinamide ribonucleotide (GAR)': ['GAR', 'Glycinamide ribotide', '5-Amino-1-(5-phospho-D-ribosyl)imidazole-4-carboxamide'],
+    'Aminoimidazole ribonucleotide (AIR)': ['AIR', '5-Aminoimidazole ribonucleotide', '5-Aminoimidazole ribotide'],
+    'Carboxyaminoimidazole ribonucleotide (CAIR)': ['CAIR', '5-Carboxyaminoimidazole ribonucleotide', '5-Carboxyaminoimidazole ribotide'],
     // Common ions and small molecules
     'NH₄⁺': ['Ammonium ion', 'Ammonium', 'NH4+', 'Ammonium cation'],
     'NH4+': ['Ammonium ion', 'Ammonium', 'NH₄⁺', 'Ammonium cation'],
