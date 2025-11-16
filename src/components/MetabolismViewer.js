@@ -10,7 +10,8 @@ import { glycolysisNodes, glycolysisReactions, glycolysisArrows, glycolysisData 
 import { pyruvateOxidationNodes, pyruvateOxidationReactions, pyruvateOxidationArrows, pyruvateOxidationData } from '../data/pyruvateOxidation/pyruvateOxidation_index.js';
 import { citricAcidCycleNodes, citricAcidCycleReactions, citricAcidCycleArrows, citricAcidCycleData } from '../data/citricAcidCycle/citricAcidCycle_index.js';
 import { electronTransportChainNodes, electronTransportChainReactions, electronTransportChainArrows, electronTransportChainData } from '../data/electronTransportChain/electronTransportChain_index.js';
-import { fermentationNodes, fermentationReactions, fermentationArrows, fermentationData } from '../data/fermentation/fermentation_index.js';
+import { lactateFermentationNodes, lactateFermentationReactions, lactateFermentationArrows, lactateFermentationData } from '../data/lactateFermentation/lactateFermentation_index.js';
+import { ethanolFermentationNodes, ethanolFermentationReactions, ethanolFermentationArrows, ethanolFermentationData } from '../data/ethanolFermentation/ethanolFermentation_index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
@@ -43,7 +44,8 @@ const PATHWAY_CONFIG = {
     'pyruvate-oxidation': 'Pyruvate Oxidation',
     'citric-acid-cycle': 'Citric Acid Cycle (Krebs Cycle)',
     'electron-transport-chain': 'Electron Transport Chain',
-    'fermentation': 'Fermentation'
+    'lactate-fermentation': 'Lactate Fermentation',
+    'ethanol-fermentation': 'Ethanol Fermentation'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -69,7 +71,12 @@ const PATHWAY_CONFIG = {
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
     },
-    'fermentation': {
+    'lactate-fermentation': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'ethanol-fermentation': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -149,7 +156,8 @@ export class MetabolismViewer {
       ...pyruvateOxidationNodes,
       ...citricAcidCycleNodes,
       ...electronTransportChainNodes,
-      ...fermentationNodes
+      ...lactateFermentationNodes,
+      ...ethanolFermentationNodes
     ];
     
     // Filter out hidden nodes for drawing (but keep all in nodeMap for arrow lookups)
@@ -161,7 +169,8 @@ export class MetabolismViewer {
       ...pyruvateOxidationReactions,
       ...citricAcidCycleReactions,
       ...electronTransportChainReactions,
-      ...fermentationReactions
+      ...lactateFermentationReactions,
+      ...ethanolFermentationReactions
     ];
     
     // Combine all arrows
@@ -170,7 +179,8 @@ export class MetabolismViewer {
       ...pyruvateOxidationArrows,
       ...citricAcidCycleArrows,
       ...electronTransportChainArrows,
-      ...fermentationArrows
+      ...lactateFermentationArrows,
+      ...ethanolFermentationArrows
     ];
     
     // Create node ID to node mapping for quick lookup
@@ -374,7 +384,8 @@ export class MetabolismViewer {
     const pyruvateOxidationReactionCount = pyruvateOxidationReactions.length;
     const citricAcidCycleReactionCount = citricAcidCycleReactions.length;
     const electronTransportChainReactionCount = electronTransportChainReactions.length;
-    const fermentationReactionCount = fermentationReactions.length;
+    const lactateFermentationReactionCount = lactateFermentationReactions.length;
+    const ethanolFermentationReactionCount = ethanolFermentationReactions.length;
     
     this.pathways = [
       {
@@ -414,13 +425,22 @@ export class MetabolismViewer {
         endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount
       },
       {
-        id: 'fermentation',
-        name: 'Fermentation',
-        reactions: fermentationReactions,
-        nodes: fermentationNodes,
-        summary: fermentationData.summary,
+        id: 'lactate-fermentation',
+        name: 'Lactate Fermentation',
+        reactions: lactateFermentationReactions,
+        nodes: lactateFermentationNodes,
+        summary: lactateFermentationData.summary,
         startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + fermentationReactionCount
+        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount
+      },
+      {
+        id: 'ethanol-fermentation',
+        name: 'Ethanol Fermentation',
+        reactions: ethanolFermentationReactions,
+        nodes: ethanolFermentationNodes,
+        summary: ethanolFermentationData.summary,
+        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount,
+        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount
       }
     ];
     
@@ -1368,7 +1388,8 @@ export class MetabolismViewer {
       ...pyruvateOxidationArrows,
       ...citricAcidCycleArrows,
       ...electronTransportChainArrows,
-      ...fermentationArrows
+      ...lactateFermentationArrows,
+      ...ethanolFermentationArrows
     ];
     
     // Define pathway lengths for legacy code compatibility (if needed)
