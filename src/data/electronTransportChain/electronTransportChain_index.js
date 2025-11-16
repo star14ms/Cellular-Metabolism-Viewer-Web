@@ -15,10 +15,10 @@ export const electronTransportChainData = {
     description: 'Uses NADH and FADH₂ to create a proton gradient that drives ATP synthesis. The final step in aerobic energy production.',
     location: 'Inner mitochondrial membrane',
     netProducts: {
-      atp: { produced: 30, consumed: 0, net: 30 },
-      h2o: { produced: 6, consumed: 0, net: 6 },
-      nadh: { consumed: 10, produced: 0, net: -10 },
-      fadh2: { consumed: 2, produced: 0, net: -2 }
+      'ATP': { produced: 30, consumed: 0, net: 30 },
+      'H₂O': { produced: 6, consumed: 0, net: 6 },
+      'NADH': { consumed: 10, produced: 0, net: -10 },
+      'FADH₂': { consumed: 2, produced: 0, net: -2 }
     },
     keyRegulatorySteps: [
       { id: 'nadh', text: 'Complex I: Entry point for NADH from glycolysis, pyruvate oxidation, and citric acid cycle' },

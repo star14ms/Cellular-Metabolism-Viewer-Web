@@ -15,10 +15,10 @@ export const citricAcidCycleData = {
     description: 'A circular metabolic pathway that oxidizes acetyl-CoA to CO₂, producing energy carriers (ATP, NADH, FADH₂)',
     location: 'Mitochondrial matrix',
     netProducts: {
-      atp: { produced: 1, consumed: 0, net: 1 },
-      nadh: { produced: 3, consumed: 0, net: 3 },
-      fadh2: { produced: 1, consumed: 0, net: 1 },
-      co2: { produced: 2, consumed: 0, net: 2 }
+      'ATP': { produced: 1, consumed: 0, net: 1 },
+      'NADH': { produced: 3, consumed: 0, net: 3 },
+      'FADH₂': { produced: 1, consumed: 0, net: 1 },
+      'CO₂': { produced: 2, consumed: 0, net: 2 }
     },
     keyRegulatorySteps: [
       { id: 'citrate', text: 'Step 1: Citrate synthase (inhibited by ATP, NADH, succinyl-CoA)' },

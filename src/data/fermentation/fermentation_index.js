@@ -16,11 +16,11 @@ export const fermentationData = {
     name: 'Fermentation',
     description: 'Anaerobic pathways that regenerate NAD⁺ for continued glycolysis. Includes lactate fermentation (pyruvate → lactate) and ethanol fermentation (pyruvate → acetaldehyde → ethanol)',
     netProducts: {
-      lactate: { produced: 1, consumed: 0, net: 1 },
-      ethanol: { produced: 1, consumed: 0, net: 1 },
-      co2: { produced: 1, consumed: 0, net: 1 },
-      nadh: { produced: 0, consumed: 2, net: -2 },
-      nad: { produced: 2, consumed: 0, net: 2 }
+      'Lactate': { produced: 1, consumed: 0, net: 1 },
+      'Ethanol': { produced: 1, consumed: 0, net: 1 },
+      'CO₂': { produced: 1, consumed: 0, net: 1 },
+      'NADH': { produced: 0, consumed: 2, net: -2 },
+      'NAD⁺': { produced: 2, consumed: 0, net: 2 }
     }
   },
 };

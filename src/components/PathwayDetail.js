@@ -248,23 +248,30 @@ export class PathwayDetail {
   renderNetProducts(netProducts) {
     if (!netProducts) return '';
     
-    // Map molecule names to their IDs for selection
-    const moleculeIdMap = {
-      'ATP': 'atp',
-      'NADH': 'nadh',
-      'FADH₂': 'fadh2',
-      'Acetyl-CoA': 'acetyl-coa',
-      'Pyruvate': 'pyruvate',
-      'CO₂': 'co2'
+    // Helper function to convert molecule name to ID for selection
+    const getMoleculeId = (name) => {
+      const idMap = {
+        'ATP': 'atp',
+        'NAD⁺': 'nad',
+        'NADH': 'nadh',
+        'FADH₂': 'fadh2',
+        'Acetyl-CoA': 'acetyl-coa',
+        'Pyruvate': 'pyruvate',
+        'CO₂': 'co2',
+        'H₂O': 'h2o',
+        'Lactate': 'lactate',
+        'Ethanol': 'ethanol'
+      };
+      return idMap[name] || '';
     };
     
-    const products = [];
-    if (netProducts.atp) products.push({ name: 'ATP', value: netProducts.atp.net, unit: '', id: moleculeIdMap['ATP'] });
-    if (netProducts.nadh) products.push({ name: 'NADH', value: netProducts.nadh.net, unit: '', id: moleculeIdMap['NADH'] });
-    if (netProducts.fadh2) products.push({ name: 'FADH₂', value: netProducts.fadh2.net, unit: '', id: moleculeIdMap['FADH₂'] });
-    if (netProducts.acetylCoA) products.push({ name: 'Acetyl-CoA', value: netProducts.acetylCoA.net, unit: '', id: moleculeIdMap['Acetyl-CoA'] });
-    if (netProducts.pyruvate) products.push({ name: 'Pyruvate', value: netProducts.pyruvate.net, unit: '', id: moleculeIdMap['Pyruvate'] });
-    if (netProducts.co2) products.push({ name: 'CO₂', value: netProducts.co2.net, unit: '', id: moleculeIdMap['CO₂'] });
+    // Iterate through netProducts directly using molecule names as keys
+    const products = Object.entries(netProducts).map(([name, data]) => ({
+      name: name,
+      value: data.net,
+      unit: '',
+      id: getMoleculeId(name)
+    }));
     
     return products.map(product => `
       <div class="pathway-stat-item" style="cursor: pointer;">
