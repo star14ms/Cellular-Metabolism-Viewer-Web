@@ -137,6 +137,7 @@ export class ArrowDetail {
                 // Handle different byreactant formats: string, array, or object with molecules array
                 // Hide byreactants if arrows start from node (ETC complexes)
                 // Skip byreactants that have the same name as coSubstrate to avoid duplication
+                // Show coefficients in Substrate → Product section
                 const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
                 
                 // mergedByreactant is always an array (from mergeByMolecules)
@@ -147,13 +148,12 @@ export class ArrowDetail {
                       return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
                     })
                     .map(mol => {
-                      const displayName = removeCoefficients(mol);
                       return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
                          data-molecule-name="${mol}" 
                          data-molecule-id=""
                          style="cursor: pointer;">
-                      <strong>${displayName}</strong>
+                      <strong>${mol}</strong>
                     </div>
                   `;
                     }).join('');
@@ -163,6 +163,7 @@ export class ArrowDetail {
               ${reaction.displayByreactant && !arrowsStartFromNode ? (() => {
                 // Handle displayByreactant (display-only, no arrows drawn)
                 // Same format support as byreactant: string, array, object with name, or object with molecules array
+                // Show coefficients in Substrate → Product section
                 const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
                 
                 if (typeof reaction.displayByreactant === 'string') {
@@ -170,13 +171,12 @@ export class ArrowDetail {
                   if (coSubstrateName && removeCoefficients(reaction.displayByreactant) === removeCoefficients(coSubstrateName)) {
                     return '';
                   }
-                  const displayName = removeCoefficients(reaction.displayByreactant);
                   return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
                          data-molecule-name="${reaction.displayByreactant}" 
                          data-molecule-id=""
                          style="cursor: pointer;">
-                      <strong>${displayName}</strong>
+                      <strong>${reaction.displayByreactant}</strong>
                     </div>
                   `;
                 } else if (Array.isArray(reaction.displayByreactant)) {
@@ -186,13 +186,12 @@ export class ArrowDetail {
                       return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
                     })
                     .map(mol => {
-                      const displayName = removeCoefficients(mol);
                       return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
                          data-molecule-name="${mol}" 
                          data-molecule-id=""
                          style="cursor: pointer;">
-                      <strong>${displayName}</strong>
+                      <strong>${mol}</strong>
                     </div>
                   `;
                     }).join('');
@@ -203,13 +202,12 @@ export class ArrowDetail {
                       return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
                     })
                     .map(mol => {
-                      const displayName = removeCoefficients(mol);
                       return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
                          data-molecule-name="${mol}" 
                          data-molecule-id=""
                          style="cursor: pointer;">
-                      <strong>${displayName}</strong>
+                      <strong>${mol}</strong>
                     </div>
                   `;
                     }).join('');
@@ -218,13 +216,12 @@ export class ArrowDetail {
                   if (coSubstrateName && removeCoefficients(reaction.displayByreactant.name) === removeCoefficients(coSubstrateName)) {
                     return '';
                   }
-                  const displayName = removeCoefficients(reaction.displayByreactant.name);
                   return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
                          data-molecule-name="${reaction.displayByreactant.name}" 
                          data-molecule-id=""
                          style="cursor: pointer;">
-                      <strong>${displayName}</strong>
+                      <strong>${reaction.displayByreactant.name}</strong>
                     </div>
                   `;
                 }
@@ -256,15 +253,15 @@ export class ArrowDetail {
               ) : ''}
               ${mergedByproduct && !arrowsStartFromNode ? (() => {
                 // mergedByproduct is always an array (from mergeByMolecules)
+                // Show coefficients in Substrate → Product section
                 if (Array.isArray(mergedByproduct)) {
                   return mergedByproduct.map(mol => {
-                    const displayName = removeCoefficients(mol);
                     return `
                     <div class="reaction-molecule clickable-molecule co-product" 
                          data-molecule-name="${mol}" 
                          data-molecule-id=""
                          style="cursor: pointer;">
-                      <strong>${displayName}</strong>
+                      <strong>${mol}</strong>
                     </div>
                   `;
                   }).join('');
@@ -274,47 +271,44 @@ export class ArrowDetail {
               ${reaction.displayByproduct && !arrowsStartFromNode ? (() => {
                 // Handle displayByproduct (display-only, no arrows drawn)
                 // Same format support as byproduct: string, array, object with name, or object with molecules array
+                // Show coefficients in Substrate → Product section
                 if (typeof reaction.displayByproduct === 'string') {
-                  const displayName = removeCoefficients(reaction.displayByproduct);
                   return `
                     <div class="reaction-molecule clickable-molecule co-product" 
                          data-molecule-name="${reaction.displayByproduct}" 
                          data-molecule-id=""
                          style="cursor: pointer;">
-                      <strong>${displayName}</strong>
+                      <strong>${reaction.displayByproduct}</strong>
                     </div>
                   `;
                 } else if (Array.isArray(reaction.displayByproduct)) {
                   return reaction.displayByproduct.map(mol => {
-                    const displayName = removeCoefficients(mol);
                     return `
                     <div class="reaction-molecule clickable-molecule co-product" 
                          data-molecule-name="${mol}" 
                          data-molecule-id=""
                          style="cursor: pointer;">
-                      <strong>${displayName}</strong>
+                      <strong>${mol}</strong>
                     </div>
                   `;
                   }).join('');
                 } else if (reaction.displayByproduct.name) {
-                  const displayName = removeCoefficients(reaction.displayByproduct.name);
                   return `
                     <div class="reaction-molecule clickable-molecule co-product" 
                          data-molecule-name="${reaction.displayByproduct.name}" 
                          data-molecule-id=""
                          style="cursor: pointer;">
-                      <strong>${displayName}</strong>
+                      <strong>${reaction.displayByproduct.name}</strong>
                     </div>
                   `;
                 } else if (reaction.displayByproduct.molecules && Array.isArray(reaction.displayByproduct.molecules)) {
                   return reaction.displayByproduct.molecules.map(mol => {
-                    const displayName = removeCoefficients(mol);
                     return `
                     <div class="reaction-molecule clickable-molecule co-product" 
                          data-molecule-name="${mol}" 
                          data-molecule-id=""
                          style="cursor: pointer;">
-                      <strong>${displayName}</strong>
+                      <strong>${mol}</strong>
                     </div>
                   `;
                   }).join('');
