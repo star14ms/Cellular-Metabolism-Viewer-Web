@@ -59,6 +59,11 @@ export function getAlternativeNames(moleculeName) {
     'Deoxythymidine-5\'-monophosphate': ['dTMP', '2\'-deoxythymidine 5\'-monophosphate', 'Deoxythymidine monophosphate', 'Thymidine monophosphate'],
     'Deoxyuridine-5\'-monophosphate (dUMP)': ['dUMP', '2\'-deoxyuridine 5\'-monophosphate', 'Deoxyuridine monophosphate'],
     'Deoxyuridine-5\'-monophosphate': ['dUMP', '2\'-deoxyuridine 5\'-monophosphate', 'Deoxyuridine monophosphate'],
+    // Pyrimidine synthesis compounds
+    'N-carbamoyl aspartate': ['N-carbamoylaspartate', 'Ureidosuccinic acid', 'Carbamoylaspartic acid', 'N-carbamoyl-L-aspartate'],
+    // Common ions and small molecules
+    'NH₄⁺': ['Ammonium ion', 'Ammonium', 'NH4+', 'Ammonium cation'],
+    'NH4+': ['Ammonium ion', 'Ammonium', 'NH₄⁺', 'Ammonium cation'],
   };
   
   return alternatives[moleculeName] || [];

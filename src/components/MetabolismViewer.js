@@ -13,6 +13,7 @@ import { electronTransportChainNodes, electronTransportChainReactions, electronT
 import { lactateFermentationNodes, lactateFermentationReactions, lactateFermentationArrows, lactateFermentationData } from '../data/lactateFermentation/lactateFermentation_index.js';
 import { ethanolFermentationNodes, ethanolFermentationReactions, ethanolFermentationArrows, ethanolFermentationData } from '../data/ethanolFermentation/ethanolFermentation_index.js';
 import { nucleosideSalvageNodes, nucleosideSalvageReactions, nucleosideSalvageArrows, nucleosideSalvageData } from '../data/nucleosideSalvage/nucleosideSalvage_index.js';
+import { pyrimidineSynthesisNodes, pyrimidineSynthesisReactions, pyrimidineSynthesisArrows, pyrimidineSynthesisData } from '../data/pyrimidineSynthesis/pyrimidineSynthesis_index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
@@ -47,7 +48,8 @@ const PATHWAY_CONFIG = {
     'electron-transport-chain': 'Electron Transport Chain',
     'lactate-fermentation': 'Lactate Fermentation',
     'ethanol-fermentation': 'Ethanol Fermentation',
-    'nucleoside-salvage': 'Nucleoside Salvage'
+    'nucleoside-salvage': 'Nucleoside Salvage',
+    'pyrimidine-synthesis': 'Pyrimidine Synthesis'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -87,11 +89,16 @@ const PATHWAY_CONFIG = {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
+    },
+    'pyrimidine-synthesis': {
+      rotationAngle: Math.PI * 2, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
     }
   },
   
   // Common by-molecules that don't have dedicated nodes
-  commonByMolecules: ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP'],
+  commonByMolecules: ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'H₂O', 'GDP', 'GTP', 'NH₄⁺', 'NH4+'],
   
   // Node ID patterns for special node types
   nodeIdPatterns: {
@@ -165,7 +172,8 @@ export class MetabolismViewer {
       ...electronTransportChainNodes,
       ...lactateFermentationNodes,
       ...ethanolFermentationNodes,
-      ...nucleosideSalvageNodes
+      ...nucleosideSalvageNodes,
+      ...pyrimidineSynthesisNodes
     ];
     
     // Filter out hidden nodes for drawing (but keep all in nodeMap for arrow lookups)
@@ -179,7 +187,8 @@ export class MetabolismViewer {
       ...electronTransportChainReactions,
       ...lactateFermentationReactions,
       ...ethanolFermentationReactions,
-      ...nucleosideSalvageReactions
+      ...nucleosideSalvageReactions,
+      ...pyrimidineSynthesisReactions
     ];
     
     // Combine all arrows
@@ -190,7 +199,8 @@ export class MetabolismViewer {
       ...electronTransportChainArrows,
       ...lactateFermentationArrows,
       ...ethanolFermentationArrows,
-      ...nucleosideSalvageArrows
+      ...nucleosideSalvageArrows,
+      ...pyrimidineSynthesisArrows
     ];
     
     // Create node ID to node mapping for quick lookup
@@ -397,6 +407,7 @@ export class MetabolismViewer {
     const lactateFermentationReactionCount = lactateFermentationReactions.length;
     const ethanolFermentationReactionCount = ethanolFermentationReactions.length;
     const nucleosideSalvageReactionCount = nucleosideSalvageReactions.length;
+    const pyrimidineSynthesisReactionCount = pyrimidineSynthesisReactions.length;
     
     this.pathways = [
       {
@@ -461,6 +472,15 @@ export class MetabolismViewer {
         summary: nucleosideSalvageData.summary,
         startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount,
         endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount
+      },
+      {
+        id: 'pyrimidine-synthesis',
+        name: 'Pyrimidine Synthesis',
+        reactions: pyrimidineSynthesisReactions,
+        nodes: pyrimidineSynthesisNodes,
+        summary: pyrimidineSynthesisData.summary,
+        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount,
+        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount
       }
     ];
     
@@ -1432,7 +1452,8 @@ export class MetabolismViewer {
       ...electronTransportChainArrows,
       ...lactateFermentationArrows,
       ...ethanolFermentationArrows,
-      ...nucleosideSalvageArrows
+      ...nucleosideSalvageArrows,
+      ...pyrimidineSynthesisArrows
     ];
     
     // Define pathway lengths for legacy code compatibility (if needed)
@@ -1657,9 +1678,41 @@ export class MetabolismViewer {
       });
     };
     
+    // Detect bidirectional arrows (same nodes but reversed directions)
+    // Group arrows by their node pair (normalized: A->B and B->A are the same pair)
+    const bidirectionalGroups = new Map();
+    nodeToNodeArrows.forEach((arrowData) => {
+      const fromId = arrowData.from_id;
+      const toId = arrowData.to_id;
+      if (!fromId || !toId) return;
+      
+      // Create normalized key (always use lexicographically smaller ID first)
+      const pairKey = fromId < toId ? `${fromId}|${toId}` : `${toId}|${fromId}`;
+      
+      if (!bidirectionalGroups.has(pairKey)) {
+        bidirectionalGroups.set(pairKey, []);
+      }
+      bidirectionalGroups.get(pairKey).push(arrowData);
+    });
+    
+    // Identify pairs that have bidirectional arrows (2+ arrows in opposite directions)
+    const bidirectionalPairs = new Set();
+    bidirectionalGroups.forEach((arrows, pairKey) => {
+      if (arrows.length >= 2) {
+        // Check if arrows go in opposite directions
+        const fromIds = new Set(arrows.map(a => a.from_id));
+        const toIds = new Set(arrows.map(a => a.to_id));
+        const hasBothDirections = fromIds.size > 1 || toIds.size > 1;
+        
+        if (hasBothDirections) {
+          bidirectionalPairs.add(pairKey);
+        }
+      }
+    });
+    
     // Draw ALL arrows from arrow data files (node-to-node arrows)
     // Simplified: just draw all arrows, find reactions by target node
-    nodeToNodeArrows.forEach((arrowData) => {
+    nodeToNodeArrows.forEach((arrowData, index) => {
       const fromNode = arrowData.from_id ? this.nodeMap.get(arrowData.from_id) : null;
       const toNode = arrowData.to_id ? this.nodeMap.get(arrowData.to_id) : null;
       
@@ -1804,14 +1857,49 @@ export class MetabolismViewer {
         const dy = toNode.position.y - fromNode.position.y;
         const angle = Math.atan2(dy, dx);
         
-        let x1 = fromNode.position.x + fromRadius * Math.cos(angle);
-        let y1 = fromNode.position.y + fromRadius * Math.sin(angle);
+        // Check if this is a bidirectional arrow pair
+        const pairKey = arrowData.from_id < arrowData.to_id 
+          ? `${arrowData.from_id}|${arrowData.to_id}` 
+          : `${arrowData.to_id}|${arrowData.from_id}`;
+        const isBidirectional = bidirectionalPairs.has(pairKey);
+        
+        // Calculate offset for bidirectional arrows (perpendicular to the line)
+        let offsetX = 0;
+        let offsetY = 0;
+        if (isBidirectional) {
+          // Get all arrows in this bidirectional pair
+          const pairArrows = bidirectionalGroups.get(pairKey);
+          // Determine if this arrow is the "forward" direction (from smaller ID to larger ID)
+          const isForward = arrowData.from_id < arrowData.to_id;
+          
+          // Calculate perpendicular offset (perpendicular to the line connecting nodes)
+          const offsetDistance = 15; // Distance to offset arrows (pixels)
+          
+          // For vertical arrows (dy > dx), offset horizontally
+          // For horizontal arrows (dx > dy), offset vertically
+          const isVertical = Math.abs(dy) > Math.abs(dx);
+          
+          if (isVertical) {
+            // Vertical arrows: offset horizontally
+            // Forward arrows go right, reverse arrows go left
+            offsetX = isForward ? offsetDistance : -offsetDistance;
+            offsetY = 0;
+          } else {
+            // Horizontal arrows: offset vertically
+            // Forward arrows go down, reverse arrows go up
+            offsetX = 0;
+            offsetY = isForward ? offsetDistance : -offsetDistance;
+          }
+        }
+        
+        let x1 = fromNode.position.x + fromRadius * Math.cos(angle) + offsetX;
+        let y1 = fromNode.position.y + fromRadius * Math.sin(angle) + offsetY;
         if (dy > 0) {
           y1 = Math.min(y1, fromNode.position.y + 35);
         }
         
-        let x2 = toNode.position.x - toRadius * Math.cos(angle);
-        let y2 = toNode.position.y - toRadius * Math.sin(angle);
+        let x2 = toNode.position.x - toRadius * Math.cos(angle) + offsetX;
+        let y2 = toNode.position.y - toRadius * Math.sin(angle) + offsetY;
         if (dy < 0) {
           y2 = Math.max(y2, toNode.position.y - 35);
         }
