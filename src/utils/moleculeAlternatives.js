@@ -52,6 +52,13 @@ export function getAlternativeNames(moleculeName) {
     'O₂': ['O2', 'Molecular oxygen'],
     'Coenzyme Q (Ubiquinone/Ubiquinol)': ['Coenzyme Q', 'CoQ'],
     'Cytochrome c': ['Cyt c', 'Cytochrome c'],
+    // Nucleoside salvage pathway compounds
+    'Deoxycytidine-5\'-monophosphate (dCMP)': ['dCMP', '2\'-deoxycytidine 5\'-monophosphate', 'Deoxycytidine monophosphate'],
+    'Deoxycytidine-5\'-monophosphate': ['dCMP', '2\'-deoxycytidine 5\'-monophosphate', 'Deoxycytidine monophosphate'],
+    'Deoxythymidine-5\'-monophosphate (dTMP)': ['dTMP', '2\'-deoxythymidine 5\'-monophosphate', 'Deoxythymidine monophosphate', 'Thymidine monophosphate'],
+    'Deoxythymidine-5\'-monophosphate': ['dTMP', '2\'-deoxythymidine 5\'-monophosphate', 'Deoxythymidine monophosphate', 'Thymidine monophosphate'],
+    'Deoxyuridine-5\'-monophosphate (dUMP)': ['dUMP', '2\'-deoxyuridine 5\'-monophosphate', 'Deoxyuridine monophosphate'],
+    'Deoxyuridine-5\'-monophosphate': ['dUMP', '2\'-deoxyuridine 5\'-monophosphate', 'Deoxyuridine monophosphate'],
   };
   
   return alternatives[moleculeName] || [];

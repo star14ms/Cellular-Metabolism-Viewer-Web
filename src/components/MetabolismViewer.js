@@ -12,6 +12,7 @@ import { citricAcidCycleNodes, citricAcidCycleReactions, citricAcidCycleArrows, 
 import { electronTransportChainNodes, electronTransportChainReactions, electronTransportChainArrows, electronTransportChainData } from '../data/electronTransportChain/electronTransportChain_index.js';
 import { lactateFermentationNodes, lactateFermentationReactions, lactateFermentationArrows, lactateFermentationData } from '../data/lactateFermentation/lactateFermentation_index.js';
 import { ethanolFermentationNodes, ethanolFermentationReactions, ethanolFermentationArrows, ethanolFermentationData } from '../data/ethanolFermentation/ethanolFermentation_index.js';
+import { nucleosideSalvageNodes, nucleosideSalvageReactions, nucleosideSalvageArrows, nucleosideSalvageData } from '../data/nucleosideSalvage/nucleosideSalvage_index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
@@ -45,7 +46,8 @@ const PATHWAY_CONFIG = {
     'citric-acid-cycle': 'Citric Acid Cycle (Krebs Cycle)',
     'electron-transport-chain': 'Electron Transport Chain',
     'lactate-fermentation': 'Lactate Fermentation',
-    'ethanol-fermentation': 'Ethanol Fermentation'
+    'ethanol-fermentation': 'Ethanol Fermentation',
+    'nucleoside-salvage': 'Nucleoside Salvage'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -77,6 +79,11 @@ const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'ethanol-fermentation': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'nucleoside-salvage': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -157,7 +164,8 @@ export class MetabolismViewer {
       ...citricAcidCycleNodes,
       ...electronTransportChainNodes,
       ...lactateFermentationNodes,
-      ...ethanolFermentationNodes
+      ...ethanolFermentationNodes,
+      ...nucleosideSalvageNodes
     ];
     
     // Filter out hidden nodes for drawing (but keep all in nodeMap for arrow lookups)
@@ -170,7 +178,8 @@ export class MetabolismViewer {
       ...citricAcidCycleReactions,
       ...electronTransportChainReactions,
       ...lactateFermentationReactions,
-      ...ethanolFermentationReactions
+      ...ethanolFermentationReactions,
+      ...nucleosideSalvageReactions
     ];
     
     // Combine all arrows
@@ -180,7 +189,8 @@ export class MetabolismViewer {
       ...citricAcidCycleArrows,
       ...electronTransportChainArrows,
       ...lactateFermentationArrows,
-      ...ethanolFermentationArrows
+      ...ethanolFermentationArrows,
+      ...nucleosideSalvageArrows
     ];
     
     // Create node ID to node mapping for quick lookup
@@ -386,6 +396,7 @@ export class MetabolismViewer {
     const electronTransportChainReactionCount = electronTransportChainReactions.length;
     const lactateFermentationReactionCount = lactateFermentationReactions.length;
     const ethanolFermentationReactionCount = ethanolFermentationReactions.length;
+    const nucleosideSalvageReactionCount = nucleosideSalvageReactions.length;
     
     this.pathways = [
       {
@@ -441,6 +452,15 @@ export class MetabolismViewer {
         summary: ethanolFermentationData.summary,
         startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount,
         endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount
+      },
+      {
+        id: 'nucleoside-salvage',
+        name: 'Nucleoside Salvage',
+        reactions: nucleosideSalvageReactions,
+        nodes: nucleosideSalvageNodes,
+        summary: nucleosideSalvageData.summary,
+        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount,
+        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount
       }
     ];
     
@@ -1411,7 +1431,8 @@ export class MetabolismViewer {
       ...citricAcidCycleArrows,
       ...electronTransportChainArrows,
       ...lactateFermentationArrows,
-      ...ethanolFermentationArrows
+      ...ethanolFermentationArrows,
+      ...nucleosideSalvageArrows
     ];
     
     // Define pathway lengths for legacy code compatibility (if needed)
