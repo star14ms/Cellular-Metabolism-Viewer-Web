@@ -23,6 +23,15 @@ export const electronTransportChainNodes = [
     complexSize: { width: 80, height: 60 },
     byreactant: ['NADH'],
     byproduct: ['NAD⁺'],
+    etcSubArrows: {
+      hPlusPump: {
+        type: 'proton-pump',
+        from: 'H⁺ (matrix)',
+        to: 'H⁺ (intermembrane space)',
+        direction: 'up',
+        count: 4
+      }
+    },
     position: { x: base_x, y: base_y }
   },
   {
@@ -50,6 +59,15 @@ export const electronTransportChainNodes = [
     reaction_id: 'rxn_etc_4',
     complexNumber: 'III',
     complexSize: { width: 80, height: 60 },
+    etcSubArrows: {
+      hPlusPump: {
+        type: 'proton-pump',
+        from: 'H⁺ (matrix)',
+        to: 'H⁺ (intermembrane space)',
+        direction: 'up',
+        count: 4
+      }
+    },
     position: { x: base_x + unit_space * 3, y: base_y }
   },
   {
@@ -63,6 +81,15 @@ export const electronTransportChainNodes = [
     complexSize: { width: 80, height: 60 },
     byreactant: ['1/2 O₂', '2 H+'],
     byproduct: ['H₂O'],
+    etcSubArrows: {
+      hPlusPump: {
+        type: 'proton-pump',
+        from: 'H⁺ (matrix)',
+        to: 'H⁺ (intermembrane space)',
+        direction: 'up',
+        count: 2
+      }
+    },
     position: { x: base_x + unit_space * 5, y: base_y }
   },
   {
@@ -77,6 +104,15 @@ export const electronTransportChainNodes = [
     isIndependent: true, // ATP Synthase is independent, not directly connected from Complex IV
     byreactant: ['ADP', 'Pi'],
     byproduct: ['ATP'],
+    etcSubArrows: {
+      hPlusPump: {
+        type: 'proton-flow',
+        from: 'H⁺ (intermembrane space)',
+        to: 'H⁺ (matrix)',
+        direction: 'down',
+        count: 3
+      }
+    },
     position: { x: base_x + unit_space * 6, y: base_y }
   },
   // Mobile carriers

@@ -20,15 +20,6 @@ export const electronTransportChainReactions = [
       regulation: 'Regulated by NADH/NAD⁺ ratio and ATP/ADP ratio',
       requirement: 'Aerobic conditions',
       notes: 'Pumps 4 protons from matrix to intermembrane space per NADH'
-    },
-    etcSubArrows: {
-      hPlusPump: {
-        type: 'proton-pump',
-        from: 'H⁺ (matrix)',
-        to: 'H⁺ (intermembrane space)',
-        direction: 'up',
-        count: 4
-      }
     }
   },
   {
@@ -86,15 +77,6 @@ export const electronTransportChainReactions = [
       regulation: 'Regulated by ubiquinol availability and cytochrome c reduction state',
       requirement: 'Aerobic conditions',
       notes: 'Pumps 4 protons per QH₂ oxidized'
-    },
-    etcSubArrows: {
-      hPlusPump: {
-        type: 'proton-pump',
-        from: 'H⁺ (matrix)',
-        to: 'H⁺ (intermembrane space)',
-        direction: 'up',
-        count: 4
-      }
     }
   },
   {
@@ -133,15 +115,6 @@ export const electronTransportChainReactions = [
       regulation: 'Regulated by O₂ availability and cytochrome c reduction state',
       requirement: 'Aerobic conditions',
       notes: 'Final step of electron transport, produces water and pumps 2 protons'
-    },
-    etcSubArrows: {
-      hPlusPump: {
-        type: 'proton-pump',
-        from: 'H⁺ (matrix)',
-        to: 'H⁺ (intermembrane space)',
-        direction: 'up',
-        count: 2
-      }
     }
   },
   {
@@ -161,15 +134,6 @@ export const electronTransportChainReactions = [
       regulation: 'Regulated by proton gradient magnitude and ADP/ATP ratio',
       requirement: 'Proton gradient (from Complexes I, III, IV)',
       notes: 'Produces ~2.5 ATP per NADH, ~1.5 ATP per FADH₂. Independent complex using H+ gradient.'
-    },
-    etcSubArrows: {
-      hPlusPump: {
-        type: 'proton-flow',
-        from: 'H⁺ (intermembrane space)',
-        to: 'H⁺ (matrix)',
-        direction: 'down',
-        count: 3
-      }
     }
   }
 ];

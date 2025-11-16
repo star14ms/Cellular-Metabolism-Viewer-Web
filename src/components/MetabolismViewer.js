@@ -142,7 +142,7 @@ const PATHWAY_CONFIG = {
   
   // Pathway type colors for nodes
   pathwayTypeColors: {
-    'carbohydrates': { fill: '#ff9999', stroke: '#cc8833' }, // Orange-ish
+    'carbohydrates': { fill: '#ffb999', stroke: '#cc8833' }, // Orange-ish
     'amino-acids': { fill: '#5fa8d3', stroke: '#2c5f7c' }, // Blue
     'oxidative-metabolism': { fill: '#d4a574', stroke: '#8b6f47' }, // Orange
     'nucleotides': { fill: '#b399ff', stroke: '#8c66cc' }, // Purple
@@ -349,7 +349,8 @@ export class MetabolismViewer {
           hideByreactantLabels: node.hideByreactantLabels !== undefined ? node.hideByreactantLabels : (reaction ? reaction.hideByreactantLabels : undefined),
           hideByproductLabels: node.hideByproductLabels !== undefined ? node.hideByproductLabels : (reaction ? reaction.hideByproductLabels : undefined),
           // Preserve etcSubArrows for ETC complexes (needed for drawing H+ arrows)
-          etcSubArrows: reaction ? reaction.etcSubArrows : undefined,
+          // etcSubArrows is now stored in nodes, not reactions
+          etcSubArrows: node.etcSubArrows !== undefined ? node.etcSubArrows : undefined,
           arrowIds: arrowIds,
           // Flag for source-only nodes (nodes that are sources but not targets)
           isSourceNode: arrowsFromNode.length > 0 && arrowsToNode.length === 0 && !node.reaction_id
@@ -4646,26 +4647,30 @@ export class MetabolismViewer {
   drawETCSubArrows() {
     // Draw special subarrows for ETC complexes: H+ pumping arrows only
     // Oxidation arrows (NADH, FADH2) are now handled by the by-molecule arrow system
-    const etcReactions = this.reactions.filter(r => r.etcSubArrows);
+    // etcSubArrows is now stored in nodes, not reactions
+    const etcNodes = this.nodes.filter(n => n.etcSubArrows);
     
-    if (etcReactions.length === 0) return;
+    if (etcNodes.length === 0) return;
     
     // Create a group for ETC subarrows - must be in the transform group (this.g) not this.svg
     // This ensures arrows move with zoom/pan
     const etcSubArrowGroup = this.g.append('g')
       .attr('class', 'etc-sub-arrows');
     
-    etcReactions.forEach(reaction => {
-      if (!reaction.etcSubArrows || !reaction.position) return;
+    etcNodes.forEach(node => {
+      if (!node.etcSubArrows || !node.position) return;
       
-      const complexX = reaction.position.x;
-      const complexY = reaction.position.y; // This is the center Y
-      const complexSize = reaction.complexSize || { width: 80, height: 60 };
+      const complexX = node.position.x;
+      const complexY = node.position.y; // This is the center Y
+      const complexSize = node.complexSize || { width: 80, height: 60 };
       const complexHeight = complexSize.height;
       const complexWidth = complexSize.width;
       
+      // Find the corresponding reaction for click handlers
+      const reaction = node.reaction_id ? this.reactions.find(r => r.id === node.reaction_id) : null;
+      
       // Draw each subarrow defined in etcSubArrows
-      Object.values(reaction.etcSubArrows).forEach(subArrow => {
+      Object.values(node.etcSubArrows).forEach(subArrow => {
         const offsetX = subArrow.offset?.x || 0;
         const arrowLength = 100; // Increased arrow length for better visibility
         
@@ -4722,9 +4727,11 @@ export class MetabolismViewer {
             .on('click', (event) => {
               event.stopPropagation();
               // Highlight the node when clicking H+ arrow
-              const targetMolecule = reaction.substrate;
-              if (targetMolecule) {
-                this.selectMolecule(targetMolecule, reaction, { skipTabSwitch: false });
+              if (reaction) {
+                const targetMolecule = reaction.substrate;
+                if (targetMolecule) {
+                  this.selectMolecule(targetMolecule, reaction, { skipTabSwitch: false });
+                }
               }
             });
           
@@ -4745,7 +4752,9 @@ export class MetabolismViewer {
                   id: 'h-plus',
                   description: 'Hydrogen ion (proton). In the electron transport chain, protons are pumped across the inner mitochondrial membrane to create a proton gradient that drives ATP synthesis.'
                 };
-                this.selectMolecule(hPlusMolecule, reaction, { skipTabSwitch: false });
+                if (reaction) {
+                  this.selectMolecule(hPlusMolecule, reaction, { skipTabSwitch: false });
+                }
               });
             return label;
           };
