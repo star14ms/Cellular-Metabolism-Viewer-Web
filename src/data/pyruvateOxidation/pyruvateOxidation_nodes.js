@@ -28,7 +28,6 @@ export const pyruvateOxidationNodes = [
     description: 'A three-carbon compound produced by glycolysis',
     smiles: 'CC(=O)C(=O)[O-]',
     position: { x: base_x, y: base_y },
-    // hidden: true
   },
   {
     id: 'thiamine-pyrophosphate',
