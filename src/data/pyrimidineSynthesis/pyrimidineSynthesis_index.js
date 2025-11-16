@@ -12,6 +12,7 @@ export const pyrimidineSynthesisData = {
   arrows: pyrimidineSynthesisArrows,
   summary: {
     name: 'Pyrimidine Synthesis',
+    pathwayType: 'nucleotides',
     description: 'The metabolic pathway that synthesizes pyrimidine nucleotides (CTP) from simple precursors including bicarbonate, glutamine, aspartate, and PRPP. This pathway is essential for DNA and RNA synthesis.',
     location: 'Cytoplasm (with dihydroorotate dehydrogenase in mitochondria)',
     netProducts: {

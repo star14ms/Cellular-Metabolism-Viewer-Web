@@ -14,6 +14,7 @@ export const lactateFermentationData = {
   arrows: lactateFermentationArrows,
   summary: {
     name: 'Lactate Fermentation',
+    pathwayType: 'carbohydrates',
     description: 'Anaerobic pathway that converts pyruvate to lactate, regenerating NAD⁺ for continued glycolysis',
     netProducts: {
       'Lactate': { produced: 1, consumed: 0, net: 1 },

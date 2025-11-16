@@ -14,6 +14,7 @@ export const ethanolFermentationData = {
   arrows: ethanolFermentationArrows,
   summary: {
     name: 'Ethanol Fermentation',
+    pathwayType: 'carbohydrates',
     description: 'Anaerobic pathway that converts pyruvate to ethanol via acetaldehyde, regenerating NAD⁺ for continued glycolysis',
     netProducts: {
       'Ethanol': { produced: 1, consumed: 0, net: 1 },

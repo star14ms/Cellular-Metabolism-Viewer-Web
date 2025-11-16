@@ -14,6 +14,7 @@ export const fermentationData = {
   arrows: fermentationArrows,
   summary: {
     name: 'Fermentation',
+    pathwayType: 'carbohydrates',
     description: 'Anaerobic pathways that regenerate NAD⁺ for continued glycolysis. Includes lactate fermentation (pyruvate → lactate) and ethanol fermentation (pyruvate → acetaldehyde → ethanol)',
     netProducts: {
       'Lactate': { produced: 1, consumed: 0, net: 1 },

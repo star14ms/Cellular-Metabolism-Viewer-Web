@@ -12,6 +12,7 @@ export const citricAcidCycleData = {
   arrows: citricAcidCycleArrows,
   summary: {
     name: 'Citric Acid Cycle (Krebs Cycle)',
+    pathwayType: 'carbohydrates',
     description: 'A circular metabolic pathway that oxidizes acetyl-CoA to CO₂, producing energy carriers (ATP, NADH, FADH₂)',
     location: 'Mitochondrial matrix',
     netProducts: {

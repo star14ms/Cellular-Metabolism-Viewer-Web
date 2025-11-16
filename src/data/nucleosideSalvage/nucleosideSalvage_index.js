@@ -12,6 +12,7 @@ export const nucleosideSalvageData = {
   arrows: nucleosideSalvageArrows,
   summary: {
     name: 'Nucleoside Salvage',
+    pathwayType: 'nucleotides',
     description: 'The metabolic pathway that phosphorylates nucleosides into their corresponding 5\'-monophosphate forms using ATP. This pathway allows cells to recycle nucleosides from degraded nucleic acids or dietary sources.',
     location: 'Cytoplasm',
     netProducts: {

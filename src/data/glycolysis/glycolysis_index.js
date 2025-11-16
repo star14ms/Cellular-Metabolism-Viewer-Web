@@ -12,6 +12,7 @@ export const glycolysisData = {
   arrows: glycolysisArrows,
   summary: {
     name: 'Glycolysis',
+    pathwayType: 'carbohydrates',
     description: 'The metabolic pathway that converts glucose into pyruvate, releasing energy and producing ATP and NADH.',
     location: 'Cytoplasm',
     netProducts: {

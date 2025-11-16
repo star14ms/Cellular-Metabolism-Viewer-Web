@@ -14,6 +14,7 @@ export const pyruvateOxidationData = {
   arrows: pyruvateOxidationArrows,
   summary: {
     name: 'Pyruvate Oxidation',
+    pathwayType: 'carbohydrates',
     description: 'The conversion of pyruvate to acetyl-CoA, linking glycolysis to the citric acid cycle',
     netProducts: {
       'Acetyl-CoA': { produced: 1, consumed: 0, net: 1 },

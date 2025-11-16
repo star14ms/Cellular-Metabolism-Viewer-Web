@@ -133,6 +133,16 @@ const PATHWAY_CONFIG = {
     reactionCircleStroke: '#2c5f7c'
   },
   
+  // Pathway type colors for nodes
+  pathwayTypeColors: {
+    'carbohydrates': { fill: '#ff9999', stroke: '#cc8833' }, // Orange-ish
+    'amino-acids': { fill: '#5fa8d3', stroke: '#2c5f7c' }, // Blue
+    'oxidative-metabolism': { fill: '#d4a574', stroke: '#8b6f47' }, // Orange
+    'nucleotides': { fill: '#b399ff', stroke: '#8c66cc' }, // Purple
+    'lipids': { fill: '#99dd99', stroke: '#66bb66' }, // Green
+    'heme-metabolism': { fill: '#e0e099', stroke: '#c4c466' } // Gray Yellow
+  },
+  
   // Node sizes
   nodeSizes: {
     regular: { radius: 30, width: 60, height: 60 },
@@ -4410,11 +4420,18 @@ export class MetabolismViewer {
     const mobileCarriers = nodes.filter(d => d.isMobileCarrier);
     const regularReactions = nodes.filter(d => !d.isProteinComplex && !d.isMobileCarrier);
     
+    // Capture viewer instance for use in callbacks
+    const viewer = this;
+    
       // Draw protein complexes as rounded rectangles
       proteinComplexes.each(function(d) {
         const defaultSize = PATHWAY_CONFIG.nodeSizes.proteinComplex;
         const size = d.complexSize || { width: defaultSize.width, height: defaultSize.height };
         const g = d3.select(this);
+        
+        // Get pathway type colors for this node
+        const pathwayType = viewer.getPathwayTypeForNode(d.nodeId);
+        const colors = viewer.getPathwayTypeColors(pathwayType);
         
         // Draw rounded rectangle (oval-like shape)
         g.append('rect')
@@ -4424,8 +4441,8 @@ export class MetabolismViewer {
           .attr('height', size.height)
           .attr('rx', size.height / 2) // Make it oval-shaped
           .attr('ry', size.height / 2)
-          .attr('fill', PATHWAY_CONFIG.colors.proteinComplex)
-          .attr('stroke', PATHWAY_CONFIG.colors.proteinComplexStroke)
+          .attr('fill', colors.proteinComplexFill)
+          .attr('stroke', colors.proteinComplexStroke)
           .attr('stroke-width', 3)
           .attr('class', 'protein-complex');
       
@@ -4444,20 +4461,34 @@ export class MetabolismViewer {
     });
     
     // Draw mobile carriers as smaller circles
-    mobileCarriers.append('circle')
-      .attr('r', PATHWAY_CONFIG.nodeSizes.mobileCarrier.radius)
-      .attr('fill', PATHWAY_CONFIG.colors.proteinComplex)
-      .attr('stroke', PATHWAY_CONFIG.colors.proteinComplexStroke)
-      .attr('stroke-width', 2)
-      .attr('class', 'mobile-carrier');
+    mobileCarriers.each(function(d) {
+      const g = d3.select(this);
+      // Get pathway type colors for this node
+      const pathwayType = viewer.getPathwayTypeForNode(d.nodeId);
+      const colors = viewer.getPathwayTypeColors(pathwayType);
+      
+      g.append('circle')
+        .attr('r', PATHWAY_CONFIG.nodeSizes.mobileCarrier.radius)
+        .attr('fill', colors.proteinComplexFill)
+        .attr('stroke', colors.proteinComplexStroke)
+        .attr('stroke-width', 2)
+        .attr('class', 'mobile-carrier');
+    });
     
     // Draw regular reactions as circles
-    regularReactions.append('circle')
-      .attr('r', PATHWAY_CONFIG.nodeSizes.regular.radius)
-      .attr('fill', PATHWAY_CONFIG.colors.reactionCircle)
-      .attr('stroke', PATHWAY_CONFIG.colors.reactionCircleStroke)
-      .attr('stroke-width', 2)
-      .attr('class', 'reaction-circle');
+    regularReactions.each(function(d) {
+      const g = d3.select(this);
+      // Get pathway type colors for this node
+      const pathwayType = viewer.getPathwayTypeForNode(d.nodeId);
+      const colors = viewer.getPathwayTypeColors(pathwayType);
+      
+      g.append('circle')
+        .attr('r', PATHWAY_CONFIG.nodeSizes.regular.radius)
+        .attr('fill', colors.fill)
+        .attr('stroke', colors.stroke)
+        .attr('stroke-width', 2)
+        .attr('class', 'reaction-circle');
+    });
     
     // Create image group for 2D structure (initially hidden)
     const imageGroups = nodes.append('g')
@@ -5050,6 +5081,60 @@ export class MetabolismViewer {
     this.container.dispatchEvent(clearEvent);
   }
   
+  /**
+   * Get pathway type for a node by checking which pathway's nodes array contains it
+   * @param {string} nodeId - The node ID to check
+   * @returns {string|null} The pathway type or null if not found
+   */
+  getPathwayTypeForNode(nodeId) {
+    if (!nodeId || !this.pathways) return null;
+    
+    for (const pathway of this.pathways) {
+      if (pathway.nodes && Array.isArray(pathway.nodes)) {
+        if (pathway.nodes.some(node => node.id === nodeId)) {
+          return pathway.summary?.pathwayType || null;
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Get colors for a pathway type
+   * @param {string} pathwayType - The pathway type
+   * @returns {Object} Object with fill and stroke colors, or default colors
+   */
+  getPathwayTypeColors(pathwayType) {
+    if (!pathwayType) {
+      // Default colors (current colors)
+      return {
+        fill: PATHWAY_CONFIG.colors.reactionCircle,
+        stroke: PATHWAY_CONFIG.colors.reactionCircleStroke,
+        proteinComplexFill: PATHWAY_CONFIG.colors.proteinComplex,
+        proteinComplexStroke: PATHWAY_CONFIG.colors.proteinComplexStroke
+      };
+    }
+    
+    const typeColors = PATHWAY_CONFIG.pathwayTypeColors[pathwayType];
+    if (typeColors) {
+      return {
+        fill: typeColors.fill,
+        stroke: typeColors.stroke,
+        proteinComplexFill: typeColors.fill,
+        proteinComplexStroke: typeColors.stroke
+      };
+    }
+    
+    // Fallback to default colors
+    return {
+      fill: PATHWAY_CONFIG.colors.reactionCircle,
+      stroke: PATHWAY_CONFIG.colors.reactionCircleStroke,
+      proteinComplexFill: PATHWAY_CONFIG.colors.proteinComplex,
+      proteinComplexStroke: PATHWAY_CONFIG.colors.proteinComplexStroke
+    };
+  }
+  
   getPathwayForReaction(reaction) {
     if (!reaction || !reaction.id) return null;
     
@@ -5349,25 +5434,47 @@ export class MetabolismViewer {
   /**
    * Reset all nodes to their default unhighlighted state
    * Works for all node types: reaction circles, protein complexes, mobile carriers, and image backgrounds
+   * Restores pathway-specific colors instead of default colors
    */
   resetAllNodeHighlights() {
-      // Reset regular reaction circles
-      this.reactionGroups.selectAll('.reaction-circle')
-        .attr('stroke-width', 2)
-        .attr('stroke', PATHWAY_CONFIG.colors.reactionCircleStroke)
-        .attr('fill', PATHWAY_CONFIG.colors.reactionCircle);
+    // Capture viewer instance for use in callbacks
+    const viewer = this;
     
-      // Reset protein complex rectangles (ETC complexes)
-      this.reactionGroups.selectAll('.protein-complex')
-        .attr('stroke-width', 3)
-        .attr('stroke', PATHWAY_CONFIG.colors.proteinComplexStroke)
-        .attr('fill', PATHWAY_CONFIG.colors.proteinComplex);
-    
-      // Reset mobile carrier circles (ETC mobile carriers)
-      this.reactionGroups.selectAll('.mobile-carrier')
-        .attr('stroke-width', 2)
-        .attr('stroke', PATHWAY_CONFIG.colors.proteinComplexStroke)
-        .attr('fill', PATHWAY_CONFIG.colors.proteinComplex);
+    // Reset each node to its pathway-specific color
+    this.reactionGroups.each(function(d) {
+      if (!d || !d.nodeId) return;
+      
+      const nodeGroup = d3.select(this);
+      const nodeId = d.nodeId;
+      
+      // Get pathway type and colors for this node
+      const pathwayType = viewer.getPathwayTypeForNode(nodeId);
+      const colors = viewer.getPathwayTypeColors(pathwayType);
+      
+      // Reset reaction circle
+      const circle = nodeGroup.select('.reaction-circle');
+      if (!circle.empty()) {
+        circle.attr('stroke-width', 2)
+              .attr('stroke', colors.stroke)
+              .attr('fill', colors.fill);
+      }
+      
+      // Reset protein complex
+      const complex = nodeGroup.select('.protein-complex');
+      if (!complex.empty()) {
+        complex.attr('stroke-width', 3)
+               .attr('stroke', colors.proteinComplexStroke)
+               .attr('fill', colors.proteinComplexFill);
+      }
+      
+      // Reset mobile carrier
+      const carrier = nodeGroup.select('.mobile-carrier');
+      if (!carrier.empty()) {
+        carrier.attr('stroke-width', 2)
+               .attr('stroke', colors.proteinComplexStroke)
+               .attr('fill', colors.proteinComplexFill);
+      }
+    });
     
     // Reset image backgrounds
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';

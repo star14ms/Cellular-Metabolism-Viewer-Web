@@ -12,6 +12,7 @@ export const electronTransportChainData = {
   arrows: electronTransportChainArrows,
   summary: {
     name: 'Electron Transport Chain / Oxidative Phosphorylation',
+    pathwayType: 'oxidative-metabolism',
     description: 'Uses NADH and FADH₂ to create a proton gradient that drives ATP synthesis. The final step in aerobic energy production.',
     location: 'Inner mitochondrial membrane',
     netProducts: {
