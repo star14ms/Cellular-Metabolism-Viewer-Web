@@ -201,111 +201,120 @@ export class MetabolismViewer {
     // This is simpler and more direct - nodes and arrows are independent
     
     // Create reactions for ALL nodes from data files
-    const allNodeReactions = this.nodes.map(node => {
+    // For nodes with multiple arrows having different reaction_ids, create a reaction for each
+    const allNodeReactions = [];
+    
+    this.nodes.forEach(node => {
       // Find arrows that involve this node to get reaction info
       const arrowsFromNode = allArrows.filter(a => a.from_id === node.id);
       const arrowsToNode = allArrows.filter(a => a.to_id === node.id);
       
-      // Try to find a reaction associated with this node
-      let reaction = null;
+      // Collect all unique reaction_ids from arrows involving this node
+      const reactionIds = new Set();
       if (node.reaction_id) {
-        // Node has a reaction_id (like complexes)
-        reaction = this.reactionMap.get(node.reaction_id);
-      } else if (arrowsFromNode.length > 0) {
-        // Node is a source - use the first arrow's reaction
-        reaction = this.reactionMap.get(arrowsFromNode[0].reaction_id);
-      } else if (arrowsToNode.length > 0) {
-        // Node is a target - use the first arrow's reaction
-        reaction = this.reactionMap.get(arrowsToNode[0].reaction_id);
+        reactionIds.add(node.reaction_id);
       }
-      
-      // Determine substrate and product based on arrows
-      let substrate = null;
-      let product = null;
-      
-      if (arrowsFromNode.length > 0) {
-        // Node is a source - it's the substrate
-        const targetNode = arrowsFromNode[0].to_id ? this.nodeMap.get(arrowsFromNode[0].to_id) : null;
-        substrate = { id: node.id, name: node.name, formula: node.formula, description: node.description, smiles: node.smiles };
-        product = targetNode ? { id: targetNode.id, name: targetNode.name, formula: targetNode.formula, description: targetNode.description, smiles: targetNode.smiles } : null;
-      } else if (arrowsToNode.length > 0) {
-        // Node is a target - it's the product
-        const sourceNode = arrowsToNode[0].from_id ? this.nodeMap.get(arrowsToNode[0].from_id) : null;
-        substrate = sourceNode ? { id: sourceNode.id, name: sourceNode.name, formula: sourceNode.formula, description: sourceNode.description, smiles: sourceNode.smiles } : null;
-        product = { id: node.id, name: node.name, formula: node.formula, description: node.description, smiles: node.smiles };
-      } else {
-        // No arrows - node is both substrate and product (for display)
-        substrate = { id: node.id, name: node.name, formula: node.formula, description: node.description, smiles: node.smiles };
-        product = { id: node.id, name: node.name, formula: node.formula, description: node.description, smiles: node.smiles };
-      }
-      
-      // Collect arrow IDs for this node
-      const arrowIds = [];
       arrowsFromNode.forEach(arrow => {
-        if (!arrowIds.includes(arrow.id)) arrowIds.push(arrow.id);
+        if (arrow.reaction_id) reactionIds.add(arrow.reaction_id);
       });
       arrowsToNode.forEach(arrow => {
-        if (!arrowIds.includes(arrow.id)) arrowIds.push(arrow.id);
+        if (arrow.reaction_id) reactionIds.add(arrow.reaction_id);
       });
       
-      // Determine the reaction ID - prefer reaction.id from arrow's reaction_id
-      // This ensures step numbers are assigned correctly
-      let reactionId = `node_${node.id}`; // Default fallback
-      if (node.reaction_id) {
-        // Node has a reaction_id (like complexes)
-        reactionId = node.reaction_id;
-      } else if (reaction) {
-        // Use the reaction.id from the arrow
-        reactionId = reaction.id;
-      } else if (arrowsFromNode.length > 0) {
-        // Node is a source - use the first arrow's reaction_id
-        reactionId = arrowsFromNode[0].reaction_id;
-      } else if (arrowsToNode.length > 0) {
-        // Node is a target - use the first arrow's reaction_id
-        reactionId = arrowsToNode[0].reaction_id;
+      // If no reaction_ids found, create one default reaction for this node
+      if (reactionIds.size === 0) {
+        reactionIds.add(`node_${node.id}`);
       }
+      
+      // Create a reaction for each unique reaction_id
+      reactionIds.forEach(reactionId => {
+        // Get the reaction data for this reaction_id
+        const reaction = this.reactionMap.get(reactionId);
+        
+        // Find arrows for this specific reaction_id
+        const arrowsForThisReaction = [
+          ...arrowsFromNode.filter(a => a.reaction_id === reactionId),
+          ...arrowsToNode.filter(a => a.reaction_id === reactionId)
+        ];
+        
+        // Determine substrate and product based on arrows for this reaction
+        let substrate = null;
+        let product = null;
+        const arrowIds = [];
+        
+        // Check if this node is a source for this reaction
+        const sourceArrows = arrowsFromNode.filter(a => a.reaction_id === reactionId);
+        if (sourceArrows.length > 0) {
+          // Node is a source - it's the substrate
+          const targetNode = sourceArrows[0].to_id ? this.nodeMap.get(sourceArrows[0].to_id) : null;
+          substrate = { id: node.id, name: node.name, formula: node.formula, description: node.description, smiles: node.smiles };
+          product = targetNode ? { id: targetNode.id, name: targetNode.name, formula: targetNode.formula, description: targetNode.description, smiles: targetNode.smiles } : null;
+          sourceArrows.forEach(arrow => {
+            if (!arrowIds.includes(arrow.id)) arrowIds.push(arrow.id);
+          });
+        } else {
+          // Check if this node is a target for this reaction
+          const targetArrows = arrowsToNode.filter(a => a.reaction_id === reactionId);
+          if (targetArrows.length > 0) {
+            // Node is a target - it's the product
+            const sourceNode = targetArrows[0].from_id ? this.nodeMap.get(targetArrows[0].from_id) : null;
+            substrate = sourceNode ? { id: sourceNode.id, name: sourceNode.name, formula: sourceNode.formula, description: sourceNode.description, smiles: sourceNode.smiles } : null;
+            product = { id: node.id, name: node.name, formula: node.formula, description: node.description, smiles: node.smiles };
+            targetArrows.forEach(arrow => {
+              if (!arrowIds.includes(arrow.id)) arrowIds.push(arrow.id);
+            });
+          } else {
+            // No arrows for this reaction_id - node is both substrate and product (for display)
+            substrate = { id: node.id, name: node.name, formula: node.formula, description: node.description, smiles: node.smiles };
+            product = { id: node.id, name: node.name, formula: node.formula, description: node.description, smiles: node.smiles };
+          }
+        }
 
-      return {
-        id: reactionId,
-        name: reaction ? reaction.name : node.name,
-        nodeId: node.id,
-        position: node.position,
-        node: node, // Preserve reference to node object (source of truth for node data)
-        // Set node type flags from node data
-        isProteinComplex: node.type === 'complex',
-        isMobileCarrier: node.type === 'carrier',
-        complexNumber: node.complexNumber,
-        complexSize: node.complexSize,
-        substrate: substrate,
-        product: product,
-        enzyme: reaction ? reaction.enzyme : null,
-        conditions: reaction ? reaction.conditions : null,
-        // Preserve by-molecule data from node (source of truth for by-molecule arrows)
-        // Node data takes precedence over reaction data
-        byreactant: node.byreactant !== undefined ? node.byreactant : (reaction ? reaction.byreactant : undefined),
-        byproduct: node.byproduct !== undefined ? node.byproduct : (reaction ? reaction.byproduct : undefined),
-        // Display-only by-molecules (shown in Substrate → Product section but no arrows drawn)
-        // These come only from reaction data, not node data
-        displayByreactant: reaction ? reaction.displayByreactant : undefined,
-        displayByproduct: reaction ? reaction.displayByproduct : undefined,
-        // Preserve by-molecule display properties from node or reaction
-        byMoleculeAngle: node.byMoleculeAngle !== undefined ? node.byMoleculeAngle : (reaction ? reaction.byMoleculeAngle : undefined),
-        hideByMoleculeLabels: node.hideByMoleculeLabels !== undefined ? node.hideByMoleculeLabels : (reaction ? reaction.hideByMoleculeLabels : undefined),
-        hideByreactantLabels: node.hideByreactantLabels !== undefined ? node.hideByreactantLabels : (reaction ? reaction.hideByreactantLabels : undefined),
-        hideByproductLabels: node.hideByproductLabels !== undefined ? node.hideByproductLabels : (reaction ? reaction.hideByproductLabels : undefined),
-        // Preserve etcSubArrows for ETC complexes (needed for drawing H+ arrows)
-        etcSubArrows: reaction ? reaction.etcSubArrows : undefined,
-        arrowIds: arrowIds,
-        // Flag for source-only nodes (nodes that are sources but not targets)
-        isSourceNode: arrowsFromNode.length > 0 && arrowsToNode.length === 0 && !node.reaction_id
-      };
+        allNodeReactions.push({
+          id: reactionId,
+          name: reaction ? reaction.name : node.name,
+          nodeId: node.id,
+          position: node.position,
+          node: node, // Preserve reference to node object (source of truth for node data)
+          // Set node type flags from node data
+          isProteinComplex: node.type === 'complex',
+          isMobileCarrier: node.type === 'carrier',
+          complexNumber: node.complexNumber,
+          complexSize: node.complexSize,
+          substrate: substrate,
+          product: product,
+          enzyme: reaction ? reaction.enzyme : null,
+          conditions: reaction ? reaction.conditions : null,
+          // Preserve by-molecule data from node (source of truth for by-molecule arrows)
+          // Node data takes precedence over reaction data
+          byreactant: node.byreactant !== undefined ? node.byreactant : (reaction ? reaction.byreactant : undefined),
+          byproduct: node.byproduct !== undefined ? node.byproduct : (reaction ? reaction.byproduct : undefined),
+          // Display-only by-molecules (shown in Substrate → Product section but no arrows drawn)
+          // These come only from reaction data, not node data
+          displayByreactant: reaction ? reaction.displayByreactant : undefined,
+          displayByproduct: reaction ? reaction.displayByproduct : undefined,
+          // Preserve by-molecule display properties from node or reaction
+          byMoleculeAngle: node.byMoleculeAngle !== undefined ? node.byMoleculeAngle : (reaction ? reaction.byMoleculeAngle : undefined),
+          hideByMoleculeLabels: node.hideByMoleculeLabels !== undefined ? node.hideByMoleculeLabels : (reaction ? reaction.hideByMoleculeLabels : undefined),
+          hideByreactantLabels: node.hideByreactantLabels !== undefined ? node.hideByreactantLabels : (reaction ? reaction.hideByreactantLabels : undefined),
+          hideByproductLabels: node.hideByproductLabels !== undefined ? node.hideByproductLabels : (reaction ? reaction.hideByproductLabels : undefined),
+          // Preserve etcSubArrows for ETC complexes (needed for drawing H+ arrows)
+          etcSubArrows: reaction ? reaction.etcSubArrows : undefined,
+          arrowIds: arrowIds,
+          // Flag for source-only nodes (nodes that are sources but not targets)
+          isSourceNode: arrowsFromNode.length > 0 && arrowsToNode.length === 0 && !node.reaction_id
+        });
+      });
     });
     
-    // Create a map for easy lookup (deduplicate by nodeId)
+    // Create a map for easy lookup (deduplicate by nodeId + reaction_id combination)
+    // This allows multiple reactions per node if they have different reaction_ids
     const reactionMap = new Map();
     allNodeReactions.forEach(r => {
-      if (r.nodeId) {
-        reactionMap.set(r.nodeId, r);
+      if (r.nodeId && r.id) {
+        // Use combination of nodeId and reaction_id as key to allow multiple reactions per node
+        const key = `${r.nodeId}_${r.id}`;
+        reactionMap.set(key, r);
       }
     });
 
@@ -4907,16 +4916,30 @@ export class MetabolismViewer {
   }
   
   getPathwayForReaction(reaction) {
-    // Find which pathway this reaction belongs to
-    const reactionIndex = this.reactions.indexOf(reaction);
-    if (reactionIndex === -1) return null;
+    if (!reaction || !reaction.id) return null;
     
-    // Find the pathway that contains this reaction
+    // Find which pathway this reaction belongs to by matching reaction_id
+    // Check each pathway's reactions array to see if it contains this reaction_id
     for (const pathway of this.pathways) {
-      if (reactionIndex >= pathway.startIndex && reactionIndex < pathway.endIndex) {
-        return pathway;
+      if (pathway.reactions && Array.isArray(pathway.reactions)) {
+        // Check if any reaction in this pathway has the same reaction_id
+        const matchingReaction = pathway.reactions.find(r => r.id === reaction.id);
+        if (matchingReaction) {
+          return pathway;
+        }
       }
     }
+    
+    // Fallback: try index-based lookup (for backwards compatibility)
+    const reactionIndex = this.reactions.indexOf(reaction);
+    if (reactionIndex !== -1) {
+      for (const pathway of this.pathways) {
+        if (reactionIndex >= pathway.startIndex && reactionIndex < pathway.endIndex) {
+          return pathway;
+        }
+      }
+    }
+    
     return null;
   }
   
@@ -5278,10 +5301,13 @@ export class MetabolismViewer {
    * @param {string} colorType - 'default' (selection), 'reactant', or 'product'
    */
   highlightNode(nodeId, colorType = 'product') {
-    const node = this.nodeMap.get(nodeId);
-    if (!node) return;
-    
-    const nodeGroup = this.reactionGroups.filter(d => d === node);
+    // Find the reaction group that corresponds to this nodeId
+    // Reactions have a nodeId property that matches the node's id
+    const nodeGroup = this.reactionGroups.filter(d => d.nodeId === nodeId);
+    if (nodeGroup.empty()) {
+      console.warn(`No reaction group found for nodeId: ${nodeId}`);
+      return;
+    }
     this.applyNodeHighlightStyle(nodeGroup, colorType);
   }
   
@@ -5294,169 +5320,128 @@ export class MetabolismViewer {
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7);
     
-    // Find ALL arrows that represent this reaction (to handle multiple products)
-    // Collect all unique reactant and product nodes
+    // Unified logic: Get all arrows having current reaction_id
+    // Reactant nodes: all nodes in from_id
+    // Product nodes: all nodes in to_id
     const reactantNodeIds = new Set();
     const productNodeIds = new Set();
     
-    // Define excluded molecules for specific reactions (molecules that should not be highlighted as reactants)
-    const excludedReactants = new Map();
-    
-    // Search for all arrows with this target reaction
-    // Compare by nodeId to handle cases where reaction objects are different references
-    const reactionNodeId = reaction.nodeId;
-    for (const [arrowKey, data] of this.arrowDataMap.entries()) {
-      const targetReactionNodeId = data.targetReaction?.nodeId;
-      if (targetReactionNodeId === reactionNodeId) {
-        // Check if the reactant node should be highlighted
-        // The reactant can be displayed on either fromNode (the reaction node) or toNode (next node)
-        // Check both to find where the reactant molecule is actually displayed
-        const fromNode = this.nodeMap.get(data.fromNodeId);
-        const toNode = this.nodeMap.get(data.toNodeId);
-        const reactantMoleculeId = data.reactantMoleculeId;
-        
-        if (reactantMoleculeId) {
-          // Check if reactant is displayed on fromNode (as substrate or byreactant)
-          if (fromNode) {
-            const fromNodeSubstrateId = fromNode.substrate?.id;
-            const fromNodeByreactant = fromNode.byreactant;
-            
-            // For ETC complexes: if reactantMoleculeId matches the complex substrate ID, highlight the complex node
-            // This handles cases where the arrow's reactant is the complex itself (e.g., 'complex_i', 'complex_ii')
-            if (fromNodeSubstrateId === reactantMoleculeId) {
-              if (!excludedReactants.has(fromNodeSubstrateId)) {
-                reactantNodeIds.add(data.fromNodeId);
-              }
-            }
-            // Check if reactant matches byreactant (for cases where NADH/FADH₂ are the reactants)
-            // Handle case-insensitive comparison and normalize molecule names
-            else if (fromNodeByreactant) {
-              const byreactantArray = Array.isArray(fromNodeByreactant) ? fromNodeByreactant : [fromNodeByreactant];
-              const normalizedReactantId = reactantMoleculeId.toLowerCase();
-              const matchesByreactant = byreactantArray.some(br => {
-                const normalizedBr = typeof br === 'string' ? br.toLowerCase() : br;
-                return normalizedBr === normalizedReactantId || 
-                       normalizedBr === reactantMoleculeId ||
-                       br === reactantMoleculeId;
-              });
-              if (matchesByreactant) {
-                if (!excludedReactants.has(reactantMoleculeId)) {
-                  reactantNodeIds.add(data.fromNodeId);
-                }
-              }
-            }
-            // Fallback: for ETC complexes, if this is the fromNode and no other match, highlight it
-            else if (fromNode.isProteinComplex && fromNode.nodeId === data.fromNodeId) {
-              reactantNodeIds.add(data.fromNodeId);
-            }
-          }
-          
-          // Check if reactant is displayed on toNode (as substrate or byreactant)
-          if (toNode) {
-            const toNodeSubstrateId = toNode.substrate?.id;
-            const toNodeByreactant = toNode.byreactant;
-            // Check if reactant matches substrate
-            if (toNodeSubstrateId === reactantMoleculeId) {
-              if (!excludedReactants.has(toNodeSubstrateId)) {
-                reactantNodeIds.add(data.toNodeId);
-              }
-            }
-            // Check if reactant matches byreactant
-            // Handle case-insensitive comparison and normalize molecule names
-            else if (toNodeByreactant) {
-              const byreactantArray = Array.isArray(toNodeByreactant) ? toNodeByreactant : [toNodeByreactant];
-              const normalizedReactantId = reactantMoleculeId.toLowerCase();
-              const matchesByreactant = byreactantArray.some(br => {
-                const normalizedBr = typeof br === 'string' ? br.toLowerCase() : br;
-                return normalizedBr === normalizedReactantId || 
-                       normalizedBr === reactantMoleculeId ||
-                       br === reactantMoleculeId;
-              });
-              if (matchesByreactant) {
-                if (!excludedReactants.has(reactantMoleculeId)) {
-                  reactantNodeIds.add(data.toNodeId);
-                }
-              }
-            }
-          }
-        } else {
-          // No specific reactant molecule ID, fallback to fromNode (legacy behavior)
-          if (fromNode) {
-            const nodeSubstrateId = fromNode.substrate?.id;
-            if (!excludedReactants.has(nodeSubstrateId)) {
-              reactantNodeIds.add(data.fromNodeId);
-            }
-          } else {
-            reactantNodeIds.add(data.fromNodeId);
-          }
-        }
-        
-        // For product node, find where the product molecule is actually displayed
-        // In pyruvate oxidation and glycolysis, nodes show substrates, so the product
-        // is displayed on the next node (where it becomes the substrate)
-        if (data.productMoleculeId) {
-          // Find the next reaction after this one that uses the product as substrate
-          const reactionIndex = this.reactions.indexOf(reaction);
-          const nextNode = this.reactions.slice(reactionIndex + 1).find(r => 
-            r.substrate?.id === data.productMoleculeId
-          );
-          if (nextNode) {
-            productNodeIds.add(nextNode.nodeId);
-          } else {
-            // Fallback to toNodeId if we can't find where product is displayed
-            productNodeIds.add(data.toNodeId);
-          }
-        } else {
-          // Fallback to toNodeId if no product molecule ID
-          productNodeIds.add(data.toNodeId);
-        }
-      }
-    }
-    
-    // If no arrows found, try fallback logic
-    if (reactantNodeIds.size === 0 && productNodeIds.size === 0) {
-      const reactionIndex = this.reactions.indexOf(reaction);
-      if (reactionIndex >= 0 && reactionIndex < this.reactions.length - 1) {
-        const nextNode = this.reactions[reactionIndex + 1];
-        if (!nextNode.isProductNode) {
-          reactantNodeIds.add(reaction.nodeId);
-          productNodeIds.add(nextNode.nodeId);
-        }
-      }
-    }
-    
-    // Special handling for CAC Step 1 (Citrate Formation) - Step 15
-    // For CAC reactions, nodes display the previous reaction's product, not the substrate
-    // So we need to ensure Step 15 node (displaying Oxaloacetate) is highlighted as reactant
-    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
-    const cacStep1Config = PATHWAY_CONFIG.specialReactions['rxn_cac_1'];
-    const isCACStep1 = cacStep1Config && reaction.step === cacStep1Config.step && this.reactions.indexOf(reaction) === cacStartIndex;
-    
-    if (isCACStep1) {
-      // Ensure Step 1 node (Oxaloacetate) is in reactant list, not product list
-      productNodeIds.delete(reaction.nodeId);
-      reactantNodeIds.add(reaction.nodeId);
+    // Helper function to resolve an ID to a node ID
+    // If it's an arrow ID, recursively resolve to find the actual node
+    const resolveToNodeId = (id, visited = new Set()) => {
+      if (!id) return null;
       
-      // Also ensure Acetyl-CoA node is in reactant list if not already there
-      const acetylCoaNode = this.reactions.find(r => r.isProductNode && r.substrate?.id === 'acetyl-coa');
-      if (acetylCoaNode) {
-        reactantNodeIds.add(acetylCoaNode.nodeId);
-        productNodeIds.delete(acetylCoaNode.nodeId);
+      // Prevent infinite loops
+      if (visited.has(id)) return null;
+      visited.add(id);
+      
+      // If it's a node ID, return it
+      if (this.nodeMap.has(id)) {
+        return id;
+      }
+      
+      // If it's an arrow ID, resolve the arrow's from_id or to_id
+      if (this.arrowMap.has(id)) {
+        const arrow = this.arrowMap.get(id);
+        // For from_id resolution, try from_id first (source), then to_id (target)
+        // For to_id resolution, try to_id first (target), then from_id (source)
+        // But since we're resolving to find the actual node, we'll try both
+        if (arrow.from_id) {
+          const resolved = resolveToNodeId(arrow.from_id, visited);
+          if (resolved) return resolved;
+        }
+        if (arrow.to_id) {
+          const resolved = resolveToNodeId(arrow.to_id, visited);
+          if (resolved) return resolved;
+        }
+      }
+      
+      return null;
+    };
+    
+    // Get all arrows with this reaction_id
+    for (const [arrowId, rawArrow] of this.arrowMap.entries()) {
+      if (rawArrow && rawArrow.reaction_id === reaction.id) {
+        // Resolve from_id to node ID (reactant nodes)
+        if (rawArrow.from_id) {
+          const fromNodeId = resolveToNodeId(rawArrow.from_id);
+          if (fromNodeId) {
+            reactantNodeIds.add(fromNodeId);
+          }
+        }
+        
+        // Resolve to_id to node ID (product nodes)
+        if (rawArrow.to_id) {
+          const toNodeId = resolveToNodeId(rawArrow.to_id);
+          if (toNodeId) {
+            productNodeIds.add(toNodeId);
+          }
+        }
       }
     }
     
-    // Special handling for Pyruvate Oxidation Step 4 (Lipoamide Regeneration) - Step 14
-    // The reactant (Dihydrolipoamide) is displayed on Step 4's own node, but the arrow from
-    // Acetyl-CoA doesn't match it, so we need to ensure Step 4's node is highlighted as reactant
-    const glycolysisLength_local = glycolysisReactions.length;
-    const pyruvateOxStep4Index = glycolysisLength_local + 4; // Step 4 is at index glycolysisLength + 4
-    const pyruvateStep3Config = PATHWAY_CONFIG.specialReactions['rxn_pyruvate_3'];
-    const isPyruvateOxStep4 = pyruvateStep3Config && reaction.step === pyruvateStep3Config.step && this.reactions.indexOf(reaction) === pyruvateOxStep4Index;
+    // Check byreactant from reaction data - find nodes by molecule name
+    if (reaction.byreactant) {
+      const byreactantArray = Array.isArray(reaction.byreactant) ? reaction.byreactant : [reaction.byreactant];
+      byreactantArray.forEach(byreactant => {
+        if (typeof byreactant === 'string') {
+          // Search for node with matching name
+          for (const [nodeId, node] of this.nodeMap.entries()) {
+            if (node.name === byreactant) {
+              reactantNodeIds.add(nodeId);
+              break; // Found the node, no need to continue searching
+            }
+          }
+        }
+      });
+    }
     
-    if (isPyruvateOxStep4) {
-      // Ensure Step 4 node (displaying Dihydrolipoamide as substrate) is in reactant list
-      productNodeIds.delete(reaction.nodeId);
-      reactantNodeIds.add(reaction.nodeId);
+    // Check byproduct from reaction data - find nodes by molecule name
+    if (reaction.byproduct) {
+      const byproductArray = Array.isArray(reaction.byproduct) ? reaction.byproduct : [reaction.byproduct];
+      byproductArray.forEach(byproduct => {
+        if (typeof byproduct === 'string') {
+          // Search for node with matching name
+          for (const [nodeId, node] of this.nodeMap.entries()) {
+            if (node.name === byproduct) {
+              productNodeIds.add(nodeId);
+              break; // Found the node, no need to continue searching
+            }
+          }
+        }
+      });
+    }
+    
+    // Check displayByreactant from reaction data - find nodes by molecule name
+    if (reaction.displayByreactant) {
+      const displayByreactantArray = Array.isArray(reaction.displayByreactant) ? reaction.displayByreactant : [reaction.displayByreactant];
+      displayByreactantArray.forEach(displayByreactant => {
+        if (typeof displayByreactant === 'string') {
+          // Search for node with matching name
+          for (const [nodeId, node] of this.nodeMap.entries()) {
+            if (node.name === displayByreactant) {
+              reactantNodeIds.add(nodeId);
+              break; // Found the node, no need to continue searching
+            }
+          }
+        }
+      });
+    }
+    
+    // Check displayByproduct from reaction data - find nodes by molecule name
+    if (reaction.displayByproduct) {
+      const displayByproductArray = Array.isArray(reaction.displayByproduct) ? reaction.displayByproduct : [reaction.displayByproduct];
+      displayByproductArray.forEach(displayByproduct => {
+        if (typeof displayByproduct === 'string') {
+          // Search for node with matching name
+          for (const [nodeId, node] of this.nodeMap.entries()) {
+            if (node.name === displayByproduct) {
+              productNodeIds.add(nodeId);
+              break; // Found the node, no need to continue searching
+            }
+          }
+        }
+      });
     }
     
     // Highlight all reactant nodes in blue

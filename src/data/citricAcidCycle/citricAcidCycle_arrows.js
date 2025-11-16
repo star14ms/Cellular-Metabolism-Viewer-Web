@@ -11,7 +11,6 @@ export const citricAcidCycleArrows = [
     from_id: 'oxaloacetate',
     to_id: 'citrate',
     reaction_id: 'rxn_cac_1',
-    flipped: true
   },
   {
     id: 'arrow_cac_2',

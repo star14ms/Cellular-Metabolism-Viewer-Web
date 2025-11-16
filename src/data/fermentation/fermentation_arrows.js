@@ -32,6 +32,7 @@ export const fermentationArrows = [
     from_id: 'pyruvate',
     to_id: 'acetaldehyde',
     reaction_id: 'rxn_fermentation_2',
+    flipped: true,
   },
   {
     id: 'arrow_fermentation_3',
