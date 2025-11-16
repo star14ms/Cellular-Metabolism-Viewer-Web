@@ -631,17 +631,39 @@ export class MetabolismViewer {
     this.overlay = this.svg.append('g')
       .attr('class', 'fixed-overlay');
     
+    // Deduplicate reactions by position - only render ONE node per position
+    // Use the first reaction for each position (prefer reactions where node is a product)
+    const uniqueReactionsByPosition = new Map();
+    reactionsWithPositions.forEach(r => {
+      const posKey = `${r.position.x},${r.position.y}`;
+      if (!uniqueReactionsByPosition.has(posKey)) {
+        uniqueReactionsByPosition.set(posKey, r);
+      } else {
+        // If we already have a reaction at this position, prefer the one where node is a product
+        // (this is typically the "main" reaction for that node)
+        const existing = uniqueReactionsByPosition.get(posKey);
+        const currentIsProduct = r.product && r.product.id === r.nodeId;
+        const existingIsProduct = existing.product && existing.product.id === existing.nodeId;
+        
+        if (currentIsProduct && !existingIsProduct) {
+          uniqueReactionsByPosition.set(posKey, r);
+        }
+      }
+    });
+    
+    const uniqueReactionsForRendering = Array.from(uniqueReactionsByPosition.values());
+    
     // Create reaction groups
-    // Use the reactionsWithPositions we already filtered earlier
+    // Use deduplicated reactions to avoid rendering same node twice at same position
     this.reactionGroups = this.g.selectAll('.reaction-group')
-      .data(reactionsWithPositions)
+      .data(uniqueReactionsForRendering)
       .enter()
       .append('g')
       .attr('class', 'reaction-group')
       .attr('transform', d => `translate(${d.position.x}, ${d.position.y})`);
     
-    // Store filtered reactions for use in other methods
-    this.reactionsWithPositions = reactionsWithPositions;
+    // Store deduplicated reactions for use in other methods (matches what's actually rendered)
+    this.reactionsWithPositions = uniqueReactionsForRendering;
     
     // Draw connections between reactions
     this.drawConnections();
@@ -2556,17 +2578,14 @@ export class MetabolismViewer {
           // IMPORTANT: Use the same curved arrow that we used for arrow data above
           // Prefer the arrow that has byproduct/byreactant data, otherwise use the first one
           let foundCurvedArrowId = null;
-          console.log(`[DEBUG] Processing curved arrows for reaction ${reaction.id}, found ${curvedArrows.length} curved arrows`);
           for (const [arrowId, rawArrow] of this.arrowMap.entries()) {
             // Only process if arrow is curved AND its reaction_id matches the current reaction
             if (rawArrow && rawArrow.curved === true && rawArrow.reaction_id === reaction.id) {
-              console.log(`[DEBUG] Found curved arrow ${arrowId}: from_id=${rawArrow.from_id}, to_id=${rawArrow.to_id}, byproduct=${rawArrow.byproduct}, byreactant=${rawArrow.byreactant}`);
               // Prefer arrow with byproduct/byreactant data (same logic as above)
               if (rawArrow.byproduct || rawArrow.byreactant) {
                 foundCurvedArrowId = arrowId;
                 curvedRawArrow = rawArrow;
                 coordsArrowId = arrowId; // Track this arrow for midpoint calculation
-                console.log(`[DEBUG] Selected arrow ${arrowId} for coords (has byproduct/byreactant)`);
                 // Try to find it in arrowDataMap
                 const arrowReactionId = rawArrow.reaction_id;
                 for (const [key, arrowData] of this.arrowDataMap.entries()) {
@@ -2575,7 +2594,6 @@ export class MetabolismViewer {
                       arrowData.targetReaction && 
                       arrowData.targetReaction.id === reaction.id) {
                     curvedArrowData = arrowData;
-                    console.log(`[DEBUG] Found arrowData in arrowDataMap for ${arrowId}, coords:`, arrowData.coords);
                     break;
                   }
                 }
@@ -2585,7 +2603,6 @@ export class MetabolismViewer {
                 foundCurvedArrowId = arrowId;
                 curvedRawArrow = rawArrow;
                 coordsArrowId = arrowId; // Track this arrow for midpoint calculation
-                console.log(`[DEBUG] Selected arrow ${arrowId} as fallback (first found)`);
               }
             }
           }
@@ -2612,11 +2629,9 @@ export class MetabolismViewer {
           if (curvedArrowData && curvedArrowData.coords) {
             coords = curvedArrowData.coords;
             coordsArrowId = curvedArrowData.connectionId; // Track which arrow these coords belong to
-            console.log(`[DEBUG] Using coords from arrowDataMap for arrow ${coordsArrowId}:`, coords);
             attachmentPointX = null;
             attachmentPointY = null;
           } else if (curvedRawArrow) {
-            console.log(`[DEBUG] Calculating coords from raw arrow ${coordsArrowId}, from_id=${curvedRawArrow.from_id}, to_id=${curvedRawArrow.to_id}`);
             // If we have raw arrow but no arrowData, calculate coords from from_id or to_id
             // IMPORTANT: We already verified that curvedRawArrow.reaction_id === reaction.id above
             // So we can safely use the current reaction
@@ -2650,7 +2665,6 @@ export class MetabolismViewer {
                   x2: startX + arrowLength,
                   y2: startY
                 };
-                console.log(`[DEBUG] Calculated coords from from_id (${fromNodeId}):`, coords, `arrowLength=${arrowLength}, nodeRadius=${nodeRadius}`);
                 attachmentPointX = null;
                 attachmentPointY = null;
               } else {
@@ -2686,7 +2700,6 @@ export class MetabolismViewer {
                   x2: endX,
                   y2: endY
                 };
-                console.log(`[DEBUG] Calculated coords from to_id (${toNodeId}):`, coords, `arrowLength=${arrowLength}, nodeRadius=${nodeRadius}`);
                 attachmentPointX = null;
                 attachmentPointY = null;
               } else {
@@ -2903,11 +2916,9 @@ export class MetabolismViewer {
         let targetArrowId = null;
         if (typeof coordsArrowId !== 'undefined' && coordsArrowId !== null) {
           targetArrowId = coordsArrowId;
-          console.log(`[DEBUG] Using coordsArrowId (${coordsArrowId}) for midpoint calculation`);
         } else {
           // Fallback to selectedCurvedArrowId or mainArrowId
           targetArrowId = selectedCurvedArrowId || mainArrowId;
-          console.log(`[DEBUG] Using fallback targetArrowId (${targetArrowId}) for midpoint calculation, selectedCurvedArrowId=${selectedCurvedArrowId}, mainArrowId=${mainArrowId}`);
         }
         
         let fromNode = null;
@@ -2917,14 +2928,11 @@ export class MetabolismViewer {
         if (targetArrowId) {
           targetRawArrow = this.arrowMap.get(targetArrowId);
           if (targetRawArrow) {
-            console.log(`[DEBUG] Target arrow ${targetArrowId}: from_id=${targetRawArrow.from_id}, to_id=${targetRawArrow.to_id}`);
             if (targetRawArrow.from_id) {
               fromNode = this.nodeMap.get(targetRawArrow.from_id);
-              console.log(`[DEBUG] Found fromNode for ${targetRawArrow.from_id}:`, fromNode ? {x: fromNode.position.x, y: fromNode.position.y} : 'null');
             }
             if (targetRawArrow.to_id) {
               toNode = this.nodeMap.get(targetRawArrow.to_id);
-              console.log(`[DEBUG] Found toNode for ${targetRawArrow.to_id}:`, toNode ? {x: toNode.position.x, y: toNode.position.y} : 'null');
             }
             startingPointArrowId = targetArrowId;
           }
@@ -2967,7 +2975,6 @@ export class MetabolismViewer {
           const fromRadius = getNodeRadius(fromNode);
           midX = fromNode.position.x + fromRadius;
           midY = fromNode.position.y;
-          console.log(`[DEBUG] Midpoint from fromNode (${targetRawArrow ? targetRawArrow.from_id : 'unknown'}): midX=${midX}, midY=${midY}, fromRadius=${fromRadius}, nodePos=(${fromNode.position.x}, ${fromNode.position.y})`);
         } else if (toNode) {
           // to_id exists (and no from_id) - use to_id edge position (coming from left)
           // This is a to_id case - concavity should be flipped by default
@@ -2975,12 +2982,10 @@ export class MetabolismViewer {
           const toRadius = getNodeRadius(toNode);
           midX = toNode.position.x - toRadius;
           midY = toNode.position.y;
-          console.log(`[DEBUG] Midpoint from toNode (${targetRawArrow ? targetRawArrow.to_id : 'unknown'}): midX=${midX}, midY=${midY}, toRadius=${toRadius}, nodePos=(${toNode.position.x}, ${toNode.position.y})`);
         } else {
           // Fallback: use calculated coords midpoint
           midX = (coords.x1 + coords.x2) / 2;
           midY = (coords.y1 + coords.y2) / 2;
-          console.log(`[DEBUG] Midpoint from coords midpoint: midX=${midX}, midY=${midY}, coords=`, coords);
         }
       } else {
         // Regular reaction: use arrow midpoint
