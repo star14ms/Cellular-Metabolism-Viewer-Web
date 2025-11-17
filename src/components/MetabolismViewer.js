@@ -15,6 +15,7 @@ import { ethanolFermentationNodes, ethanolFermentationReactions, ethanolFermenta
 import { nucleosideSalvageNodes, nucleosideSalvageReactions, nucleosideSalvageArrows, nucleosideSalvageData } from '../data/nucleosideSalvage/nucleosideSalvage_index.js';
 import { pyrimidineSynthesisNodes, pyrimidineSynthesisReactions, pyrimidineSynthesisArrows, pyrimidineSynthesisData } from '../data/pyrimidineSynthesis/pyrimidineSynthesis_index.js';
 import { purineSynthesisNodes, purineSynthesisReactions, purineSynthesisArrows, purineSynthesisData } from '../data/purineSynthesis/purineSynthesis_index.js';
+import { deoxyribonucleotidesNodes, deoxyribonucleotidesReactions, deoxyribonucleotidesArrows, deoxyribonucleotidesData } from '../data/deoxyribonucleotides/deoxyribonucleotides_index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
@@ -51,7 +52,8 @@ const PATHWAY_CONFIG = {
     'ethanol-fermentation': 'Ethanol Fermentation',
     'nucleoside-salvage': 'Nucleoside Salvage',
     'pyrimidine-synthesis': 'Pyrimidine Synthesis',
-    'purine-synthesis': 'Purine Synthesis'
+    'purine-synthesis': 'Purine Synthesis',
+    'deoxyribonucleotides': 'Deoxyribonucleotides Synthesis'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -98,6 +100,11 @@ const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'purine-synthesis': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'deoxyribonucleotides': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -191,7 +198,8 @@ export class MetabolismViewer {
       ...ethanolFermentationNodes,
       ...nucleosideSalvageNodes,
       ...pyrimidineSynthesisNodes,
-      ...purineSynthesisNodes
+      ...purineSynthesisNodes,
+      ...deoxyribonucleotidesNodes
     ];
     
     // Filter out hidden nodes for drawing (but keep all in nodeMap for arrow lookups)
@@ -207,7 +215,8 @@ export class MetabolismViewer {
       ...ethanolFermentationReactions,
       ...nucleosideSalvageReactions,
       ...pyrimidineSynthesisReactions,
-      ...purineSynthesisReactions
+      ...purineSynthesisReactions,
+      ...deoxyribonucleotidesReactions
     ];
     
     // Combine all arrows
@@ -220,7 +229,8 @@ export class MetabolismViewer {
       ...ethanolFermentationArrows,
       ...nucleosideSalvageArrows,
       ...pyrimidineSynthesisArrows,
-      ...purineSynthesisArrows
+      ...purineSynthesisArrows,
+      ...deoxyribonucleotidesArrows
     ];
     
     // Create node ID to node mapping for quick lookup
@@ -430,6 +440,7 @@ export class MetabolismViewer {
     const nucleosideSalvageReactionCount = nucleosideSalvageReactions.length;
     const pyrimidineSynthesisReactionCount = pyrimidineSynthesisReactions.length;
     const purineSynthesisReactionCount = purineSynthesisReactions.length;
+    const deoxyribonucleotidesReactionCount = deoxyribonucleotidesReactions.length;
     
     this.pathways = [
       {
@@ -512,6 +523,15 @@ export class MetabolismViewer {
         summary: purineSynthesisData.summary,
         startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount,
         endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount
+      },
+      {
+        id: 'deoxyribonucleotides',
+        name: 'Deoxyribonucleotides Synthesis',
+        reactions: deoxyribonucleotidesReactions,
+        nodes: deoxyribonucleotidesNodes,
+        summary: deoxyribonucleotidesData.summary,
+        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount,
+        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount
       }
     ];
     
@@ -1485,7 +1505,8 @@ export class MetabolismViewer {
       ...ethanolFermentationArrows,
       ...nucleosideSalvageArrows,
       ...pyrimidineSynthesisArrows,
-      ...purineSynthesisArrows
+      ...purineSynthesisArrows,
+      ...deoxyribonucleotidesArrows
     ];
     
     // Define pathway lengths for legacy code compatibility (if needed)
@@ -1697,6 +1718,7 @@ export class MetabolismViewer {
         coords: coords,
         connectionId: connectionId
       };
+      
       this.arrowDataMap.set(moleculeKey, arrowData);
       
       // Add connection ID to target reaction's arrowIds array

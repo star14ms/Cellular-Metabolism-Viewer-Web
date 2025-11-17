@@ -58,19 +58,12 @@ export const pyrimidineSynthesisArrows = [
     to_id: 'ctp',
     reaction_id: 'rxn_pyrimidine_synthesis_9'
   },
-  // Alternative pathway arrow (spontaneous reaction)
-  {
-    id: 'arrow_pyrimidine_synthesis_10',
-    from_id: 'utp',
-    to_id: 'ctp',
-    reaction_id: 'rxn_pyrimidine_synthesis_10'
-  },
   // Reverse reaction: CTP to UTP (deamination)
   {
-    id: 'arrow_pyrimidine_synthesis_11',
+    id: 'arrow_pyrimidine_synthesis_10',
     from_id: 'ctp',
     to_id: 'utp',
-    reaction_id: 'rxn_pyrimidine_synthesis_11'
+    reaction_id: 'rxn_pyrimidine_synthesis_10'
   }
 ];
 

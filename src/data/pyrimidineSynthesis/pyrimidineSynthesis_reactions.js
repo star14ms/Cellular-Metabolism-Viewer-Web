@@ -176,25 +176,6 @@ export const pyrimidineSynthesisReactions = [
   },
   {
     id: 'rxn_pyrimidine_synthesis_10',
-    name: 'CTP Synthesis (Alternative)',
-    byreactant: ['ATP', 'Glutamine'],
-    byproduct: ['ADP', 'Pi', 'Glutamate'],
-    enzyme: {
-      name: 'Spontaneous reaction',
-      ecNumber: 'N/A',
-      cofactors: ['None'],
-      description: 'Alternative pathway: UTP can spontaneously convert to CTP by reacting with ammonium ion (NH₄⁺)'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Spontaneous reaction, not enzymatically catalyzed',
-      isReversible: true
-    }
-  },
-  {
-    id: 'rxn_pyrimidine_synthesis_11',
     name: 'CTP Deamination',
     byproduct: ['NH₄⁺'],
     enzyme: {

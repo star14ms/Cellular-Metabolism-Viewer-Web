@@ -59,6 +59,14 @@ export function getAlternativeNames(moleculeName) {
     'Deoxythymidine-5\'-monophosphate': ['dTMP', '2\'-deoxythymidine 5\'-monophosphate', 'Deoxythymidine monophosphate', 'Thymidine monophosphate'],
     'Deoxyuridine-5\'-monophosphate (dUMP)': ['dUMP', '2\'-deoxyuridine 5\'-monophosphate', 'Deoxyuridine monophosphate'],
     'Deoxyuridine-5\'-monophosphate': ['dUMP', '2\'-deoxyuridine 5\'-monophosphate', 'Deoxyuridine monophosphate'],
+    // Deoxyribonucleotides pathway compounds
+    'Deoxythymidine diphosphate (dTDP)': ['dTDP', 'Thymidine diphosphate', '2\'-deoxythymidine 5\'-diphosphate', 'Thymidine 5\'-diphosphate'],
+    'Deoxythymidine triphosphate (dTTP)': ['dTTP', 'Thymidine triphosphate', '2\'-deoxythymidine 5\'-triphosphate', 'Thymidine 5\'-triphosphate'],
+    'Deoxycytidine monophosphate (dCMP)': ['dCMP', '2\'-deoxycytidine 5\'-monophosphate', 'Deoxycytidine monophosphate'],
+    'Deoxyuridine monophosphate (dUMP)': ['dUMP', '2\'-deoxyuridine 5\'-monophosphate', 'Deoxyuridine monophosphate'],
+    'Deoxythymidine monophosphate (dTMP)': ['dTMP', 'Thymidine monophosphate', '2\'-deoxythymidine 5\'-monophosphate', 'Deoxythymidine monophosphate'],
+    // Folate cycle compounds
+    'N⁵,N¹⁰-methylene-THF': ['5,10-Methylenetetrahydrofolate', '5,10-Methylene tetrahydrofolate', '5,10-Methylene-THF', 'N5,N10-Methylenetetrahydrofolate', '5,10-CH2-THF', '5,10-Methylenetetrahydrofolic acid'],
     // Pyrimidine synthesis compounds
     'N-carbamoyl aspartate': ['N-carbamoylaspartate', 'Ureidosuccinic acid', 'Carbamoylaspartic acid', 'N-carbamoyl-L-aspartate'],
     // Purine synthesis intermediates
