@@ -5,19 +5,14 @@
  */
 
 import * as d3 from 'd3';
-// New data format: separate nodes, reactions, and arrows
-import { glycolysisNodes, glycolysisReactions, glycolysisArrows, glycolysisData } from '../data/glycolysis/glycolysis_index.js';
-import { pyruvateOxidationNodes, pyruvateOxidationReactions, pyruvateOxidationArrows, pyruvateOxidationData } from '../data/pyruvateOxidation/pyruvateOxidation_index.js';
-import { citricAcidCycleNodes, citricAcidCycleReactions, citricAcidCycleArrows, citricAcidCycleData } from '../data/citricAcidCycle/citricAcidCycle_index.js';
-import { electronTransportChainNodes, electronTransportChainReactions, electronTransportChainArrows, electronTransportChainData } from '../data/electronTransportChain/electronTransportChain_index.js';
-import { lactateFermentationNodes, lactateFermentationReactions, lactateFermentationArrows, lactateFermentationData } from '../data/lactateFermentation/lactateFermentation_index.js';
-import { ethanolFermentationNodes, ethanolFermentationReactions, ethanolFermentationArrows, ethanolFermentationData } from '../data/ethanolFermentation/ethanolFermentation_index.js';
-import { nucleosideSalvageNodes, nucleosideSalvageReactions, nucleosideSalvageArrows, nucleosideSalvageData } from '../data/nucleosideSalvage/nucleosideSalvage_index.js';
-import { pyrimidineSynthesisNodes, pyrimidineSynthesisReactions, pyrimidineSynthesisArrows, pyrimidineSynthesisData } from '../data/pyrimidineSynthesis/pyrimidineSynthesis_index.js';
-import { purineSynthesisNodes, purineSynthesisReactions, purineSynthesisArrows, purineSynthesisData } from '../data/purineSynthesis/purineSynthesis_index.js';
-import { deoxyribonucleotidesNodes, deoxyribonucleotidesReactions, deoxyribonucleotidesArrows, deoxyribonucleotidesData } from '../data/deoxyribonucleotides/deoxyribonucleotides_index.js';
-import { nucleotideBreakdownNodes, nucleotideBreakdownReactions, nucleotideBreakdownArrows, nucleotideBreakdownData } from '../data/nucleotideBreakdown/nucleotideBreakdown_index.js';
-import { aromaticAminoAcidMetabolismNodes, aromaticAminoAcidMetabolismReactions, aromaticAminoAcidMetabolismArrows, aromaticAminoAcidMetabolismData } from '../data/aromaticAminoAcidMetabolism/aromaticAminoAcidMetabolism_index.js';
+// Centralized pathway data import
+import { 
+  allNodes, 
+  allReactions, 
+  allArrows, 
+  PATHWAY_CONFIG, 
+  generatePathwaysArray 
+} from '../data/index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
@@ -42,89 +37,10 @@ function removeCoefficients(moleculeName) {
   return moleculeName.replace(/^(\d+\/\d+|\d+)\s+/, '').trim();
 }
 
-// Configuration object for pathway-specific and general settings
-const PATHWAY_CONFIG = {
-  // Pathway ID to display name mapping
-  pathwayNames: {
-    'glycolysis': 'Glycolysis',
-    'pyruvate-oxidation': 'Pyruvate Oxidation',
-    'citric-acid-cycle': 'Citric Acid Cycle (Krebs Cycle)',
-    'electron-transport-chain': 'Electron Transport Chain',
-    'lactate-fermentation': 'Lactate Fermentation',
-    'ethanol-fermentation': 'Ethanol Fermentation',
-    'nucleoside-salvage': 'Nucleoside Salvage',
-    'pyrimidine-synthesis': 'Pyrimidine Synthesis',
-    'purine-synthesis': 'Purine Synthesis',
-    'deoxyribonucleotides': 'Deoxyribonucleotides Synthesis',
-    'nucleotide-breakdown': 'Nucleotide Breakdown',
-    'aromatic-amino-acid-metabolism': 'Aromatic Amino Acid Metabolism'
-  },
-  
-  // Pathway-specific behavior for by-molecule arrows
-  pathwayBehavior: {
-    'glycolysis': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (negative)
-      useStandardShape: true
-    },
-    'pyruvate-oxidation': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: 1, // Below (after 180 flip)
-      useStandardShape: false
-    },
-    'citric-acid-cycle': {
-      rotationAngle: 0, // No base rotation (handled dynamically)
-      offsetDirection: 1, // Below/outward (after 180 flip)
-      useStandardShape: false,
-      calculateOutwardDirection: true // Special handling for cycle
-    },
-    'electron-transport-chain': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
-    'lactate-fermentation': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
-    'ethanol-fermentation': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
-    'nucleoside-salvage': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
-    'pyrimidine-synthesis': {
-      rotationAngle: Math.PI * 2, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
-    'purine-synthesis': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
-    'deoxyribonucleotides': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
-    'nucleotide-breakdown': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
-    'aromatic-amino-acid-metabolism': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    }
-  },
-  
+// Configuration object for general settings (pathway-specific config moved to data/index.js)
+// PATHWAY_CONFIG is imported from data/index.js
+// Extend it here with non-pathway-specific settings
+const VIEWER_CONFIG = {
   // Common by-molecules that don't have dedicated nodes
   commonByMolecules: ['ATP', 'ADP', 'AMP', 'NAD⁺', 'NADH', 'NADP⁺', 'NADPH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'PPi', 'H₂O', 'H₂O₂', 'H2O2', 'GDP', 'GTP', 'NH₄⁺', 'NH4+', 'PRPP', 'Glutamine', 'Glutamate', 'Glycine', 'Aspartate', 'Fumarate', 'N¹⁰-formyl-THF', 'THF', '(deoxy) ribose-1-P', 'deoxyribose-1-P', 'Uracil', 'Serine', 'Formate'],
   
@@ -192,6 +108,12 @@ const PATHWAY_CONFIG = {
   }
 };
 
+// Merge PATHWAY_CONFIG with VIEWER_CONFIG for backward compatibility
+// PATHWAY_CONFIG contains pathwayNames and pathwayBehavior (from data/index.js)
+// VIEWER_CONFIG contains all other settings (colors, sizes, etc.)
+// Merge VIEWER_CONFIG properties into PATHWAY_CONFIG object
+Object.assign(PATHWAY_CONFIG, VIEWER_CONFIG);
+
 export class MetabolismViewer {
   constructor(container, options = {}) {
     this.container = container;
@@ -201,63 +123,21 @@ export class MetabolismViewer {
       ...options
     };
     
-    // Load nodes, reactions, and arrows from new data format
-    // Combine all nodes (filter out hidden nodes for drawing, but keep all for nodeMap)
-    const allNodesRaw = [
-      ...glycolysisNodes,
-      ...pyruvateOxidationNodes,
-      ...citricAcidCycleNodes,
-      ...electronTransportChainNodes,
-      ...lactateFermentationNodes,
-      ...ethanolFermentationNodes,
-      ...nucleosideSalvageNodes,
-      ...pyrimidineSynthesisNodes,
-      ...purineSynthesisNodes,
-      ...deoxyribonucleotidesNodes,
-      ...nucleotideBreakdownNodes,
-      ...aromaticAminoAcidMetabolismNodes
-    ];
-    
+    // Load nodes, reactions, and arrows from centralized data
     // Filter out hidden nodes for drawing (but keep all in nodeMap for arrow lookups)
-    this.nodes = allNodesRaw.filter(n => !n.hidden);
+    this.nodes = allNodes.filter(n => !n.hidden);
     
-    // Combine all raw reactions (before processing)
-    const rawReactions = [
-      ...glycolysisReactions,
-      ...pyruvateOxidationReactions,
-      ...citricAcidCycleReactions,
-      ...electronTransportChainReactions,
-      ...lactateFermentationReactions,
-      ...ethanolFermentationReactions,
-      ...nucleosideSalvageReactions,
-      ...pyrimidineSynthesisReactions,
-      ...purineSynthesisReactions,
-      ...deoxyribonucleotidesReactions,
-      ...nucleotideBreakdownReactions,
-      ...aromaticAminoAcidMetabolismReactions
-    ];
+    // Use all reactions from centralized data (before processing)
+    const rawReactions = allReactions;
     
-    // Combine all arrows
-    this.allArrows = [
-      ...glycolysisArrows,
-      ...pyruvateOxidationArrows,
-      ...citricAcidCycleArrows,
-      ...electronTransportChainArrows,
-      ...lactateFermentationArrows,
-      ...ethanolFermentationArrows,
-      ...nucleosideSalvageArrows,
-      ...pyrimidineSynthesisArrows,
-      ...purineSynthesisArrows,
-      ...deoxyribonucleotidesArrows,
-      ...nucleotideBreakdownArrows,
-      ...aromaticAminoAcidMetabolismArrows
-    ];
+    // Use all arrows from centralized data
+    this.allArrows = allArrows;
     
     // Create node ID to node mapping for quick lookup
     // Include ALL nodes (even hidden ones) for arrow lookups
     // This ensures arrows can find their source/target nodes even if they're hidden
     this.nodeMap = new Map();
-    allNodesRaw.forEach(node => {
+    allNodes.forEach(node => {
       this.nodeMap.set(node.id, node);
     });
     
@@ -450,130 +330,9 @@ export class MetabolismViewer {
     // Create arrow data dictionary: key = "fromNodeId-toNodeId", value = arrow data
     this.arrowDataMap = new Map();
     
-    // Define pathway groups using new data format
-    const glycolysisReactionCount = glycolysisReactions.length;
-    const pyruvateOxidationReactionCount = pyruvateOxidationReactions.length;
-    const citricAcidCycleReactionCount = citricAcidCycleReactions.length;
-    const electronTransportChainReactionCount = electronTransportChainReactions.length;
-    const lactateFermentationReactionCount = lactateFermentationReactions.length;
-    const ethanolFermentationReactionCount = ethanolFermentationReactions.length;
-    const nucleosideSalvageReactionCount = nucleosideSalvageReactions.length;
-    const pyrimidineSynthesisReactionCount = pyrimidineSynthesisReactions.length;
-    const purineSynthesisReactionCount = purineSynthesisReactions.length;
-    const deoxyribonucleotidesReactionCount = deoxyribonucleotidesReactions.length;
-    const nucleotideBreakdownReactionCount = nucleotideBreakdownReactions.length;
-    const aromaticAminoAcidMetabolismReactionCount = aromaticAminoAcidMetabolismReactions.length;
-    
-    this.pathways = [
-      {
-        id: 'glycolysis',
-        name: 'Glycolysis',
-        reactions: glycolysisReactions,
-        nodes: glycolysisNodes,
-        summary: glycolysisData.summary,
-        startIndex: 0,
-        endIndex: glycolysisReactionCount
-      },
-      {
-        id: 'pyruvate-oxidation',
-        name: 'Pyruvate Oxidation',
-        reactions: pyruvateOxidationReactions,
-        nodes: pyruvateOxidationNodes,
-        summary: pyruvateOxidationData.summary,
-        startIndex: glycolysisReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount
-      },
-      {
-        id: 'citric-acid-cycle',
-        name: 'Citric Acid Cycle',
-        reactions: citricAcidCycleReactions,
-        nodes: citricAcidCycleNodes,
-        summary: citricAcidCycleData.summary,
-        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount
-      },
-      {
-        id: 'electron-transport-chain',
-        name: 'Electron Transport Chain',
-        reactions: electronTransportChainReactions,
-        nodes: electronTransportChainNodes,
-        summary: electronTransportChainData.summary,
-        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount
-      },
-      {
-        id: 'lactate-fermentation',
-        name: 'Lactate Fermentation',
-        reactions: lactateFermentationReactions,
-        nodes: lactateFermentationNodes,
-        summary: lactateFermentationData.summary,
-        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount
-      },
-      {
-        id: 'ethanol-fermentation',
-        name: 'Ethanol Fermentation',
-        reactions: ethanolFermentationReactions,
-        nodes: ethanolFermentationNodes,
-        summary: ethanolFermentationData.summary,
-        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount
-      },
-      {
-        id: 'purine-synthesis',
-        name: 'Purine Synthesis',
-        reactions: purineSynthesisReactions,
-        nodes: purineSynthesisNodes,
-        summary: purineSynthesisData.summary,
-        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount
-      },
-      {
-        id: 'pyrimidine-synthesis',
-        name: 'Pyrimidine Synthesis',
-        reactions: pyrimidineSynthesisReactions,
-        nodes: pyrimidineSynthesisNodes,
-        summary: pyrimidineSynthesisData.summary,
-        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount
-      },
-      {
-        id: 'nucleotide-breakdown',
-        name: 'Nucleotide Breakdown',
-        reactions: nucleotideBreakdownReactions,
-        nodes: nucleotideBreakdownNodes,
-        summary: nucleotideBreakdownData.summary,
-        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount + nucleotideBreakdownReactionCount
-      },
-      {
-        id: 'deoxyribonucleotides',
-        name: 'Deoxyribonucleotides Synthesis',
-        reactions: deoxyribonucleotidesReactions,
-        nodes: deoxyribonucleotidesNodes,
-        summary: deoxyribonucleotidesData.summary,
-        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount
-      },
-      {
-        id: 'nucleoside-salvage',
-        name: 'Nucleoside Salvage',
-        reactions: nucleosideSalvageReactions,
-        nodes: nucleosideSalvageNodes,
-        summary: nucleosideSalvageData.summary,
-        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount
-      },
-      {
-        id: 'aromatic-amino-acid-metabolism',
-        name: 'Aromatic Amino Acid Metabolism',
-        reactions: aromaticAminoAcidMetabolismReactions,
-        nodes: aromaticAminoAcidMetabolismNodes,
-        summary: aromaticAminoAcidMetabolismData.summary,
-        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount + nucleotideBreakdownReactionCount,
-        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount + nucleotideBreakdownReactionCount + aromaticAminoAcidMetabolismReactionCount
-      },
-    ];
+    // Generate pathways array from centralized data
+    // This automatically calculates startIndex and endIndex for each pathway
+    this.pathways = generatePathwaysArray();
     
     this.selectedNode = null;
     this.selectedMolecule = null;
@@ -1630,10 +1389,13 @@ export class MetabolismViewer {
     // Use the allArrows variable saved in constructor
     const allArrows = this.allArrows;
     
-    // Define pathway lengths for legacy code compatibility (if needed)
-    const glycolysisLength = glycolysisReactions.length;
-    const pyruvateOxidationLength = pyruvateOxidationReactions.length;
-    const citricAcidCycleLength = citricAcidCycleReactions.length;
+    // Define pathway lengths using pathways array
+    const glycolysisPathway = this.pathways.find(p => p.id === 'glycolysis');
+    const pyruvateOxidationPathway = this.pathways.find(p => p.id === 'pyruvate-oxidation');
+    const citricAcidCyclePathway = this.pathways.find(p => p.id === 'citric-acid-cycle');
+    const glycolysisLength = glycolysisPathway ? glycolysisPathway.reactions.length : 0;
+    const pyruvateOxidationLength = pyruvateOxidationPathway ? pyruvateOxidationPathway.reactions.length : 0;
+    const citricAcidCycleLength = citricAcidCyclePathway ? citricAcidCyclePathway.reactions.length : 0;
     const cacStartIndex = glycolysisLength + pyruvateOxidationLength;
     const etcStartIndex = glycolysisLength + pyruvateOxidationLength + citricAcidCycleLength;
     
@@ -1667,14 +1429,16 @@ export class MetabolismViewer {
       if (!node) return 30;
       if (node.isProteinComplex) {
         // Check if it's ETC
-        const etcNodes = electronTransportChainNodes.filter(n => !n.hidden);
+        const electronTransportChainPathway = this.pathways.find(p => p.id === 'electron-transport-chain');
+        const etcNodes = electronTransportChainPathway ? electronTransportChainPathway.nodes.filter(n => !n.hidden) : [];
         if (etcNodes.some(n => n.id === nodeId)) {
           return 40; // Right/left edge of complex
         }
         return 40;
       }
       if (node.isMobileCarrier) {
-        const etcNodes = electronTransportChainNodes.filter(n => !n.hidden);
+        const electronTransportChainPathway = this.pathways.find(p => p.id === 'electron-transport-chain');
+        const etcNodes = electronTransportChainPathway ? electronTransportChainPathway.nodes.filter(n => !n.hidden) : [];
         if (etcNodes.some(n => n.id === nodeId)) {
           return 20; // Mobile carrier radius
         }
@@ -5541,7 +5305,11 @@ export class MetabolismViewer {
     }
     
     // If not found in product nodes, find where the molecule is visually displayed
-    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
+    const glycolysisPathway = this.pathways.find(p => p.id === 'glycolysis');
+    const pyruvateOxidationPathway = this.pathways.find(p => p.id === 'pyruvate-oxidation');
+    const glycolysisLength = glycolysisPathway ? glycolysisPathway.reactions.length : 0;
+    const pyruvateOxidationLength = pyruvateOxidationPathway ? pyruvateOxidationPathway.reactions.length : 0;
+    const cacStartIndex = glycolysisLength + pyruvateOxidationLength + this.productNodeOffset;
     
     for (let i = 0; i < this.reactions.length; i++) {
       const reaction = this.reactions[i];
@@ -6028,9 +5796,17 @@ export class MetabolismViewer {
     // If not found in product nodes, find where the molecule is visually displayed
     if (!targetReaction) {
       // Calculate CAC start index and ETC start index
-      const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
-      const etcStartIndex = cacStartIndex + citricAcidCycleReactions.length;
-      const etcEndIndex = etcStartIndex + electronTransportChainReactions.length;
+      const glycolysisPathway = this.pathways.find(p => p.id === 'glycolysis');
+      const pyruvateOxidationPathway = this.pathways.find(p => p.id === 'pyruvate-oxidation');
+      const citricAcidCyclePathway = this.pathways.find(p => p.id === 'citric-acid-cycle');
+      const electronTransportChainPathway = this.pathways.find(p => p.id === 'electron-transport-chain');
+      const glycolysisLength = glycolysisPathway ? glycolysisPathway.reactions.length : 0;
+      const pyruvateOxidationLength = pyruvateOxidationPathway ? pyruvateOxidationPathway.reactions.length : 0;
+      const citricAcidCycleLength = citricAcidCyclePathway ? citricAcidCyclePathway.reactions.length : 0;
+      const electronTransportChainLength = electronTransportChainPathway ? electronTransportChainPathway.reactions.length : 0;
+      const cacStartIndex = glycolysisLength + pyruvateOxidationLength + this.productNodeOffset;
+      const etcStartIndex = cacStartIndex + citricAcidCycleLength;
+      const etcEndIndex = etcStartIndex + electronTransportChainLength;
       
       for (let i = 0; i < this.reactions.length; i++) {
         const reaction = this.reactions[i];
@@ -6957,8 +6733,13 @@ export class MetabolismViewer {
   async fetchMoleculeImages() {
     // Fetch PubChem data for all molecules to get image URLs
     const uniqueMolecules = new Map();
-    const cacStartIndex = glycolysisReactions.length + pyruvateOxidationReactions.length + this.productNodeOffset;
-    const cacLength = citricAcidCycleReactions.length;
+    const glycolysisPathway = this.pathways.find(p => p.id === 'glycolysis');
+    const pyruvateOxidationPathway = this.pathways.find(p => p.id === 'pyruvate-oxidation');
+    const citricAcidCyclePathway = this.pathways.find(p => p.id === 'citric-acid-cycle');
+    const glycolysisLength = glycolysisPathway ? glycolysisPathway.reactions.length : 0;
+    const pyruvateOxidationLength = pyruvateOxidationPathway ? pyruvateOxidationPathway.reactions.length : 0;
+    const cacLength = citricAcidCyclePathway ? citricAcidCyclePathway.reactions.length : 0;
+    const cacStartIndex = glycolysisLength + pyruvateOxidationLength + this.productNodeOffset;
     
     this.reactions.forEach((reaction, index) => {
       let molecule;
