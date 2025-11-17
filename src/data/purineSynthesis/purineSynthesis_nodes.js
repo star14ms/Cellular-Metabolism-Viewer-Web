@@ -15,7 +15,7 @@ export const purineSynthesisNodes = [
   {
     id: 'prpp_purine',
     type: 'molecule',
-    name: '5-Phosphoribosyl pyrophosphate (PRPP)',
+    name: '5-Phosphoribosyl-1-pyrophosphate (PRPP)',
     formula: 'C₅H₁₃O₁₄P₃',
     smiles: 'C1C(C(C(O1)COP(=O)(O)OP(=O)(O)O)O)O',
     description: '5-Phosphoribosyl pyrophosphate, the starting substrate for purine synthesis',

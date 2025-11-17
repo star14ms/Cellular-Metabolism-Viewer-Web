@@ -6500,18 +6500,55 @@ export class MetabolismViewer {
   }
   
   /**
-   * Apply molecule highlight - highlights only the selected node
+   * Apply molecule highlight - highlights all nodes with the same molecule name
    * Works for all pathways (ETC and others) and all node types
-   * @param {Object} molecule - The molecule object (not used for highlighting, but kept for API consistency)
-   * @param {Object} reactionNode - The reaction node to highlight
+   * @param {Object} molecule - The molecule object with name to match
+   * @param {Object} reactionNode - The reaction node that was clicked
    */
   applyMoleculeHighlight(molecule, reactionNode) {
     // Reset all nodes to default state (clears any previous product/reactant highlights)
     this.resetAllNodeHighlights();
     
-    // Highlight only the selected node using unified function
-    const selectedGroup = this.reactionGroups.filter(d => d === reactionNode);
-    this.applyNodeHighlightStyle(selectedGroup, 'default');
+    if (!molecule || !molecule.name) {
+      // Fallback: highlight only the selected node if molecule name is not available
+      const selectedGroup = this.reactionGroups.filter(d => d === reactionNode);
+      this.applyNodeHighlightStyle(selectedGroup, 'default');
+      return;
+    }
+    
+    // Get the molecule name to match (exact match required)
+    const moleculeName = molecule.name;
+    
+    // Find all nodes with the exact same molecule name
+    // Check both substrate and product names to catch all instances
+    const matchingNodes = this.reactionGroups.filter(d => {
+      if (!d) return false;
+      
+      // Get the molecule name from the node
+      let nodeMoleculeName = null;
+      if (d.node && d.node.name) {
+        // Use node data directly (most reliable - comes from data files)
+        nodeMoleculeName = d.node.name;
+      } else if (d.product && d.product.name) {
+        // Fallback to product name
+        nodeMoleculeName = d.product.name;
+      } else if (d.substrate && d.substrate.name) {
+        // Fallback to substrate name
+        nodeMoleculeName = d.substrate.name;
+      }
+      
+      // Exact name match
+      return nodeMoleculeName === moleculeName;
+    });
+    
+    // Highlight all matching nodes
+    if (!matchingNodes.empty()) {
+      this.applyNodeHighlightStyle(matchingNodes, 'default');
+    } else {
+      // Fallback: if no matches found, highlight only the selected node
+      const selectedGroup = this.reactionGroups.filter(d => d === reactionNode);
+      this.applyNodeHighlightStyle(selectedGroup, 'default');
+    }
   }
   
   zoomToReaction(reaction) {

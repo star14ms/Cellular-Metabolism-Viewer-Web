@@ -74,7 +74,7 @@ export const nucleosideSalvageNodes = [
   {
     id: 'amp',
     type: 'molecule',
-    name: 'Adenosine-5\'-monophosphate (AMP)',
+    name: 'Adenosine monophosphate (AMP)',
     formula: 'C₁₀H₁₄N₅O₇P',
     smiles: 'C1=NC2=C(C(=N1)N)N=CN2C3C(C(C(O3)COP(=O)(O)O)O)O',
     description: 'Adenosine monophosphate, a nucleotide',
@@ -83,7 +83,7 @@ export const nucleosideSalvageNodes = [
   {
     id: 'cmp',
     type: 'molecule',
-    name: 'Cytidine-5\'-monophosphate (CMP)',
+    name: 'Cytidine monophosphate (CMP)',
     formula: 'C₉H₁₄N₃O₈P',
     smiles: 'C1=NC(=O)N(=C1)C2C(C(C(O2)COP(=O)(O)O)O)O',
     description: 'Cytidine monophosphate, a nucleotide',
@@ -92,7 +92,7 @@ export const nucleosideSalvageNodes = [
   {
     id: 'ump',
     type: 'molecule',
-    name: 'Uridine-5\'-monophosphate (UMP)',
+    name: 'Uridine monophosphate (UMP)',
     formula: 'C₉H₁₃N₂O₉P',
     smiles: 'C1=NC(=O)NC(=C1)C2C(C(C(O2)COP(=O)(O)O)O)O',
     description: 'Uridine monophosphate, a nucleotide',
@@ -101,7 +101,7 @@ export const nucleosideSalvageNodes = [
   {
     id: 'dcmp',
     type: 'molecule',
-    name: 'Deoxycytidine-5\'-monophosphate (dCMP)',
+    name: 'Deoxycytidine monophosphate (dCMP)',
     formula: 'C₉H₁₄N₃O₇P',
     smiles: 'C1=NC(=O)N(=C1)C2C(C(C(O2)COP(=O)(O)O)O)O',
     description: 'Deoxycytidine monophosphate, a deoxynucleotide',
@@ -110,7 +110,7 @@ export const nucleosideSalvageNodes = [
   {
     id: 'dtmp',
     type: 'molecule',
-    name: 'Deoxythymidine-5\'-monophosphate (dTMP)',
+    name: 'Deoxythymidine monophosphate (dTMP)',
     formula: 'C₁₀H₁₅N₂O₈P',
     smiles: 'CC1=CN(C(=O)NC1=O)C2C(C(C(O2)COP(=O)(O)O)O)O',
     description: 'Deoxythymidine monophosphate, a deoxynucleotide',
@@ -119,7 +119,7 @@ export const nucleosideSalvageNodes = [
   {
     id: 'dump',
     type: 'molecule',
-    name: 'Deoxyuridine-5\'-monophosphate (dUMP)',
+    name: 'Deoxyuridine monophosphate (dUMP)',
     formula: 'C₉H₁₃N₂O₈P',
     smiles: 'C1=NC(=O)NC(=C1)C2C(C(C(O2)COP(=O)(O)O)O)O',
     description: 'Deoxyuridine monophosphate, a deoxynucleotide',
