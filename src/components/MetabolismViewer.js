@@ -4532,6 +4532,20 @@ export class MetabolismViewer {
         .attr('stroke', colors.stroke)
         .attr('stroke-width', 2)
         .attr('class', 'reaction-circle');
+      
+      // Add short name label for nucleotide nodes (similar to complex numbers)
+      const nucleotideShortName = viewer.getNucleotideShortName(d);
+      if (nucleotideShortName) {
+        g.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('dy', '0.35em')
+          .attr('font-size', '18px')
+          .attr('font-weight', 'bold')
+          .attr('fill', '#000')
+          .text(nucleotideShortName);
+      }
     });
     
     // Create image group for 2D structure (initially hidden)
@@ -5589,11 +5603,53 @@ export class MetabolismViewer {
   }
   
   /**
-   * Highlight a node by nodeId with specified color type
-   * Works for all pathways (ETC and others) and all node types
-   * @param {string} nodeId - The nodeId to highlight
-   * @param {string} colorType - 'default' (selection), 'reactant', or 'product'
+   * Get short name for nucleotide nodes (e.g., "ATP", "ADP", "AMP", "dATP")
+   * Returns null if the node is not a nucleotide
+   * @param {Object} reactionNode - The reaction node to check
+   * @returns {string|null} - Short name for nucleotide or null
    */
+  getNucleotideShortName(reactionNode) {
+    if (!reactionNode) return null;
+    
+    // Get the molecule name from the node
+    let moleculeName = null;
+    if (reactionNode.node && reactionNode.node.name) {
+      moleculeName = reactionNode.node.name;
+    } else if (reactionNode.product && reactionNode.product.name) {
+      moleculeName = reactionNode.product.name;
+    } else if (reactionNode.substrate && reactionNode.substrate.name) {
+      moleculeName = reactionNode.substrate.name;
+    }
+    
+    if (!moleculeName) return null;
+    
+    // First, try to extract short name from parentheses (e.g., "Adenosine triphosphate (ATP)" -> "ATP")
+    const parenthesesMatch = moleculeName.match(/\(([^)]+)\)/);
+    if (parenthesesMatch) {
+      const shortName = parenthesesMatch[1].trim();
+      // Check if it matches nucleotide pattern
+      const nucleotidePattern = /^(d?)([AGCTU])(TP|DP|MP)$/i;
+      if (nucleotidePattern.test(shortName)) {
+        return shortName.toUpperCase();
+      }
+    }
+    
+    // If no parentheses match, try to match the pattern directly in the name
+    // Pattern: (optional 'd' for deoxy) + (A|G|C|T|U) + (TP|DP|MP)
+    const nucleotidePattern = /(d?)([AGCTU])(TP|DP|MP)/i;
+    const match = moleculeName.match(nucleotidePattern);
+    
+    if (match) {
+      // Extract the short name (e.g., "ATP", "dATP")
+      const deoxyPrefix = match[1] || ''; // 'd' or ''
+      const base = match[2].toUpperCase(); // A, G, C, T, or U
+      const phosphate = match[3].toUpperCase(); // TP, DP, or MP
+      return deoxyPrefix + base + phosphate;
+    }
+    
+    return null;
+  }
+  
   highlightNode(nodeId, colorType = 'product') {
     // Find the reaction group that corresponds to this nodeId
     // Reactions have a nodeId property that matches the node's id
