@@ -149,9 +149,9 @@ const PATHWAY_CONFIG = {
   
   // Pathway type colors for nodes
   pathwayTypeColors: {
-    'carbohydrates': { fill: '#ffb999', stroke: '#cc8833' }, // Orange-ish
+    'carbohydrates': { fill: '#ffa0c0', stroke: '#944040' }, // Red
     'amino-acids': { fill: '#5fa8d3', stroke: '#2c5f7c' }, // Blue
-    'oxidative-metabolism': { fill: '#d4a574', stroke: '#8b6f47' }, // Orange
+    'oxidative-metabolism': { fill: '#ffb999', stroke: '#ffb999' }, // Orange
     'nucleotides': { fill: '#b399ff', stroke: '#8c66cc' }, // Purple
     'lipids': { fill: '#99dd99', stroke: '#66bb66' }, // Green
     'heme-metabolism': { fill: '#e0e099', stroke: '#c4c466' } // Gray Yellow
@@ -860,6 +860,11 @@ export class MetabolismViewer {
               }
             }
           }
+          
+          // Update pathway button positions on resize
+          if (this.updatePathwayButtonPositions) {
+            this.updatePathwayButtonPositions();
+          }
         }
       }, 100); // 100ms debounce
     };
@@ -1154,14 +1159,37 @@ export class MetabolismViewer {
       viewer.zoomToAllReactions();
     });
     
-    // Add pathway buttons (shifted by one position)
+    // Add pathway buttons with wrapping support
     let currentX = 20 + showAllWidth + 15; // Start after "Show All" button with 15px gap
+    let currentY = buttonY; // Start at initial Y position
+    const buttonGap = 15; // Gap between buttons
+    const lineHeight = buttonHeight + 10; // Height of each line (button height + gap)
+    const rightMargin = 20; // Right margin to prevent buttons from going off-screen
+    
+    // Get available width (accounting for SVG viewport and detail panel)
+    const getAvailableWidth = () => {
+      // Use SVG width (which is the actual viewport width)
+      const svgWidth = this.svg.attr('width') ? parseFloat(this.svg.attr('width')) : this.options.width;
+      // Account for detail panel if visible
+      const detailPanelWidth = this.container.closest('.main-content')?.querySelector('.detail-panel')?.clientWidth || 0;
+      // Available width is SVG width minus detail panel width
+      return svgWidth - detailPanelWidth;
+    };
+    
     this.pathways.forEach((pathway, index) => {
       const buttonWidth = calculateButtonWidth(pathway.name);
+      const availableWidth = getAvailableWidth();
+      
+      // Check if button would overflow the right edge, wrap to new line if needed
+      // Only wrap when the button would actually go beyond the available width
+      if (currentX + buttonWidth > availableWidth - rightMargin) {
+        currentX = 20; // Start new line from left margin
+        currentY += lineHeight; // Move to next line
+      }
       
       const button = buttonGroup.append('g')
         .attr('class', 'pathway-button btn')
-        .attr('transform', `translate(${currentX}, ${buttonY})`);
+        .attr('transform', `translate(${currentX}, ${currentY})`);
       
       // Button background
       button.append('rect')
@@ -1183,7 +1211,7 @@ export class MetabolismViewer {
         .text(pathway.name);
       
       // Update currentX for next button
-      currentX += buttonWidth + 15; // 15px gap between buttons
+      currentX += buttonWidth + buttonGap;
       
       // Hover effects
       button.on('mouseenter', function() {
@@ -1205,6 +1233,70 @@ export class MetabolismViewer {
       
       // Store button reference
       pathway.button = button;
+    });
+    
+    // Store button group reference for resize handling
+    this.pathwayButtonGroup = buttonGroup;
+  }
+  
+  /**
+   * Update pathway button positions to wrap based on current available width
+   * Called on window resize or when detail panel opens/closes
+   */
+  updatePathwayButtonPositions() {
+    if (!this.pathwayButtonGroup || !this.pathways || this.pathways.length === 0) {
+      return;
+    }
+    
+    const buttonY = 20;
+    const buttonHeight = 28;
+    const buttonGap = 15;
+    const lineHeight = buttonHeight + 10;
+    const rightMargin = 20; // Right margin to prevent buttons from going off-screen
+    
+    // Get "Show All" button width (first button in group)
+    const showAllButton = this.pathwayButtonGroup.select('.pathway-button').node();
+    let showAllWidth = 0;
+    if (showAllButton) {
+      const showAllRect = d3.select(showAllButton).select('rect');
+      showAllWidth = showAllRect.attr('width') ? parseFloat(showAllRect.attr('width')) : 0;
+    }
+    
+    // Get available width (accounting for SVG viewport and detail panel)
+    const getAvailableWidth = () => {
+      // Use SVG width (which is the actual viewport width)
+      const svgWidth = this.svg.attr('width') ? parseFloat(this.svg.attr('width')) : this.options.width;
+      return svgWidth;
+    };
+    
+    let currentX = 20 + showAllWidth + 15;
+    let currentY = buttonY;
+    
+    // Update positions for all pathway buttons (skip "Show All" button which is first)
+    const pathwayButtons = this.pathwayButtonGroup.selectAll('.pathway-button').nodes();
+    pathwayButtons.forEach((buttonNode, index) => {
+      // Skip first button (Show All)
+      if (index === 0) return;
+      
+      const pathway = this.pathways[index - 1];
+      if (!pathway) return;
+      
+      const button = d3.select(buttonNode);
+      const buttonWidth = parseFloat(button.select('rect').attr('width')) || 0;
+      const availableWidth = getAvailableWidth();
+      
+      // Check if button would overflow the right edge, wrap to new line if needed
+      // Only wrap when the button would actually go beyond the available width
+      if (currentX + buttonWidth > availableWidth - rightMargin) {
+        currentX = 20; // Start new line from left margin
+        currentY += lineHeight;
+      }
+      
+      // Update button position
+      button.attr('transform', `translate(${currentX}, ${currentY})`);
+      
+      // Update currentX for next button
+      currentX += buttonWidth + buttonGap;
     });
   }
   
@@ -5629,8 +5721,18 @@ export class MetabolismViewer {
       const shortName = parenthesesMatch[1].trim();
       // Check if it matches nucleotide pattern
       const nucleotidePattern = /^(d?)([AGCTU])(TP|DP|MP)$/i;
-      if (nucleotidePattern.test(shortName)) {
-        return shortName.toUpperCase();
+      const match = shortName.match(nucleotidePattern);
+      if (match) {
+        // Format: if deoxy prefix exists, keep 'd' lowercase, rest uppercase (e.g., "dATP")
+        // Otherwise, keep all uppercase (e.g., "ATP")
+        const deoxyPrefix = match[1] || '';
+        const base = match[2].toUpperCase();
+        const phosphate = match[3].toUpperCase();
+        if (deoxyPrefix) {
+          return deoxyPrefix.toLowerCase() + base + phosphate;
+        } else {
+          return base + phosphate;
+        }
       }
     }
     
@@ -5644,7 +5746,14 @@ export class MetabolismViewer {
       const deoxyPrefix = match[1] || ''; // 'd' or ''
       const base = match[2].toUpperCase(); // A, G, C, T, or U
       const phosphate = match[3].toUpperCase(); // TP, DP, or MP
-      return deoxyPrefix + base + phosphate;
+      
+      // If deoxy prefix exists, keep 'd' lowercase, rest uppercase (e.g., "dATP")
+      // Otherwise, keep all uppercase (e.g., "ATP")
+      if (deoxyPrefix) {
+        return deoxyPrefix.toLowerCase() + base + phosphate;
+      } else {
+        return base + phosphate;
+      }
     }
     
     return null;
