@@ -60,6 +60,43 @@ export const aromaticAminoAcidMetabolismReactions = [
     }
   },
   {
+    id: 'rxn_aromatic_35',
+    name: 'GTP to Dihydroneopterin Triphosphate',
+    byreactant: ['H₂O'],
+    byproduct: ['Formate'],
+    enzyme: {
+      name: 'GTP cyclohydrolase I',
+      ecNumber: 'EC 3.5.4.16',
+      cofactors: ['H₂O'],
+      description: 'Converts GTP to dihydroneopterin triphosphate, consuming H₂O and producing formate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Rate-limiting step in tetrahydrobiopterin synthesis',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_aromatic_36',
+    name: 'Dihydroneopterin Triphosphate to Tetrahydrobiopterin',
+    enzyme: {
+      name: 'Multiple enzymes',
+      ecNumber: 'Multiple steps',
+      cofactors: ['Multiple cofactors'],
+      description: 'Conversion of dihydroneopterin triphosphate to tetrahydrobiopterin (BH₄) through multiple enzymatic steps'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Multi-step pathway',
+      isReversible: false,
+      notes: 'Multiple steps involved'
+    }
+  },
+  {
     id: 'rxn_aromatic_4',
     name: 'Phenylalanine Hydroxylation',
     byreactant: ['bh4_set1'],
@@ -79,6 +116,25 @@ export const aromaticAminoAcidMetabolismReactions = [
       ph: '7.0-7.4',
       temperature: '37°C',
       regulation: 'Key regulatory step in phenylalanine metabolism',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_aromatic_11',
+    name: 'BH₂ to BH₄ Regeneration (Catecholamine)',
+    byreactant: ['NADPH'],
+    byproduct: ['NADP⁺'],
+    enzyme: {
+      name: 'Dihydrobiopterin reductase',
+      ecNumber: 'EC 1.5.1.33',
+      cofactors: ['NADPH'],
+      description: 'Regenerates tetrahydrobiopterin (BH₄) from dihydrobiopterin (BH₂) using NADPH for catecholamine synthesis'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Required for continuous tyrosine hydroxylation',
       isReversible: false
     }
   },
@@ -155,25 +211,6 @@ export const aromaticAminoAcidMetabolismReactions = [
       ph: '7.0-7.4',
       temperature: '37°C',
       regulation: 'Rate-limiting step in catecholamine synthesis',
-      isReversible: false
-    }
-  },
-  {
-    id: 'rxn_aromatic_11',
-    name: 'BH₂ to BH₄ Regeneration (Catecholamine)',
-    byreactant: ['NADPH'],
-    byproduct: ['NADP⁺'],
-    enzyme: {
-      name: 'Dihydrobiopterin reductase',
-      ecNumber: 'EC 1.5.1.33',
-      cofactors: ['NADPH'],
-      description: 'Regenerates tetrahydrobiopterin (BH₄) from dihydrobiopterin (BH₂) using NADPH for catecholamine synthesis'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Required for continuous tyrosine hydroxylation',
       isReversible: false
     }
   },
@@ -602,42 +639,5 @@ export const aromaticAminoAcidMetabolismReactions = [
       notes: 'Multiple steps involved'
     }
   },
-  {
-    id: 'rxn_aromatic_35',
-    name: 'GTP to Dihydroneopterin Triphosphate',
-    byreactant: ['H₂O'],
-    byproduct: ['Formate'],
-    enzyme: {
-      name: 'GTP cyclohydrolase I',
-      ecNumber: 'EC 3.5.4.16',
-      cofactors: ['H₂O'],
-      description: 'Converts GTP to dihydroneopterin triphosphate, consuming H₂O and producing formate'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Rate-limiting step in tetrahydrobiopterin synthesis',
-      isReversible: false
-    }
-  },
-  {
-    id: 'rxn_aromatic_36',
-    name: 'Dihydroneopterin Triphosphate to Tetrahydrobiopterin',
-    enzyme: {
-      name: 'Multiple enzymes',
-      ecNumber: 'Multiple steps',
-      cofactors: ['Multiple cofactors'],
-      description: 'Conversion of dihydroneopterin triphosphate to tetrahydrobiopterin (BH₄) through multiple enzymatic steps'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Multi-step pathway',
-      isReversible: false,
-      notes: 'Multiple steps involved'
-    }
-  }
 ];
 

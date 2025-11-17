@@ -178,7 +178,7 @@ export const aromaticAminoAcidMetabolismNodes = [
     formula: 'C₈H₈O₄',
     smiles: 'OC(=O)CC1=CC(=C(C=C1)O)O',
     description: 'Oxidized form of homogentisate (spontaneous reaction)',
-    position: { x: base_x - unit_space, y: base_y + unit_space * 2 }
+    position: { x: base_x - unit_space * 0.66, y: base_y + unit_space * 2 }
   },
   {
     id: 'maleylacetoacetate',

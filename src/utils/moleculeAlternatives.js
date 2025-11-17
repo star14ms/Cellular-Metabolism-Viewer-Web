@@ -86,6 +86,8 @@ export function getAlternativeNames(moleculeName) {
     // Aromatic amino acid metabolism compounds
     'N-Acetyl-5-HT': ['N-Acetylserotonin', 'N-Acetyl-5-hydroxytryptamine', 'N-Acetylserotonin (NAS)'],
     'Phenyllactate': ['Phenyllactic acid', '2-Hydroxy-3-phenylpropanoic acid', 'Phenyl lactic acid', '3-Phenyllactic acid'],
+    'Alkapton': ['Homogentisic acid', 'Homogentisate', '2,5-Dihydroxyphenylacetic acid'],
+    'Homogentisate': ['Homogentisic acid', '2,5-Dihydroxyphenylacetic acid'],
   };
   
   return alternatives[moleculeName] || [];
