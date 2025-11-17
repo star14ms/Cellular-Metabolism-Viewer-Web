@@ -410,16 +410,24 @@ if (!app) {
         
         // Priority 1: If pathway info is provided (from Key Regulatory Steps), find reaction using pathway index
         // This should be checked first to avoid matching wrong reactions with same product ID
+        // But verify the reaction ID matches to ensure we have the correct reaction
         if (pathwayId && pathwayStartIndex !== undefined && reactionIndexInPathway !== null) {
           // Find the reaction in the viewer's reactions array using pathway startIndex + reaction index
           const viewerReactionIndex = pathwayStartIndex + reactionIndexInPathway;
           if (viewerReactionIndex >= 0 && viewerReactionIndex < viewer.reactions.length) {
-            targetReaction = viewer.reactions[viewerReactionIndex];
-            console.log('Found reaction by pathway index:', targetReaction.name);
+            const candidateReaction = viewer.reactions[viewerReactionIndex];
+            // Verify the reaction ID matches (if provided) to ensure we have the correct reaction
+            if (!reactionId || candidateReaction.id === reactionId || 
+                (candidateReaction.product && candidateReaction.product.id === reactionId)) {
+              targetReaction = candidateReaction;
+              console.log('Found reaction by pathway index:', targetReaction.name);
+            } else {
+              console.warn(`Reaction at index ${viewerReactionIndex} doesn't match reactionId ${reactionId}, trying other methods`);
+            }
           }
         }
         
-        // Priority 2: If reaction ID is provided, find reaction by product ID
+        // Priority 2: If reaction ID is provided, find reaction by reaction.id (reaction_id) or product.id
         // Only use this if pathway index didn't work, and prefer reactions from the specified pathway
         if (!targetReaction && reactionId) {
           if (pathwayId && pathwayStartIndex !== undefined) {
@@ -427,11 +435,11 @@ if (!app) {
             const pathwayEndIndex = pathwayStartIndex + (viewer.getPathwayForReaction ? 
               (viewer.getPathwayForReaction(viewer.reactions[pathwayStartIndex])?.reactions?.length || 0) : 0);
             targetReaction = viewer.reactions.slice(pathwayStartIndex, pathwayEndIndex)
-              .find(r => r.product && r.product.id === reactionId);
+              .find(r => r.id === reactionId || (r.product && r.product.id === reactionId));
           }
           // Fall back to searching all reactions if pathway search didn't work
           if (!targetReaction) {
-            targetReaction = viewer.reactions.find(r => r.product && r.product.id === reactionId);
+            targetReaction = viewer.reactions.find(r => r.id === reactionId || (r.product && r.product.id === reactionId));
           }
           if (targetReaction) {
             console.log('Found reaction by ID:', reactionId, targetReaction.name);

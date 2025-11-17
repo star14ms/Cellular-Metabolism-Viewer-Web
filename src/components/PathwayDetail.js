@@ -147,10 +147,26 @@ export class PathwayDetail {
         const stepNumber = parseInt(item.dataset.step);
         const reactionIndex = parseInt(item.dataset.reactionIndex);
         
+        // Get the actual pathway object - it might be nested in pathway.pathway
+        const actualPathway = pathway.pathway || pathway;
+        const reaction = pathway.reactions[reactionIndex];
+        
+        // Get reaction ID - prefer reaction.id (reaction_id from data file) over product.id
+        const reactionId = reaction ? (reaction.id || (reaction.product ? reaction.product.id : null)) : null;
+        
         // Dispatch event to select reaction in viewer
         if (this.viewerContainer) {
           const selectEvent = new CustomEvent('select-reaction-by-step', {
-            detail: { step: stepNumber, reactionIndex: reactionIndex, pathway: pathway }
+            detail: { 
+              step: reaction ? reaction.step : stepNumber,
+              reactionId: reactionId, // Use reaction.id (reaction_id) for matching
+              pathwayId: actualPathway.id,
+              pathwayStartIndex: actualPathway.startIndex,
+              reactionIndexInPathway: reactionIndex >= 0 ? reactionIndex : null,
+              pathway: actualPathway,
+              skipZoom: false, // Move/zoom to reaction
+              switchToReactionTab: true // Switch to reaction tab
+            }
           });
           this.viewerContainer.dispatchEvent(selectEvent);
         }

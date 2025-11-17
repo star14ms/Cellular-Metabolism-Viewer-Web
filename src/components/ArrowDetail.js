@@ -105,10 +105,22 @@ export class ArrowDetail {
       }
     };
     
+    // Calculate relative step number within the pathway
+    let relativeStepNumber = null;
+    if (this.viewer) {
+      const pathway = this.viewer.getPathwayForReaction(reaction);
+      if (pathway && pathway.reactions && Array.isArray(pathway.reactions)) {
+        const reactionIndex = pathway.reactions.findIndex(r => r.id === reaction.id);
+        if (reactionIndex >= 0) {
+          relativeStepNumber = reactionIndex + 1; // 1-based step number
+        }
+      }
+    }
+    
     const html = `
       <div class="reaction-detail">
         <div class="detail-header">
-          <h2>${reaction.step !== null ? `Step ${reaction.step}: ` : ''}${reaction.name}</h2>
+          <h2>${relativeStepNumber !== null ? `Step ${relativeStepNumber}: ` : (reaction.step !== null ? `Step ${reaction.step}: ` : '')}${reaction.name}</h2>
         </div>
         
         ${hasByMolecules || !isEnzymeOrCarrierNode ? `
