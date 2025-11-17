@@ -8,50 +8,84 @@
 import { convertGreekToEnglish } from '../utils/greekConverter.js';
 
 /**
+ * Convert superscripts to regular numbers
+ * @param {string} text - Text that may contain superscripts
+ * @returns {string} Text with superscripts converted to regular numbers
+ */
+function convertSuperscriptsToNumbers(text) {
+  const superscriptMap = {
+    '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4',
+    '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9',
+    '⁺': '+', '⁻': '-', '⁼': '=', '⁽': '(', '⁾': ')'
+  };
+  
+  let converted = text;
+  for (const [superscript, regular] of Object.entries(superscriptMap)) {
+    converted = converted.replace(new RegExp(superscript, 'g'), regular);
+  }
+  return converted;
+}
+
+/**
+ * Normalize compound name for PubChem search
+ * Converts Greek letters and superscripts to ASCII equivalents
+ * @param {string} name - Original compound name
+ * @returns {string} Normalized name
+ */
+function normalizeCompoundName(name) {
+  let normalized = name.trim();
+  // First convert superscripts (e.g., N⁵,N¹⁰ -> N5,N10)
+  normalized = convertSuperscriptsToNumbers(normalized);
+  // Then convert Greek letters (e.g., β -> beta)
+  normalized = convertGreekToEnglish(normalized);
+  return normalized;
+}
+
+/**
+ * Generate sensible name variations for PubChem search
+ * @param {string} name - Normalized compound name
+ * @returns {string[]} Array of name variations
+ */
+function generateNameVariations(name) {
+  const variations = [name]; // Start with the normalized name
+  
+  // Only generate variations that are likely to work
+  // Replace hyphens with spaces and vice versa
+  if (name.includes('-')) {
+    variations.push(name.replace(/-/g, ' '));
+  }
+  if (name.includes(' ')) {
+    variations.push(name.replace(/\s+/g, '-'));
+  }
+  
+  // Handle comma-containing names (e.g., "1,3-Bisphosphoglycerate")
+  // Only try variations with proper spacing
+  if (name.includes(',')) {
+    const withSpace = name.replace(/,\s*/g, ', ');
+    const withoutSpace = name.replace(/,\s*/g, ',');
+    if (withSpace !== name) variations.push(withSpace);
+    if (withoutSpace !== name && withoutSpace !== withSpace) variations.push(withoutSpace);
+  }
+  
+  return [...new Set(variations)]; // Remove duplicates
+}
+
+/**
  * Fetch compound information from PubChem by name
  * @param {string} compoundName - Name of the compound (e.g., "Fructose-6-phosphate")
  * @returns {Promise<Object>} Compound data from PubChem
  */
 export async function fetchCompoundByName(compoundName) {
   try {
-    // Try multiple name variations
-    const nameVariations = [
-      compoundName.trim(),
-      compoundName.trim().replace(/\s+/g, '-'),
-      compoundName.trim().replace(/\s+/g, ' '),
-      compoundName.trim().replace(/-/g, ' '),
-    ];
+    // Normalize the name first (convert Greek letters and superscripts)
+    const normalizedName = normalizeCompoundName(compoundName);
     
-    // Handle comma-containing names (e.g., "1,3-Bisphosphoglycerate")
-    // Try variations with and without spaces after commas
-    if (compoundName.includes(',')) {
-      nameVariations.push(
-        compoundName.trim().replace(/,\s*/g, ','),  // Remove spaces after commas
-        compoundName.trim().replace(/,\s*/g, ', '),  // Ensure space after comma
-        compoundName.trim().replace(/,\s*/g, ' '),   // Replace comma with space
-        compoundName.trim().replace(/,/g, '')        // Remove commas entirely
-      );
-    }
+    // Generate variations from the normalized name
+    const nameVariations = generateNameVariations(normalizedName);
     
-    // Add Greek-to-English converted versions
-    const greekConverted = convertGreekToEnglish(compoundName.trim());
-    if (greekConverted !== compoundName.trim()) {
-      nameVariations.push(
-        greekConverted,
-        greekConverted.replace(/\s+/g, '-'),
-        greekConverted.replace(/\s+/g, ' '),
-        greekConverted.replace(/-/g, ' ')
-      );
-      
-      // Also handle commas in Greek-converted names
-      if (greekConverted.includes(',')) {
-        nameVariations.push(
-          greekConverted.replace(/,\s*/g, ','),
-          greekConverted.replace(/,\s*/g, ', '),
-          greekConverted.replace(/,\s*/g, ' '),
-          greekConverted.replace(/,/g, '')
-        );
-      }
+    // Also try the original name if it's different from normalized
+    if (compoundName.trim() !== normalizedName) {
+      nameVariations.unshift(compoundName.trim()); // Try original first
     }
     
     // Remove duplicates
