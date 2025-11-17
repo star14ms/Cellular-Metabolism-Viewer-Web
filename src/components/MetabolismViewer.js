@@ -17,6 +17,7 @@ import { pyrimidineSynthesisNodes, pyrimidineSynthesisReactions, pyrimidineSynth
 import { purineSynthesisNodes, purineSynthesisReactions, purineSynthesisArrows, purineSynthesisData } from '../data/purineSynthesis/purineSynthesis_index.js';
 import { deoxyribonucleotidesNodes, deoxyribonucleotidesReactions, deoxyribonucleotidesArrows, deoxyribonucleotidesData } from '../data/deoxyribonucleotides/deoxyribonucleotides_index.js';
 import { nucleotideBreakdownNodes, nucleotideBreakdownReactions, nucleotideBreakdownArrows, nucleotideBreakdownData } from '../data/nucleotideBreakdown/nucleotideBreakdown_index.js';
+import { aromaticAminoAcidMetabolismNodes, aromaticAminoAcidMetabolismReactions, aromaticAminoAcidMetabolismArrows, aromaticAminoAcidMetabolismData } from '../data/aromaticAminoAcidMetabolism/aromaticAminoAcidMetabolism_index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
@@ -55,7 +56,8 @@ const PATHWAY_CONFIG = {
     'pyrimidine-synthesis': 'Pyrimidine Synthesis',
     'purine-synthesis': 'Purine Synthesis',
     'deoxyribonucleotides': 'Deoxyribonucleotides Synthesis',
-    'nucleotide-breakdown': 'Nucleotide Breakdown'
+    'nucleotide-breakdown': 'Nucleotide Breakdown',
+    'aromatic-amino-acid-metabolism': 'Aromatic Amino Acid Metabolism'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -115,11 +117,16 @@ const PATHWAY_CONFIG = {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
+    },
+    'aromatic-amino-acid-metabolism': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
     }
   },
   
   // Common by-molecules that don't have dedicated nodes
-  commonByMolecules: ['ATP', 'ADP', 'AMP', 'NAD⁺', 'NADH', 'NADP⁺', 'NADPH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'PPi', 'H₂O', 'H₂O₂', 'H2O2', 'GDP', 'GTP', 'NH₄⁺', 'NH4+', 'PRPP', 'Glutamine', 'Glutamate', 'Glycine', 'Aspartate', 'Fumarate', 'N¹⁰-formyl-THF', 'THF', '(deoxy) ribose-1-P', 'deoxyribose-1-P', 'Uracil', 'Serine', ],
+  commonByMolecules: ['ATP', 'ADP', 'AMP', 'NAD⁺', 'NADH', 'NADP⁺', 'NADPH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'PPi', 'H₂O', 'H₂O₂', 'H2O2', 'GDP', 'GTP', 'NH₄⁺', 'NH4+', 'PRPP', 'Glutamine', 'Glutamate', 'Glycine', 'Aspartate', 'Fumarate', 'N¹⁰-formyl-THF', 'THF', '(deoxy) ribose-1-P', 'deoxyribose-1-P', 'Uracil', 'Serine', 'Formate'],
   
   // Node ID patterns for special node types
   nodeIdPatterns: {
@@ -207,7 +214,8 @@ export class MetabolismViewer {
       ...pyrimidineSynthesisNodes,
       ...purineSynthesisNodes,
       ...deoxyribonucleotidesNodes,
-      ...nucleotideBreakdownNodes
+      ...nucleotideBreakdownNodes,
+      ...aromaticAminoAcidMetabolismNodes
     ];
     
     // Filter out hidden nodes for drawing (but keep all in nodeMap for arrow lookups)
@@ -225,7 +233,8 @@ export class MetabolismViewer {
       ...pyrimidineSynthesisReactions,
       ...purineSynthesisReactions,
       ...deoxyribonucleotidesReactions,
-      ...nucleotideBreakdownReactions
+      ...nucleotideBreakdownReactions,
+      ...aromaticAminoAcidMetabolismReactions
     ];
     
     // Combine all arrows
@@ -240,7 +249,8 @@ export class MetabolismViewer {
       ...pyrimidineSynthesisArrows,
       ...purineSynthesisArrows,
       ...deoxyribonucleotidesArrows,
-      ...nucleotideBreakdownArrows
+      ...nucleotideBreakdownArrows,
+      ...aromaticAminoAcidMetabolismArrows
     ];
     
     // Create node ID to node mapping for quick lookup
@@ -452,6 +462,7 @@ export class MetabolismViewer {
     const purineSynthesisReactionCount = purineSynthesisReactions.length;
     const deoxyribonucleotidesReactionCount = deoxyribonucleotidesReactions.length;
     const nucleotideBreakdownReactionCount = nucleotideBreakdownReactions.length;
+    const aromaticAminoAcidMetabolismReactionCount = aromaticAminoAcidMetabolismReactions.length;
     
     this.pathways = [
       {
@@ -552,6 +563,15 @@ export class MetabolismViewer {
         summary: nucleosideSalvageData.summary,
         startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount,
         endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount
+      },
+      {
+        id: 'aromatic-amino-acid-metabolism',
+        name: 'Aromatic Amino Acid Metabolism',
+        reactions: aromaticAminoAcidMetabolismReactions,
+        nodes: aromaticAminoAcidMetabolismNodes,
+        summary: aromaticAminoAcidMetabolismData.summary,
+        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount + nucleotideBreakdownReactionCount,
+        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount + nucleotideBreakdownReactionCount + aromaticAminoAcidMetabolismReactionCount
       },
     ];
     

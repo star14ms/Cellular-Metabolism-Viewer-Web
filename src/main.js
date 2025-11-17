@@ -10,6 +10,7 @@ import { citricAcidCycleData } from './data/citricAcidCycle/citricAcidCycle_inde
 import { electronTransportChainData } from './data/electronTransportChain/electronTransportChain_index.js'
 import { fermentationData } from './data/fermentation/fermentation_index.js'
 import { purineSynthesisData } from './data/purineSynthesis/purineSynthesis_index.js'
+import { aromaticAminoAcidMetabolismData } from './data/aromaticAminoAcidMetabolism/aromaticAminoAcidMetabolism_index.js'
 
 // Legacy exports for backward compatibility (if needed)
 export const glycolysisReactions = glycolysisData.reactions
@@ -24,6 +25,8 @@ export const fermentationReactions = fermentationData.reactions
 export const fermentationSummary = fermentationData.summary
 export const purineSynthesisReactions = purineSynthesisData.reactions
 export const purineSynthesisSummary = purineSynthesisData.summary
+export const aromaticAminoAcidMetabolismReactions = aromaticAminoAcidMetabolismData.reactions
+export const aromaticAminoAcidMetabolismSummary = aromaticAminoAcidMetabolismData.summary
 
 // Initialize theme IMMEDIATELY before anything else to prevent flash
 const initTheme = () => {

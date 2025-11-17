@@ -83,6 +83,9 @@ export function getAlternativeNames(moleculeName) {
     '(deoxy) ribose-1-P': ['Ribose-1-phosphate'],
     'H2O2': ['Hydrogen peroxide'],
     'H₂O₂': ['Hydrogen peroxide'],
+    // Aromatic amino acid metabolism compounds
+    'N-Acetyl-5-HT': ['N-Acetylserotonin', 'N-Acetyl-5-hydroxytryptamine', 'N-Acetylserotonin (NAS)'],
+    'Phenyllactate': ['Phenyllactic acid', '2-Hydroxy-3-phenylpropanoic acid', 'Phenyl lactic acid', '3-Phenyllactic acid'],
   };
   
   return alternatives[moleculeName] || [];
