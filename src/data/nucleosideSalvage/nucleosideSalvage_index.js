@@ -16,9 +16,9 @@ export const nucleosideSalvageData = {
     description: 'The metabolic pathway that phosphorylates nucleosides into their corresponding 5\'-monophosphate forms using ATP. This pathway allows cells to recycle nucleosides from degraded nucleic acids or dietary sources.',
     location: 'Cytoplasm',
     netProducts: {
-      'ATP': { produced: 0, consumed: 6, net: -6 },
-      'ADP': { produced: 6, consumed: 0, net: 6 },
-      'Nucleotides': { produced: 6, consumed: 0, net: 6 }
+      'ATP': { produced: 0, consumed: 1, net: -1 },
+      'ADP': { produced: 1, consumed: 0, net: 1 },
+      'Nucleotides': { produced: 1, consumed: 0, net: 1 }
     },
     keyRegulatorySteps: [
       { id: 'amp', text: 'Adenosine kinase: Phosphorylates adenosine to AMP' },

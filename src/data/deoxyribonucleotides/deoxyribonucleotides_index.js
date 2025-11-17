@@ -16,15 +16,11 @@ export const deoxyribonucleotidesData = {
     description: 'The metabolic pathway that synthesizes deoxyribonucleotide triphosphates (dATP, dGTP, dCTP, dUTP) from their corresponding ribonucleotide triphosphate precursors (ATP, GTP, CTP, UTP). Each pathway involves three steps: dephosphorylation, reduction, and re-phosphorylation. The pathway is organized in four parallel columns, one for each nucleotide base.',
     location: 'Cytoplasm',
     netProducts: {
-      'ATP': { produced: 0, consumed: 4, net: -4 },
-      'ADP': { produced: 4, consumed: 0, net: 4 },
-      'H₂O': { produced: 0, consumed: 4, net: -4 },
-      'Pi': { produced: 4, consumed: 0, net: 4 },
-      'NH₄⁺': { produced: 1, consumed: 0, net: 1 },
-      'dATP': { produced: 1, consumed: 0, net: 1 },
-      'dGTP': { produced: 1, consumed: 0, net: 1 },
-      'dCTP': { produced: 0, consumed: 1, net: -1 },
-      'dUTP': { produced: 2, consumed: 0, net: 2 }
+      'ATP': { produced: 0, consumed: 1, net: -1 },
+      'ADP': { produced: 1, consumed: 0, net: 1 },
+      'H₂O': { produced: 0, consumed: 1, net: -1 },
+      'Pi': { produced: 1, consumed: 0, net: 1 },
+      'dNTP': { produced: 1, consumed: 0, net: 1 }
     },
     keyRegulatorySteps: [
       { id: 'dadp', text: 'Ribonucleotide reductase - Allosterically regulated by dATP (feedback inhibition), controlling the rate of deoxyribonucleotide synthesis' },

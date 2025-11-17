@@ -16,6 +16,7 @@ export const purineSynthesisData = {
     description: 'The metabolic pathway that synthesizes purine nucleotides from simple precursors. This 10-step pathway converts PRPP to inosine monophosphate (IMP), the first purine nucleotide. IMP serves as a precursor for both AMP and GMP synthesis.',
     location: 'Cytoplasm',
     netProducts: {
+      'PRPP': { produced: 0, consumed: 1, net: -1 },
       'ATP': { produced: 0, consumed: 4, net: -4 },
       'ADP': { produced: 4, consumed: 0, net: 4 },
       'Pi': { produced: 4, consumed: 0, net: 4 },

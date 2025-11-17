@@ -20,7 +20,14 @@ export const pyrimidineSynthesisData = {
       'ADP': { produced: 5, consumed: 0, net: 5 },
       'NAD⁺': { produced: 0, consumed: 1, net: -1 },
       'NADH': { produced: 1, consumed: 0, net: 1 },
-      'CTP': { produced: 1, consumed: 0, net: 1 }
+      'Glutamine': { produced: 0, consumed: 1, net: -1 },
+      'Glutamate': { produced: 1, consumed: 0, net: 1 },
+      'Aspartate': { produced: 0, consumed: 1, net: -1 },
+      'Pi': { produced: 2, consumed: 0, net: 2 },
+      'PRPP': { produced: 0, consumed: 1, net: -1 },
+      'PPi': { produced: 1, consumed: 0, net: 1 },
+      'CO₂': { produced: 0, consumed: 1, net: -1 },
+      'H₂O': { produced: 1, consumed: 0, net: 1 },
     },
     keyRegulatorySteps: [
       { id: 'carbamoyl_phosphate', text: 'Step 1: Carbamoyl phosphate synthetase II (CPSII) - First committed step' },

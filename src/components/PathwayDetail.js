@@ -165,7 +165,7 @@ export class PathwayDetail {
               reactionIndexInPathway: reactionIndex >= 0 ? reactionIndex : null,
               pathway: actualPathway,
               skipZoom: false, // Move/zoom to reaction
-              switchToReactionTab: true // Switch to reaction tab
+              switchToReactionTab: false // Load reaction tab without switching
             }
           });
           this.viewerContainer.dispatchEvent(selectEvent);
@@ -220,7 +220,7 @@ export class PathwayDetail {
                 reactionIndexInPathway: reactionIndexInPathway >= 0 ? reactionIndexInPathway : null, 
                 pathway: actualPathway,
                 skipZoom: false, // Move/zoom to reaction (same as clicking in Reactions tab)
-                switchToReactionTab: true // Switch to reaction tab
+                switchToReactionTab: false // Load reaction tab without switching
               }
             });
             this.viewerContainer.dispatchEvent(selectEvent);
