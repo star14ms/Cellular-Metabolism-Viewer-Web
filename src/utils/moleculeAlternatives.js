@@ -40,6 +40,8 @@ export function getAlternativeNames(moleculeName) {
     'ADP': ['Adenosine diphosphate'],
     'NAD⁺': ['NAD+', 'Nicotinamide adenine dinucleotide'],
     'NADH': ['Nicotinamide adenine dinucleotide (reduced)'],
+    'NADP⁺': ['NADP+', 'Nicotinamide adenine dinucleotide phosphate', 'NADP'],
+    'NADPH': ['Nicotinamide adenine dinucleotide phosphate (reduced)', 'NADPH'],
     'FADH₂': ['Flavin adenine dinucleotide (reduced)'],
     'H₂O': ['H2O'],
     'Pi': ['Inorganic phosphate', 'PO4'],
@@ -78,9 +80,15 @@ export function getAlternativeNames(moleculeName) {
     'Glycinamide ribonucleotide (GAR)': ['GAR', 'Glycinamide ribotide', '5-Amino-1-(5-phospho-D-ribosyl)imidazole-4-carboxamide'],
     'Aminoimidazole ribonucleotide (AIR)': ['AIR', '5-Aminoimidazole ribonucleotide', '5-Aminoimidazole ribotide'],
     'Carboxyaminoimidazole ribonucleotide (CAIR)': ['CAIR', '5-Carboxyaminoimidazole ribonucleotide', '5-Carboxyaminoimidazole ribotide'],
+    'PPi': ['pyrophosphate'],
     // Common ions and small molecules
     'NH₄⁺': ['Ammonium ion', 'Ammonium', 'NH4+', 'Ammonium cation'],
     'NH4+': ['Ammonium ion', 'Ammonium', 'NH₄⁺', 'Ammonium cation'],
+    // Nucleotide breakdown compounds
+    'deoxyribose-1-P': ['Deoxyribose-1-phosphate'],
+    '(deoxy) ribose-1-P': ['Ribose-1-phosphate'],
+    'H2O2': ['Hydrogen peroxide'],
+    'H₂O₂': ['Hydrogen peroxide'],
   };
   
   return alternatives[moleculeName] || [];

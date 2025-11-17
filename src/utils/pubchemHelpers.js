@@ -11,16 +11,27 @@ import { loadCacheFromStorage, saveToStorage, getFromStorage } from './pubchemCa
  * Normalize molecule name for PubChem search
  * Handles CO₂/CO2 conversion and other special cases
  * Also removes parenthetical abbreviations like "(PEP)" from names
+ * Removes "(deoxy)" prefix for PubChem searches
  */
 export function normalizeMoleculeName(moleculeName) {
   if (moleculeName === 'CO₂' || moleculeName === 'CO2') {
     return 'Carbon dioxide';
   }
   
-  // Remove parenthetical abbreviations like "(PEP)", "(ATP)", etc.
+  let normalized = moleculeName;
+  
+  // Remove "(deoxy)" prefix from the beginning (case-insensitive, with optional spaces)
+  // Pattern: matches "(deoxy)" at the start, with optional spaces before and after
+  normalized = normalized.replace(/^\s*\(deoxy\)\s*/i, '').trim();
+  
+  // Remove parenthetical abbreviations like "(PEP)", "(ATP)", etc. from the end
   // This helps match names like "Phosphoenolpyruvate (PEP)" to "Phosphoenolpyruvate"
   // Pattern: matches parentheses with optional spaces, e.g., " (PEP)", "(ATP)", etc.
-  const normalized = moleculeName.replace(/\s*\([^)]+\)\s*$/, '').trim();
+  normalized = normalized.replace(/\s*\([^)]+\)\s*$/, '').trim();
+  
+  // Convert superscript plus (⁺) to regular plus (+) for PubChem searches
+  // This helps with molecules like NAD⁺, NADP⁺, H⁺, etc.
+  normalized = normalized.replace(/⁺/g, '+');
   
   return normalized || moleculeName; // Return original if normalization results in empty string
 }
@@ -51,7 +62,21 @@ export async function fetchPubChemData(moleculeName, cache) {
   const searchName = normalizeMoleculeName(moleculeName);
   
   // Try alternative names
-  const alternativeNames = getAlternativeNames(moleculeName);
+  let alternativeNames = getAlternativeNames(moleculeName);
+  
+  // If the original name starts with "(deoxy)", also try "Deoxy" prefix version
+  // For example: "(deoxy) Guanosine monophosphate" -> try "Deoxyguanosine monophosphate"
+  if (/^\s*\(deoxy\)/i.test(moleculeName)) {
+    const deoxyVersion = searchName.replace(/^([A-Z][a-z]*)/, (match) => {
+      // Capitalize first letter and add "Deoxy" prefix
+      return 'Deoxy' + match;
+    });
+    // Add "Deoxy" version to alternatives if it's different from searchName
+    if (deoxyVersion !== searchName && !alternativeNames.includes(deoxyVersion)) {
+      alternativeNames = [deoxyVersion, ...alternativeNames];
+    }
+  }
+  
   const pubchemData = await fetchCompoundWithFallback(searchName, alternativeNames);
   
   // Save to localStorage

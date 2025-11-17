@@ -16,6 +16,7 @@ import { nucleosideSalvageNodes, nucleosideSalvageReactions, nucleosideSalvageAr
 import { pyrimidineSynthesisNodes, pyrimidineSynthesisReactions, pyrimidineSynthesisArrows, pyrimidineSynthesisData } from '../data/pyrimidineSynthesis/pyrimidineSynthesis_index.js';
 import { purineSynthesisNodes, purineSynthesisReactions, purineSynthesisArrows, purineSynthesisData } from '../data/purineSynthesis/purineSynthesis_index.js';
 import { deoxyribonucleotidesNodes, deoxyribonucleotidesReactions, deoxyribonucleotidesArrows, deoxyribonucleotidesData } from '../data/deoxyribonucleotides/deoxyribonucleotides_index.js';
+import { nucleotideBreakdownNodes, nucleotideBreakdownReactions, nucleotideBreakdownArrows, nucleotideBreakdownData } from '../data/nucleotideBreakdown/nucleotideBreakdown_index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
@@ -53,7 +54,8 @@ const PATHWAY_CONFIG = {
     'nucleoside-salvage': 'Nucleoside Salvage',
     'pyrimidine-synthesis': 'Pyrimidine Synthesis',
     'purine-synthesis': 'Purine Synthesis',
-    'deoxyribonucleotides': 'Deoxyribonucleotides Synthesis'
+    'deoxyribonucleotides': 'Deoxyribonucleotides Synthesis',
+    'nucleotide-breakdown': 'Nucleotide Breakdown'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -108,11 +110,16 @@ const PATHWAY_CONFIG = {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
+    },
+    'nucleotide-breakdown': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
     }
   },
   
   // Common by-molecules that don't have dedicated nodes
-  commonByMolecules: ['ATP', 'ADP', 'NAD⁺', 'NADH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'PPi', 'H₂O', 'GDP', 'GTP', 'NH₄⁺', 'NH4+', 'Glutamine', 'Glutamate', 'Glycine', 'Aspartate', 'Fumarate', 'N¹⁰-formyl-THF', 'THF'],
+  commonByMolecules: ['ATP', 'ADP', 'AMP', 'NAD⁺', 'NADH', 'NADP⁺', 'NADPH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'PPi', 'H₂O', 'H₂O₂', 'H2O2', 'GDP', 'GTP', 'NH₄⁺', 'NH4+', 'PRPP', 'Glutamine', 'Glutamate', 'Glycine', 'Aspartate', 'Fumarate', '(deoxy) ribose-1-P', 'deoxyribose-1-P', 'Uracil', 'Serine'],
   
   // Node ID patterns for special node types
   nodeIdPatterns: {
@@ -199,7 +206,8 @@ export class MetabolismViewer {
       ...nucleosideSalvageNodes,
       ...pyrimidineSynthesisNodes,
       ...purineSynthesisNodes,
-      ...deoxyribonucleotidesNodes
+      ...deoxyribonucleotidesNodes,
+      ...nucleotideBreakdownNodes
     ];
     
     // Filter out hidden nodes for drawing (but keep all in nodeMap for arrow lookups)
@@ -216,11 +224,12 @@ export class MetabolismViewer {
       ...nucleosideSalvageReactions,
       ...pyrimidineSynthesisReactions,
       ...purineSynthesisReactions,
-      ...deoxyribonucleotidesReactions
+      ...deoxyribonucleotidesReactions,
+      ...nucleotideBreakdownReactions
     ];
     
     // Combine all arrows
-    const allArrows = [
+    this.allArrows = [
       ...glycolysisArrows,
       ...pyruvateOxidationArrows,
       ...citricAcidCycleArrows,
@@ -230,7 +239,8 @@ export class MetabolismViewer {
       ...nucleosideSalvageArrows,
       ...pyrimidineSynthesisArrows,
       ...purineSynthesisArrows,
-      ...deoxyribonucleotidesArrows
+      ...deoxyribonucleotidesArrows,
+      ...nucleotideBreakdownArrows
     ];
     
     // Create node ID to node mapping for quick lookup
@@ -253,7 +263,7 @@ export class MetabolismViewer {
     
     // Populate arrowMap with arrow data (keyed by arrow.id)
     this.arrowMap = new Map();
-    allArrows.forEach(arrow => {
+    this.allArrows.forEach(arrow => {
       this.arrowMap.set(arrow.id, arrow);
     });
     
@@ -266,8 +276,8 @@ export class MetabolismViewer {
     
     this.nodes.forEach(node => {
       // Find arrows that involve this node to get reaction info
-      const arrowsFromNode = allArrows.filter(a => a.from_id === node.id);
-      const arrowsToNode = allArrows.filter(a => a.to_id === node.id);
+      const arrowsFromNode = this.allArrows.filter(a => a.from_id === node.id);
+      const arrowsToNode = this.allArrows.filter(a => a.to_id === node.id);
       
       // Collect all unique reaction_ids from arrows involving this node
       const reactionIds = new Set();
@@ -441,6 +451,7 @@ export class MetabolismViewer {
     const pyrimidineSynthesisReactionCount = pyrimidineSynthesisReactions.length;
     const purineSynthesisReactionCount = purineSynthesisReactions.length;
     const deoxyribonucleotidesReactionCount = deoxyribonucleotidesReactions.length;
+    const nucleotideBreakdownReactionCount = nucleotideBreakdownReactions.length;
     
     this.pathways = [
       {
@@ -532,6 +543,15 @@ export class MetabolismViewer {
         summary: deoxyribonucleotidesData.summary,
         startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount,
         endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount
+      },
+      {
+        id: 'nucleotide-breakdown',
+        name: 'Nucleotide Breakdown',
+        reactions: nucleotideBreakdownReactions,
+        nodes: nucleotideBreakdownNodes,
+        summary: nucleotideBreakdownData.summary,
+        startIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount,
+        endIndex: glycolysisReactionCount + pyruvateOxidationReactionCount + citricAcidCycleReactionCount + electronTransportChainReactionCount + lactateFermentationReactionCount + ethanolFermentationReactionCount + nucleosideSalvageReactionCount + pyrimidineSynthesisReactionCount + purineSynthesisReactionCount + deoxyribonucleotidesReactionCount + nucleotideBreakdownReactionCount
       }
     ];
     
@@ -1587,19 +1607,8 @@ export class MetabolismViewer {
       .attr('fill', '#ff6b6b');
     
     // Draw arrows from arrow data (new format)
-    // Get all arrows from the combined arrow arrays
-    const allArrows = [
-      ...glycolysisArrows,
-      ...pyruvateOxidationArrows,
-      ...citricAcidCycleArrows,
-      ...electronTransportChainArrows,
-      ...lactateFermentationArrows,
-      ...ethanolFermentationArrows,
-      ...nucleosideSalvageArrows,
-      ...pyrimidineSynthesisArrows,
-      ...purineSynthesisArrows,
-      ...deoxyribonucleotidesArrows
-    ];
+    // Use the allArrows variable saved in constructor
+    const allArrows = this.allArrows;
     
     // Define pathway lengths for legacy code compatibility (if needed)
     const glycolysisLength = glycolysisReactions.length;
@@ -6322,6 +6331,18 @@ export class MetabolismViewer {
           };
         }
         
+        // Fallback: If moleculeInfo is still null but we have a sourceReaction (clicked from byproduct/byreactant),
+        // create a basic moleculeInfo to ensure detail page can be shown
+        // This handles cases where molecules like H₂O₂ or ribose-1-P are clicked but not found in reactions
+        if (!moleculeInfo && sourceReaction) {
+          moleculeInfo = {
+            name: moleculeName,
+            formula: '', // Will be filled by PubChem
+            id: moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+').replace(/¹⁰/g, '10'),
+            description: '' // Will be filled by PubChem
+          };
+        }
+        
         // If we have moleculeInfo, show the detail page
         // Highlight reactions if any were found, but still show detail page even if none found
         if (moleculeInfo) {
@@ -6667,6 +6688,7 @@ export class MetabolismViewer {
   /**
    * Apply molecule highlight - highlights all nodes with the same molecule name
    * Works for all pathways (ETC and others) and all node types
+   * For "(deoxy)" prefixed nodes, also highlights both dNMP and NMP versions
    * @param {Object} molecule - The molecule object with name to match
    * @param {Object} reactionNode - The reaction node that was clicked
    */
@@ -6681,11 +6703,74 @@ export class MetabolismViewer {
       return;
     }
     
-    // Get the molecule name to match (exact match required)
+    // Get the molecule name to match
     const moleculeName = molecule.name;
     
-    // Find all nodes with the exact same molecule name
-    // Check both substrate and product names to catch all instances
+    // Generate names to match - handle "(deoxy)" prefix nodes
+    const namesToMatch = [moleculeName]; // Always include the original name
+    
+    // If the name starts with "(deoxy)", also search for ribo and deoxy versions
+    if (/^\s*\(deoxy\)/i.test(moleculeName)) {
+      // Remove "(deoxy)" prefix and any trailing parentheses (like "(GMP)")
+      let baseName = moleculeName.replace(/^\s*\(deoxy\)\s*/i, '').trim();
+      // Remove trailing parentheses like "(GMP)", "(AMP)", etc.
+      baseName = baseName.replace(/\s*\([^)]+\)\s*$/, '').trim();
+      
+      // Add the base name (ribo version) - e.g., "Guanosine monophosphate"
+      if (baseName && baseName !== moleculeName) {
+        namesToMatch.push(baseName);
+      }
+      
+      // Try to reconstruct with trailing parentheses if original had them
+      const trailingMatch = moleculeName.match(/\s*\(([^)]+)\)\s*$/);
+      if (trailingMatch) {
+        const abbreviation = trailingMatch[1];
+        // Add base name with abbreviation - e.g., "Guanosine monophosphate (GMP)"
+        namesToMatch.push(`${baseName} (${abbreviation})`);
+        
+        // Add "Deoxy" prefix version - e.g., "Deoxyguanosine monophosphate (dGMP)"
+        // Extract the base word (first word after removing "(deoxy)")
+        const firstWordMatch = baseName.match(/^([A-Z][a-z]*)/);
+        if (firstWordMatch) {
+          const firstWord = firstWordMatch[1];
+          const restOfName = baseName.substring(firstWord.length);
+          const deoxyVersion = `Deoxy${firstWord}${restOfName}`;
+          namesToMatch.push(`${deoxyVersion} (${abbreviation})`);
+          // Also try with "d" prefix for abbreviation - e.g., "Deoxyguanosine monophosphate (dGMP)"
+          if (abbreviation && abbreviation.length > 0) {
+            namesToMatch.push(`${deoxyVersion} (d${abbreviation})`);
+          }
+          
+          // If this is a monophosphate (contains "monophosphate"), also add nucleoside versions
+          if (baseName.includes('monophosphate')) {
+            // Extract just the nucleoside name (first word) - e.g., "Guanosine" from "Guanosine monophosphate"
+            const nucleosideName = firstWord;
+            // Add nucleoside versions: "(deoxy) Guanosine", "Guanosine", "Deoxyguanosine"
+            namesToMatch.push(`(deoxy) ${nucleosideName}`);
+            namesToMatch.push(nucleosideName);
+            namesToMatch.push(`Deoxy${nucleosideName}`);
+          }
+        }
+      } else {
+        // No trailing parentheses, just add "Deoxy" prefix version
+        const firstWordMatch = baseName.match(/^([A-Z][a-z]*)/);
+        if (firstWordMatch) {
+          const firstWord = firstWordMatch[1];
+          const restOfName = baseName.substring(firstWord.length);
+          namesToMatch.push(`Deoxy${firstWord}${restOfName}`);
+          
+          // If this is a monophosphate, also add nucleoside versions
+          if (baseName.includes('monophosphate')) {
+            const nucleosideName = firstWord;
+            namesToMatch.push(`(deoxy) ${nucleosideName}`);
+            namesToMatch.push(nucleosideName);
+            namesToMatch.push(`Deoxy${nucleosideName}`);
+          }
+        }
+      }
+    }
+    
+    // Find all nodes matching any of the names
     const matchingNodes = this.reactionGroups.filter(d => {
       if (!d) return false;
       
@@ -6702,8 +6787,10 @@ export class MetabolismViewer {
         nodeMoleculeName = d.substrate.name;
       }
       
-      // Exact name match
-      return nodeMoleculeName === moleculeName;
+      if (!nodeMoleculeName) return false;
+      
+      // Check if node name matches any of the names to match
+      return namesToMatch.some(name => nodeMoleculeName === name);
     });
     
     // Highlight all matching nodes
