@@ -6740,16 +6740,6 @@ export class MetabolismViewer {
           if (abbreviation && abbreviation.length > 0) {
             namesToMatch.push(`${deoxyVersion} (d${abbreviation})`);
           }
-          
-          // If this is a monophosphate (contains "monophosphate"), also add nucleoside versions
-          if (baseName.includes('monophosphate')) {
-            // Extract just the nucleoside name (first word) - e.g., "Guanosine" from "Guanosine monophosphate"
-            const nucleosideName = firstWord;
-            // Add nucleoside versions: "(deoxy) Guanosine", "Guanosine", "Deoxyguanosine"
-            namesToMatch.push(`(deoxy) ${nucleosideName}`);
-            namesToMatch.push(nucleosideName);
-            namesToMatch.push(`Deoxy${nucleosideName}`);
-          }
         }
       } else {
         // No trailing parentheses, just add "Deoxy" prefix version
@@ -6758,14 +6748,6 @@ export class MetabolismViewer {
           const firstWord = firstWordMatch[1];
           const restOfName = baseName.substring(firstWord.length);
           namesToMatch.push(`Deoxy${firstWord}${restOfName}`);
-          
-          // If this is a monophosphate, also add nucleoside versions
-          if (baseName.includes('monophosphate')) {
-            const nucleosideName = firstWord;
-            namesToMatch.push(`(deoxy) ${nucleosideName}`);
-            namesToMatch.push(nucleosideName);
-            namesToMatch.push(`Deoxy${nucleosideName}`);
-          }
         }
       }
     }
