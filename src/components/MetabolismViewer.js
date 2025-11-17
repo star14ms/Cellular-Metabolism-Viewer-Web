@@ -1562,7 +1562,7 @@ export class MetabolismViewer {
       .attr('refY', 0)
       .attr('markerWidth', 6)
       .attr('markerHeight', 6)
-      .attr('orient', 'auto')
+      .attr('orient', 'auto-start-reverse')
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
       .attr('fill', '#2c5f7c');
@@ -1575,7 +1575,7 @@ export class MetabolismViewer {
       .attr('refY', 0)
       .attr('markerWidth', 10)
       .attr('markerHeight', 10)
-      .attr('orient', 'auto')
+      .attr('orient', 'auto-start-reverse')
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
       .attr('fill', '#2c5f7c');
@@ -1588,7 +1588,7 @@ export class MetabolismViewer {
       .attr('refY', 0)
       .attr('markerWidth', 8)
       .attr('markerHeight', 8)
-      .attr('orient', 'auto')
+      .attr('orient', 'auto-start-reverse')
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
       .attr('fill', '#ff6b6b');
@@ -1601,7 +1601,7 @@ export class MetabolismViewer {
       .attr('refY', 0)
       .attr('markerWidth', 6)
       .attr('markerHeight', 6)
-      .attr('orient', 'auto')
+      .attr('orient', 'auto-start-reverse')
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
       .attr('fill', '#ff6b6b');
@@ -1699,7 +1699,8 @@ export class MetabolismViewer {
         () => {
           // When clicked, select the target reaction (the reaction the target arrow represents)
           this.selectReaction(targetReaction);
-        }
+        },
+        { isReversible: this.isReactionReversible(targetReaction) }
       );
       
       // Make the hit area wider at the endpoint for easier clicking
@@ -1711,7 +1712,8 @@ export class MetabolismViewer {
     };
     
     // Generalized function to create an arrow with visible line and hit area
-    const createArrow = (coords, connectionId, className, onClick) => {
+    const createArrow = (coords, connectionId, className, onClick, options = {}) => {
+      const { isReversible = false } = options;
       // Create visible arrow line
       const visibleArrow = this.g.append('line')
         .attr('class', `connection ${className || ''}`)
@@ -1724,6 +1726,10 @@ export class MetabolismViewer {
         .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
         .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
         .attr('marker-end', 'url(#arrowhead)');
+      
+      if (isReversible) {
+        visibleArrow.attr('marker-start', 'url(#arrowhead)');
+      }
       
       // Create invisible hit area (wider, transparent) - larger for easier interaction
       const hitArea = this.g.append('line')
@@ -1808,6 +1814,7 @@ export class MetabolismViewer {
       
       // Store arrow data
       const moleculeKey = reactantId && productId ? `${arrowKey}-${reactantId}-${productId}` : arrowKey;
+      const isReversible = this.isReactionReversible(targetReaction);
       const arrowData = {
         fromNodeId: fromNodeIdValue,
         toNodeId: toNodeIdValue,
@@ -1828,9 +1835,15 @@ export class MetabolismViewer {
       }
       
       // Create visual arrow
-      return createArrow(coords, connectionId, className, () => {
-        this.selectReaction(targetReaction);
-      });
+      return createArrow(
+        coords,
+        connectionId,
+        className,
+        () => {
+          this.selectReaction(targetReaction);
+        },
+        { isReversible }
+      );
     };
     
     // Detect bidirectional arrows (same nodes but reversed directions)
@@ -2198,7 +2211,8 @@ export class MetabolismViewer {
             if (finalTargetReaction) {
               this.selectReaction(finalTargetReaction);
             }
-          }
+          },
+          { isReversible: this.isReactionReversible(finalTargetReaction) }
         );
         
         if (arrowResult && arrowResult.hitArea) {
@@ -2255,7 +2269,8 @@ export class MetabolismViewer {
             if (finalTargetReaction) {
               this.selectReaction(finalTargetReaction);
             }
-          }
+          },
+          { isReversible: this.isReactionReversible(finalTargetReaction) }
         );
         
         if (arrowResult && arrowResult.hitArea) {
@@ -2340,9 +2355,15 @@ export class MetabolismViewer {
     }
     
     // Create visual arrow with wider hit area for midpoint connections
-    const arrowResult = this.createArrowVisual(coords, connectionId, 'connection-midpoint', () => {
-      this.selectReaction(targetReaction);
-    });
+    const arrowResult = this.createArrowVisual(
+      coords,
+      connectionId,
+      'connection-midpoint',
+      () => {
+        this.selectReaction(targetReaction);
+      },
+      { isReversible: this.isReactionReversible(targetReaction) }
+    );
     if (arrowResult && arrowResult.hitArea) {
       arrowResult.hitArea.attr('stroke-width', 30);
     }
@@ -2353,7 +2374,8 @@ export class MetabolismViewer {
   /**
    * Helper method to create visual arrow elements
    */
-  createArrowVisual(coords, connectionId, className, onClick) {
+  createArrowVisual(coords, connectionId, className, onClick, options = {}) {
+    const { markerUrl = 'url(#arrowhead)', isReversible = false } = options;
     // Create visible arrow line
     const visibleArrow = this.g.append('line')
       .attr('class', `connection ${className || ''}`)
@@ -2365,7 +2387,11 @@ export class MetabolismViewer {
             .attr('stroke', PATHWAY_CONFIG.colors.secondary)
             .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
             .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
-      .attr('marker-end', 'url(#arrowhead)');
+      .attr('marker-end', markerUrl);
+    
+    if (isReversible) {
+      visibleArrow.attr('marker-start', markerUrl);
+    }
     
     // Create invisible hit area
     const hitArea = this.g.append('line')
@@ -2408,6 +2434,17 @@ export class MetabolismViewer {
     if (!reaction) return false;
     // Check if it's a protein complex or mobile carrier
     return reaction.isProteinComplex === true || reaction.isMobileCarrier === true;
+  }
+
+  isReactionReversible(reaction) {
+    if (!reaction) return false;
+    if (reaction.conditions && typeof reaction.conditions.isReversible === 'boolean') {
+      return reaction.conditions.isReversible;
+    }
+    if (typeof reaction.isReversible === 'boolean') {
+      return reaction.isReversible;
+    }
+    return false;
   }
   
   /**
@@ -5229,7 +5266,13 @@ export class MetabolismViewer {
       .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
       .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
       .attr('stroke', PATHWAY_CONFIG.colors.secondary)
-      .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
+      .attr('marker-end', 'url(#arrowhead)') // Reset marker to default
+      .each(function() {
+        const element = d3.select(this);
+        if (element.attr('marker-start')) {
+          element.attr('marker-start', 'url(#arrowhead)');
+        }
+      });
     
     // Reset all node highlights using unified function
     this.resetAllNodeHighlights();
@@ -5527,6 +5570,9 @@ export class MetabolismViewer {
             .attr('stroke-opacity', 1)
             .attr('stroke', '#ff6b6b')
             .attr('marker-end', 'url(#arrowhead-highlighted)');
+          if (arrowElement.attr('marker-start')) {
+            arrowElement.attr('marker-start', 'url(#arrowhead-highlighted)');
+          }
         }
       }
     }
@@ -5552,7 +5598,13 @@ export class MetabolismViewer {
       .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
       .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
       .attr('stroke', PATHWAY_CONFIG.colors.secondary)
-      .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
+      .attr('marker-end', 'url(#arrowhead)') // Reset marker to default
+      .each(function() {
+        const element = d3.select(this);
+        if (element.attr('marker-start')) {
+          element.attr('marker-start', 'url(#arrowhead)');
+        }
+      });
     
     // Highlight all arrows representing this reaction (by reaction_id, not nodeId)
     this.highlightReactionArrows(reaction.id, PATHWAY_CONFIG.arrowSettings.strokeWidthHover);
@@ -6652,7 +6704,13 @@ export class MetabolismViewer {
       .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
       .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
       .attr('stroke', PATHWAY_CONFIG.colors.secondary)
-      .attr('marker-end', 'url(#arrowhead)'); // Reset marker to default
+      .attr('marker-end', 'url(#arrowhead)') // Reset marker to default
+      .each(function() {
+        const element = d3.select(this);
+        if (element.attr('marker-start')) {
+          element.attr('marker-start', 'url(#arrowhead)');
+        }
+      });
     
     this.applyMoleculeHighlight(molecule, reactionNode);
     
