@@ -62,8 +62,8 @@ export const aromaticAminoAcidMetabolismReactions = [
   {
     id: 'rxn_aromatic_4',
     name: 'Phenylalanine Hydroxylation',
-    byreactant: ['Tetrahydrobiopterin (BH₄)'],
-    byproduct: ['Dihydrobiopterin (BH₂)'],
+    byreactant: ['bh4_set1'],
+    byproduct: ['bh2_set1'],
     displayByreactant: ['O₂'],
     displayByproduct: ['H₂O'],
     hideByreactantLabels: true,
@@ -138,8 +138,8 @@ export const aromaticAminoAcidMetabolismReactions = [
   {
     id: 'rxn_aromatic_10',
     name: 'Tyrosine Hydroxylation',
-    byreactant: ['Tetrahydrobiopterin (BH₄)'],
-    byproduct: ['Dihydrobiopterin (BH₂)'],
+    byreactant: ['bh4_set2'],
+    byproduct: ['bh2_set2'],
     displayByreactant: ['O₂'],
     displayByproduct: ['H₂O'],
     hideByreactantLabels: true,
@@ -472,8 +472,8 @@ export const aromaticAminoAcidMetabolismReactions = [
   {
     id: 'rxn_aromatic_28',
     name: 'Tryptophan Hydroxylation',
-    byreactant: ['Tetrahydrobiopterin (BH₄)'],
-    byproduct: ['Dihydrobiopterin (BH₂)'],
+    byreactant: ['bh4_set3'],
+    byproduct: ['bh2_set3'],
     displayByreactant: ['O₂'],
     displayByproduct: ['H₂O'],
     hideByreactantLabels: true,

@@ -5688,32 +5688,42 @@ export class MetabolismViewer {
       }
     }
     
-    // Check byreactant from reaction data - find nodes by molecule name
+    // Check byreactant from reaction data - can be node IDs or molecule names
     if (reaction.byreactant) {
       const byreactantArray = Array.isArray(reaction.byreactant) ? reaction.byreactant : [reaction.byreactant];
       byreactantArray.forEach(byreactant => {
         if (typeof byreactant === 'string') {
-          // Search for node with matching name
-          for (const [nodeId, node] of this.nodeMap.entries()) {
-            if (node.name === byreactant) {
-              reactantNodeIds.add(nodeId);
-              break; // Found the node, no need to continue searching
+          // First check if it's a node ID (exists in nodeMap)
+          if (this.nodeMap.has(byreactant)) {
+            reactantNodeIds.add(byreactant);
+          } else {
+            // Fall back to searching by molecule name
+            for (const [nodeId, node] of this.nodeMap.entries()) {
+              if (node.name === byreactant) {
+                reactantNodeIds.add(nodeId);
+                break; // Found the node, no need to continue searching
+              }
             }
           }
         }
       });
     }
     
-    // Check byproduct from reaction data - find nodes by molecule name
+    // Check byproduct from reaction data - can be node IDs or molecule names
     if (reaction.byproduct) {
       const byproductArray = Array.isArray(reaction.byproduct) ? reaction.byproduct : [reaction.byproduct];
       byproductArray.forEach(byproduct => {
         if (typeof byproduct === 'string') {
-          // Search for node with matching name
-          for (const [nodeId, node] of this.nodeMap.entries()) {
-            if (node.name === byproduct) {
-              productNodeIds.add(nodeId);
-              break; // Found the node, no need to continue searching
+          // First check if it's a node ID (exists in nodeMap)
+          if (this.nodeMap.has(byproduct)) {
+            productNodeIds.add(byproduct);
+          } else {
+            // Fall back to searching by molecule name
+            for (const [nodeId, node] of this.nodeMap.entries()) {
+              if (node.name === byproduct) {
+                productNodeIds.add(nodeId);
+                break; // Found the node, no need to continue searching
+              }
             }
           }
         }
