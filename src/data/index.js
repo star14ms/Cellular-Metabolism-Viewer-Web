@@ -9,17 +9,17 @@
 import { glycolysisNodes, glycolysisReactions, glycolysisArrows, glycolysisData } from './glycolysis/glycolysis_index.js';
 import { pyruvateOxidationNodes, pyruvateOxidationReactions, pyruvateOxidationArrows, pyruvateOxidationData } from './pyruvateOxidation/pyruvateOxidation_index.js';
 import { citricAcidCycleNodes, citricAcidCycleReactions, citricAcidCycleArrows, citricAcidCycleData } from './citricAcidCycle/citricAcidCycle_index.js';
-import { ammoniumCaptureReleaseNodes, ammoniumCaptureReleaseReactions, ammoniumCaptureReleaseArrows, ammoniumCaptureReleaseData } from './ammoniumCaptureRelease/ammoniumCaptureRelease_index.js';
 import { electronTransportChainNodes, electronTransportChainReactions, electronTransportChainArrows, electronTransportChainData } from './electronTransportChain/electronTransportChain_index.js';
 import { lactateFermentationNodes, lactateFermentationReactions, lactateFermentationArrows, lactateFermentationData } from './lactateFermentation/lactateFermentation_index.js';
 import { ethanolFermentationNodes, ethanolFermentationReactions, ethanolFermentationArrows, ethanolFermentationData } from './ethanolFermentation/ethanolFermentation_index.js';
-import { nucleosideSalvageNodes, nucleosideSalvageReactions, nucleosideSalvageArrows, nucleosideSalvageData } from './nucleosideSalvage/nucleosideSalvage_index.js';
-import { pyrimidineSynthesisNodes, pyrimidineSynthesisReactions, pyrimidineSynthesisArrows, pyrimidineSynthesisData } from './pyrimidineSynthesis/pyrimidineSynthesis_index.js';
 import { purineSynthesisNodes, purineSynthesisReactions, purineSynthesisArrows, purineSynthesisData } from './purineSynthesis/purineSynthesis_index.js';
-import { deoxyribonucleotidesNodes, deoxyribonucleotidesReactions, deoxyribonucleotidesArrows, deoxyribonucleotidesData } from './deoxyribonucleotides/deoxyribonucleotides_index.js';
+import { pyrimidineSynthesisNodes, pyrimidineSynthesisReactions, pyrimidineSynthesisArrows, pyrimidineSynthesisData } from './pyrimidineSynthesis/pyrimidineSynthesis_index.js';
 import { nucleotideBreakdownNodes, nucleotideBreakdownReactions, nucleotideBreakdownArrows, nucleotideBreakdownData } from './nucleotideBreakdown/nucleotideBreakdown_index.js';
+import { deoxyribonucleotidesNodes, deoxyribonucleotidesReactions, deoxyribonucleotidesArrows, deoxyribonucleotidesData } from './deoxyribonucleotides/deoxyribonucleotides_index.js';
+import { nucleosideSalvageNodes, nucleosideSalvageReactions, nucleosideSalvageArrows, nucleosideSalvageData } from './nucleosideSalvage/nucleosideSalvage_index.js';
 import { aromaticAminoAcidMetabolismNodes, aromaticAminoAcidMetabolismReactions, aromaticAminoAcidMetabolismArrows, aromaticAminoAcidMetabolismData } from './aromaticAminoAcidMetabolism/aromaticAminoAcidMetabolism_index.js';
 import { singleCarbonMetabolismNodes, singleCarbonMetabolismReactions, singleCarbonMetabolismArrows, singleCarbonMetabolismData } from './singleCarbonMetabolism/singleCarbonMetabolism_index.js';
+import { ammoniumCaptureReleaseNodes, ammoniumCaptureReleaseReactions, ammoniumCaptureReleaseArrows, ammoniumCaptureReleaseData } from './ammoniumCaptureRelease/ammoniumCaptureRelease_index.js';
 import { branchedChainAminoAcidBreakdownNodes, branchedChainAminoAcidBreakdownReactions, branchedChainAminoAcidBreakdownArrows, branchedChainAminoAcidBreakdownData } from './branchedChainAminoAcidBreakdown/branchedChainAminoAcidBreakdown_index.js';
 import { ureaCycleNodes, ureaCycleReactions, ureaCycleArrows, ureaCycleData } from './ureaCycle/ureaCycle_index.js';
 
@@ -28,17 +28,17 @@ export const allNodes = [
   ...glycolysisNodes,
   ...pyruvateOxidationNodes,
   ...citricAcidCycleNodes,
-  ...ammoniumCaptureReleaseNodes,
   ...electronTransportChainNodes,
   ...lactateFermentationNodes,
   ...ethanolFermentationNodes,
-  ...nucleosideSalvageNodes,
-  ...pyrimidineSynthesisNodes,
   ...purineSynthesisNodes,
-  ...deoxyribonucleotidesNodes,
+  ...pyrimidineSynthesisNodes,
   ...nucleotideBreakdownNodes,
+  ...deoxyribonucleotidesNodes,
+  ...nucleosideSalvageNodes,
   ...aromaticAminoAcidMetabolismNodes,
   ...singleCarbonMetabolismNodes,
+  ...ammoniumCaptureReleaseNodes,
   ...branchedChainAminoAcidBreakdownNodes,
   ...ureaCycleNodes
 ];
@@ -48,17 +48,17 @@ export const allReactions = [
   ...glycolysisReactions,
   ...pyruvateOxidationReactions,
   ...citricAcidCycleReactions,
-  ...ammoniumCaptureReleaseReactions,
   ...electronTransportChainReactions,
   ...lactateFermentationReactions,
   ...ethanolFermentationReactions,
-  ...nucleosideSalvageReactions,
-  ...pyrimidineSynthesisReactions,
   ...purineSynthesisReactions,
-  ...deoxyribonucleotidesReactions,
+  ...pyrimidineSynthesisReactions,
   ...nucleotideBreakdownReactions,
+  ...deoxyribonucleotidesReactions,
+  ...nucleosideSalvageReactions,
   ...aromaticAminoAcidMetabolismReactions,
   ...singleCarbonMetabolismReactions,
+  ...ammoniumCaptureReleaseReactions,
   ...branchedChainAminoAcidBreakdownReactions,
   ...ureaCycleReactions
 ];
@@ -68,17 +68,17 @@ export const allArrows = [
   ...glycolysisArrows,
   ...pyruvateOxidationArrows,
   ...citricAcidCycleArrows,
-  ...ammoniumCaptureReleaseArrows,
   ...electronTransportChainArrows,
   ...lactateFermentationArrows,
   ...ethanolFermentationArrows,
-  ...nucleosideSalvageArrows,
-  ...pyrimidineSynthesisArrows,
   ...purineSynthesisArrows,
-  ...deoxyribonucleotidesArrows,
+  ...pyrimidineSynthesisArrows,
   ...nucleotideBreakdownArrows,
+  ...deoxyribonucleotidesArrows,
+  ...nucleosideSalvageArrows,
   ...aromaticAminoAcidMetabolismArrows,
   ...singleCarbonMetabolismArrows,
+  ...ammoniumCaptureReleaseArrows,
   ...branchedChainAminoAcidBreakdownArrows,
   ...ureaCycleArrows
 ];
@@ -90,17 +90,19 @@ export const PATHWAY_CONFIG = {
     'glycolysis': 'Glycolysis',
     'pyruvate-oxidation': 'Pyruvate Oxidation',
     'citric-acid-cycle': 'Citric Acid Cycle (Krebs Cycle)',
-    'ammonium-capture-release': 'Ammonium Capture and Release',
     'electron-transport-chain': 'Electron Transport Chain',
     'lactate-fermentation': 'Lactate Fermentation',
     'ethanol-fermentation': 'Ethanol Fermentation',
-    'nucleoside-salvage': 'Nucleoside Salvage',
-    'pyrimidine-synthesis': 'Pyrimidine Synthesis',
+    
     'purine-synthesis': 'Purine Synthesis',
-    'deoxyribonucleotides': 'Deoxyribonucleotides Synthesis',
+    'pyrimidine-synthesis': 'Pyrimidine Synthesis',
     'nucleotide-breakdown': 'Nucleotide Breakdown',
+    'deoxyribonucleotides': 'Deoxyribonucleotides Synthesis',
+    'nucleoside-salvage': 'Nucleoside Salvage',
+    
     'aromatic-amino-acid-metabolism': 'Aromatic Amino Acid Metabolism',
     'single-carbon-metabolism': 'Single-Carbon Metabolism and Sulfur-Containing Amino Acids',
+    'ammonium-capture-release': 'Ammonium Capture and Release',
     'branched-chain-amino-acid-breakdown': 'Branched Chain Amino Acid Breakdown',
     'urea-cycle': 'Urea Cycle'
   },
@@ -123,11 +125,6 @@ export const PATHWAY_CONFIG = {
       useStandardShape: false,
       calculateOutwardDirection: true // Special handling for cycle
     },
-    'ammonium-capture-release': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
     'electron-transport-chain': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
@@ -143,7 +140,7 @@ export const PATHWAY_CONFIG = {
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
     },
-    'nucleoside-salvage': {
+    'purine-synthesis': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -153,7 +150,7 @@ export const PATHWAY_CONFIG = {
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
     },
-    'purine-synthesis': {
+    'nucleotide-breakdown': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -163,7 +160,7 @@ export const PATHWAY_CONFIG = {
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
     },
-    'nucleotide-breakdown': {
+    'nucleoside-salvage': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -174,6 +171,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'single-carbon-metabolism': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'ammonium-capture-release': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -219,14 +221,6 @@ const pathwayDefinitions = [
     data: citricAcidCycleData
   },
   {
-    id: 'ammonium-capture-release',
-    name: 'Ammonium Capture and Release',
-    nodes: ammoniumCaptureReleaseNodes,
-    reactions: ammoniumCaptureReleaseReactions,
-    arrows: ammoniumCaptureReleaseArrows,
-    data: ammoniumCaptureReleaseData
-  },
-  {
     id: 'electron-transport-chain',
     name: 'Electron Transport Chain',
     nodes: electronTransportChainNodes,
@@ -251,12 +245,12 @@ const pathwayDefinitions = [
     data: ethanolFermentationData
   },
   {
-    id: 'nucleoside-salvage',
-    name: 'Nucleoside Salvage',
-    nodes: nucleosideSalvageNodes,
-    reactions: nucleosideSalvageReactions,
-    arrows: nucleosideSalvageArrows,
-    data: nucleosideSalvageData
+    id: 'purine-synthesis',
+    name: 'Purine Synthesis',
+    nodes: purineSynthesisNodes,
+    reactions: purineSynthesisReactions,
+    arrows: purineSynthesisArrows,
+    data: purineSynthesisData
   },
   {
     id: 'pyrimidine-synthesis',
@@ -267,12 +261,12 @@ const pathwayDefinitions = [
     data: pyrimidineSynthesisData
   },
   {
-    id: 'purine-synthesis',
-    name: 'Purine Synthesis',
-    nodes: purineSynthesisNodes,
-    reactions: purineSynthesisReactions,
-    arrows: purineSynthesisArrows,
-    data: purineSynthesisData
+    id: 'nucleotide-breakdown',
+    name: 'Nucleotide Breakdown',
+    nodes: nucleotideBreakdownNodes,
+    reactions: nucleotideBreakdownReactions,
+    arrows: nucleotideBreakdownArrows,
+    data: nucleotideBreakdownData
   },
   {
     id: 'deoxyribonucleotides',
@@ -283,12 +277,12 @@ const pathwayDefinitions = [
     data: deoxyribonucleotidesData
   },
   {
-    id: 'nucleotide-breakdown',
-    name: 'Nucleotide Breakdown',
-    nodes: nucleotideBreakdownNodes,
-    reactions: nucleotideBreakdownReactions,
-    arrows: nucleotideBreakdownArrows,
-    data: nucleotideBreakdownData
+    id: 'nucleoside-salvage',
+    name: 'Nucleoside Salvage',
+    nodes: nucleosideSalvageNodes,
+    reactions: nucleosideSalvageReactions,
+    arrows: nucleosideSalvageArrows,
+    data: nucleosideSalvageData
   },
   {
     id: 'aromatic-amino-acid-metabolism',
@@ -305,6 +299,14 @@ const pathwayDefinitions = [
     reactions: singleCarbonMetabolismReactions,
     arrows: singleCarbonMetabolismArrows,
     data: singleCarbonMetabolismData
+  },
+  {
+    id: 'ammonium-capture-release',
+    name: 'Ammonium Capture and Release',
+    nodes: ammoniumCaptureReleaseNodes,
+    reactions: ammoniumCaptureReleaseReactions,
+    arrows: ammoniumCaptureReleaseArrows,
+    data: ammoniumCaptureReleaseData
   },
   {
     id: 'branched-chain-amino-acid-breakdown',

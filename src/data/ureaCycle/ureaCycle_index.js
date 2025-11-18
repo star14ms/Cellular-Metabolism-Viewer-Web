@@ -2,7 +2,7 @@
  * Urea Cycle Pathway - Index
  */
 
-import { ureaCycleNodes } from './ureaCycle_nodes.js';
+import { ureaCycleNodes, base_x, base_y } from './ureaCycle_nodes.js';
 import { ureaCycleReactions } from './ureaCycle_reactions.js';
 import { ureaCycleArrows } from './ureaCycle_arrows.js';
 
@@ -21,8 +21,8 @@ export const ureaCycleData = {
       // Ornithine: (1860, 860), Citrulline: (2140, 860), Argininosuccinate: (2140, 1140), Arginine: (1860, 1140)
       // Center: ((1860+2140+2140+1860)/4, (860+860+1140+1140)/4) = (2000, 1000)
       center: { 
-        x: 2800, // Calculated center from node positions
-        y: 2200 // Calculated center from node positions
+        x: base_x, // Calculated center from node positions
+        y: base_y // Calculated center from node positions
       },
       // Default angle for by-arrows (in degrees, pointing outward from cycle center)
       defaultByArrowAngle: 0,

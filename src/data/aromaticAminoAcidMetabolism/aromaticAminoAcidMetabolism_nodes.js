@@ -6,8 +6,8 @@
  */
 
 const unit_space = 200;
-const base_x = 1750; // Tyrosine position
-const base_y = -600;
+const base_x = 2800; // Tyrosine position
+const base_y = 200;
 
 export const aromaticAminoAcidMetabolismNodes = [
   {
@@ -187,7 +187,7 @@ export const aromaticAminoAcidMetabolismNodes = [
     formula: 'C₈H₈O₆',
     smiles: 'OC(=O)CC(=O)C(=O)CC1=CC(=C(C=C1)O)O',
     description: 'Intermediate in tyrosine catabolism',
-    position: { x: base_x, y: base_y + unit_space * 2.66 }
+    position: { x: base_x, y: base_y + unit_space * 3 }
   },
   {
     id: 'fumarylacetoacetate',
@@ -196,7 +196,7 @@ export const aromaticAminoAcidMetabolismNodes = [
     formula: 'C₈H₈O₆',
     smiles: 'OC(=O)CC(=O)C(=O)CC1=CC(=C(C=C1)O)O',
     description: 'Intermediate in tyrosine catabolism',
-    position: { x: base_x, y: base_y + unit_space * 3.33 }
+    position: { x: base_x, y: base_y + unit_space * 4 }
   },
   {
     id: 'succinylacetoacetate',
@@ -205,7 +205,7 @@ export const aromaticAminoAcidMetabolismNodes = [
     formula: 'C₈H₁₀O₆',
     smiles: 'OC(=O)CCC(=O)CC(=O)C(=O)O',
     description: 'Intermediate formed spontaneously from maleylacetoacetate or fumarylacetoacetate',
-    position: { x: base_x - unit_space, y: base_y + unit_space * 3 }
+    position: { x: base_x - unit_space, y: base_y + unit_space * 3.5 }
   },
   {
     id: 'succinylacetone',
@@ -214,7 +214,7 @@ export const aromaticAminoAcidMetabolismNodes = [
     formula: 'C₈H₁₂O₅',
     smiles: 'OC(=O)CCC(=O)CC(=O)C',
     description: 'Product of spontaneous decarboxylation of succinylacetoacetate',
-    position: { x: base_x - unit_space * 2, y: base_y + unit_space * 3 }
+    position: { x: base_x - unit_space * 2, y: base_y + unit_space * 3.5 }
   },
   {
     id: 'acetoacetate',
@@ -223,7 +223,7 @@ export const aromaticAminoAcidMetabolismNodes = [
     formula: 'C₄H₅O₃⁻',
     smiles: 'CC(=O)CC(=O)[O-]',
     description: 'Ketone body, enters TCA cycle',
-    position: { x: base_x - unit_space, y: base_y + unit_space * 4 }
+    position: { x: base_x - unit_space, y: base_y + unit_space * 5 }
   },
   {
     id: 'fumarate_aromatic',
@@ -232,7 +232,7 @@ export const aromaticAminoAcidMetabolismNodes = [
     formula: 'C₄H₄O₄²⁻',
     smiles: 'OC(=O)C=CC(=O)[O-]',
     description: 'TCA cycle intermediate from tyrosine catabolism',
-    position: { x: base_x, y: base_y + unit_space * 4 }
+    position: { x: base_x, y: base_y + unit_space * 5 }
   },
   {
     id: 'tca_cycle',
@@ -242,7 +242,7 @@ export const aromaticAminoAcidMetabolismNodes = [
     imageUrl: 'https://praxilabs.com/en/blog/wp-content/uploads/2024/04/istockphoto-1034141326-612x612-1-1.jpg',
     description: 'Tricarboxylic acid cycle (Krebs cycle)',
     pathwayIdToRoute: 'citric-acid-cycle', // Route to citric acid cycle pathway when clicked
-    position: { x: base_x, y: base_y + unit_space * 4.66 }
+    position: { x: base_x, y: base_y + unit_space * 6 }
   },
   {
     id: 'tryptophan',

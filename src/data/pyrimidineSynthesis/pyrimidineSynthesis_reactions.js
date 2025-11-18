@@ -189,7 +189,7 @@ export const pyrimidineSynthesisReactions = [
       ph: '7.0-7.4',
       temperature: '37°C',
       regulation: 'Spontaneous reaction, not enzymatically catalyzed',
-      isReversible: true
+      isReversible: false
     }
   }
 ];

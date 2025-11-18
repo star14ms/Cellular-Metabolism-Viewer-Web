@@ -81,11 +81,22 @@ const VIEWER_CONFIG = {
   // Pathway type colors for nodes
   pathwayTypeColors: {
     'carbohydrates': { fill: '#ffa0c0', stroke: '#944040' }, // Red
-    'amino-acids': { fill: '#5fa8d3', stroke: '#2c5f7c' }, // Blue
+    'amino-acids': { fill: '#5fa8d3', stroke: '#2c5f7c' }, // Blue (legacy, for backward compatibility)
+    'amino_acids': { fill: '#5fa8d3', stroke: '#2c5f7c' }, // Blue
     'oxidative-metabolism': { fill: '#ffb999', stroke: '#ffb999' }, // Orange
     'nucleotides': { fill: '#b399ff', stroke: '#8c66cc' }, // Purple
     'lipids': { fill: '#99dd99', stroke: '#66bb66' }, // Green
     'heme-metabolism': { fill: '#e0e099', stroke: '#c4c466' } // Gray Yellow
+  },
+  
+  // Pathway type colors for buttons (more vibrant, suitable for buttons)
+  pathwayTypeButtonColors: {
+    'carbohydrates': { fill: '#ff6b9d', hover: '#ff4d7a', selected: '#ff3366' }, // Red
+    'amino_acids': { fill: '#4a9fd8', hover: '#3a8fc8', selected: '#2a7fb8' }, // Blue
+    'oxidative-metabolism': { fill: '#ff9966', hover: '#ff8844', selected: '#ff7722' }, // Orange
+    'nucleotides': { fill: '#9966ff', hover: '#8844ff', selected: '#7722ff' }, // Purple
+    'lipids': { fill: '#66cc66', hover: '#55bb55', selected: '#44aa44' }, // Green
+    'heme-metabolism': { fill: '#d4c466', hover: '#c4b456', selected: '#b4a446' } // Yellow
   },
   
   // Node sizes
@@ -966,7 +977,7 @@ export class MetabolismViewer {
     let currentY = buttonY; // Start at initial Y position
     const buttonGap = 15; // Gap between buttons
     const lineHeight = buttonHeight + 10; // Height of each line (button height + gap)
-    const rightMargin = 20; // Right margin to prevent buttons from going off-screen
+    const rightMargin = 150; // Right margin to prevent buttons from overlapping with dark mode button
     
     // Get available width (accounting for SVG viewport and detail panel)
     const getAvailableWidth = () => {
@@ -993,13 +1004,17 @@ export class MetabolismViewer {
         .attr('class', 'pathway-button btn')
         .attr('transform', `translate(${currentX}, ${currentY})`);
       
+      // Get pathway type and button colors
+      const pathwayType = pathway.summary?.pathwayType || null;
+      const buttonColors = viewer.getPathwayButtonColors(pathwayType);
+      
       // Button background
       button.append('rect')
         .attr('width', buttonWidth)
         .attr('height', buttonHeight)
         .attr('rx', 6)
-        .attr('fill', PATHWAY_CONFIG.colors.primary)
-        .attr('stroke', PATHWAY_CONFIG.colors.primaryHover)
+        .attr('fill', buttonColors.fill)
+        .attr('stroke', buttonColors.hover)
         .attr('stroke-width', 2);
       
       // Button text
@@ -1012,19 +1027,22 @@ export class MetabolismViewer {
         .attr('font-weight', '600')
         .text(pathway.name);
       
+      // Store button colors for later use
+      pathway.buttonColors = buttonColors;
+      
       // Update currentX for next button
       currentX += buttonWidth + buttonGap;
       
       // Hover effects
       button.on('mouseenter', function() {
         d3.select(this).select('rect')
-          .attr('fill', PATHWAY_CONFIG.colors.primaryHover)
+          .attr('fill', buttonColors.hover)
           .attr('stroke-width', 3);
       })
       .on('mouseleave', function() {
         if (viewer.selectedPathway !== pathway.id) {
           d3.select(this).select('rect')
-            .attr('fill', PATHWAY_CONFIG.colors.primary)
+            .attr('fill', buttonColors.fill)
             .attr('stroke-width', 2);
         }
       })
@@ -1054,7 +1072,7 @@ export class MetabolismViewer {
     const buttonHeight = 28;
     const buttonGap = 15;
     const lineHeight = buttonHeight + 10;
-    const rightMargin = 20; // Right margin to prevent buttons from going off-screen
+    const rightMargin = 150; // Right margin to prevent buttons from overlapping with dark mode button
     
     // Get "Show All" button width (first button in group)
     const showAllButton = this.pathwayButtonGroup.select('.pathway-button').node();
@@ -1107,16 +1125,18 @@ export class MetabolismViewer {
     if (this.selectedPathway) {
       const prevPathway = this.pathways.find(p => p.id === this.selectedPathway);
       if (prevPathway && prevPathway.button) {
+        const buttonColors = prevPathway.buttonColors || this.getPathwayButtonColors(prevPathway.summary?.pathwayType);
         prevPathway.button.select('rect')
-          .attr('fill', PATHWAY_CONFIG.colors.primary)
+          .attr('fill', buttonColors.fill)
           .attr('stroke-width', 2);
       }
     }
     
     // Highlight selected pathway button
     if (pathway.button) {
+      const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
       pathway.button.select('rect')
-        .attr('fill', PATHWAY_CONFIG.colors.primaryDark)
+        .attr('fill', buttonColors.selected)
         .attr('stroke-width', 3);
     }
     
@@ -1319,8 +1339,9 @@ export class MetabolismViewer {
     if (this.selectedPathway) {
       const prevPathway = this.pathways.find(p => p.id === this.selectedPathway);
       if (prevPathway && prevPathway.button) {
+        const buttonColors = prevPathway.buttonColors || this.getPathwayButtonColors(prevPathway.summary?.pathwayType);
         prevPathway.button.select('rect')
-          .attr('fill', PATHWAY_CONFIG.colors.primary)
+          .attr('fill', buttonColors.fill)
           .attr('stroke-width', 2);
       }
       this.selectedPathway = null;
@@ -5610,8 +5631,9 @@ export class MetabolismViewer {
     // Reset pathway button highlighting
     this.pathways.forEach(pathway => {
       if (pathway.button) {
+        const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
         pathway.button.select('rect')
-          .attr('fill', PATHWAY_CONFIG.colors.primary)
+          .attr('fill', buttonColors.fill)
           .attr('stroke-width', 2);
       }
     });
@@ -5672,6 +5694,34 @@ export class MetabolismViewer {
       stroke: PATHWAY_CONFIG.colors.reactionCircleStroke,
       proteinComplexFill: PATHWAY_CONFIG.colors.proteinComplex,
       proteinComplexStroke: PATHWAY_CONFIG.colors.proteinComplexStroke
+    };
+  }
+  
+  /**
+   * Get button colors for a pathway type
+   * @param {string} pathwayType - The pathway type
+   * @returns {Object} Object with fill, hover, and selected colors, or default colors
+   */
+  getPathwayButtonColors(pathwayType) {
+    if (!pathwayType) {
+      // Default colors (current primary colors)
+      return {
+        fill: PATHWAY_CONFIG.colors.primary,
+        hover: PATHWAY_CONFIG.colors.primaryHover,
+        selected: PATHWAY_CONFIG.colors.primaryDark
+      };
+    }
+    
+    const buttonColors = PATHWAY_CONFIG.pathwayTypeButtonColors[pathwayType];
+    if (buttonColors) {
+      return buttonColors;
+    }
+    
+    // Fallback to default colors
+    return {
+      fill: PATHWAY_CONFIG.colors.primary,
+      hover: PATHWAY_CONFIG.colors.primaryHover,
+      selected: PATHWAY_CONFIG.colors.primaryDark
     };
   }
   
@@ -5921,8 +5971,9 @@ export class MetabolismViewer {
     // Reset pathway button highlighting
     this.pathways.forEach(pathway => {
       if (pathway.button) {
+        const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
         pathway.button.select('rect')
-          .attr('fill', PATHWAY_CONFIG.colors.primary)
+          .attr('fill', buttonColors.fill)
           .attr('stroke-width', 2);
       }
     });
@@ -7059,8 +7110,9 @@ export class MetabolismViewer {
     // Reset pathway button highlighting
     this.pathways.forEach(pathway => {
       if (pathway.button) {
+        const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
         pathway.button.select('rect')
-          .attr('fill', PATHWAY_CONFIG.colors.primary)
+          .attr('fill', buttonColors.fill)
           .attr('stroke-width', 2);
       }
     });

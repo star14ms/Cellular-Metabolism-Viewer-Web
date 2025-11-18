@@ -15,8 +15,8 @@
  */
 
 const unit_space = 200;
-const base_x = 2800; // Starting x position for the cycle center
-const base_y = 2200; // Starting y position for the cycle center
+const base_x = 3200; // Starting x position for the cycle center
+const base_y = 2000; // Starting y position for the cycle center
 
 export const ureaCycleNodes = [
   // Central Urea Cycle Nodes (arranged in a cycle)
@@ -181,4 +181,6 @@ export const ureaCycleNodes = [
     position: { x: base_x + unit_space * -0.25, y: base_y + unit_space * 1.5 }
   }
 ];
+
+export { base_x, base_y };
 
