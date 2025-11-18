@@ -62,7 +62,12 @@ export function getAlternativeNames(moleculeName) {
     'Deoxyuridine monophosphate (dUMP)': ['dUMP', 'Deoxyuridine monophosphate'],
     'Deoxythymidine monophosphate (dTMP)': ['dTMP', 'Thymidine monophosphate'],
     // Folate cycle compounds
-    'N⁵,N¹⁰-methylene-THF': ['5,10-Methylenetetrahydrofolate', '5,10-Methylene-THF', '5,10-CH2-THF'],
+    'N⁵,N¹⁰-methylene-THF': ['5,10-Methylene-THF', '5,10-CH2-THF'],
+    'N⁵,N¹⁰-methenyl-THF': ['5,10-Methenyl-THF', '5,10-Methenyltetrahydrofolic acid', '5,10-CH+-THF'],
+    // Single-carbon metabolism compounds
+    'N⁵-methyl-THF': ['5-Methyl-THF'],
+    '3-Phosphopyruvate': ['3-phosphonatopyruvate'],
+    'Bile Salts': ['Bile salt'],
     // Pyrimidine synthesis compounds
     'N-carbamoyl aspartate': ['N-carbamoylaspartate', 'Ureidosuccinic acid', 'N-carbamoyl-L-aspartate'],
     // Purine synthesis intermediates

@@ -11,7 +11,8 @@ import {
   allReactions, 
   allArrows, 
   PATHWAY_CONFIG, 
-  generatePathwaysArray 
+  generatePathwaysArray,
+  pathwayDefinitions 
 } from '../data/index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
@@ -1497,6 +1498,246 @@ export class MetabolismViewer {
       return arrowResult;
     };
     
+    // Function to create a curved cycle arrow
+    // Approach: 
+    // 1. Draw a complete circle passing through node centers
+    // 2. Find all intersection points where circle meets node surfaces (2n points for n nodes)
+    // 3. Break circle into segments, removing parts that pass through nodes
+    const createCurvedCycleArrow = (fromNode, toNode, connectionId, targetReaction, cycleMetadata, arrowData = null) => {
+      // Get cycle center from metadata
+      const centerX = cycleMetadata.center.x;
+      const centerY = cycleMetadata.center.y;
+      const centerPos = { x: centerX, y: centerY };
+      
+      // Check if this arrow should be flipped
+      const isFlipped = arrowData && arrowData.flipped === true;
+      
+      // Get all nodes in the cycle
+      const cycleNodeIds = cycleMetadata.nodeOrder || [];
+      const cycleNodes = cycleNodeIds.map(nodeId => this.nodeMap.get(nodeId)).filter(n => n);
+      
+      // Calculate circle radius: distance from center to node centers
+      // For a circle to pass through all node centers, use the distance from center to any node center
+      // (all nodes should be equidistant from the center if they form a perfect cycle)
+      let circleRadius = 200; // default fallback
+      if (cycleNodes.length > 0) {
+        // Use the distance from center to the first node as the radius
+        // This ensures the circle passes through node centers
+        const firstNode = cycleNodes[0];
+        circleRadius = Math.sqrt(
+          Math.pow(firstNode.position.x - centerX, 2) + 
+          Math.pow(firstNode.position.y - centerY, 2)
+        );
+      }
+      
+      // Helper: Find both intersection points of circle with a node's surface
+      const findNodeIntersections = (nodePos, nodeRadius) => {
+        const dx = nodePos.x - centerX;
+        const dy = nodePos.y - centerY;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        
+        const maxDist = circleRadius + nodeRadius;
+        const minDist = Math.abs(circleRadius - nodeRadius);
+        
+        if (d > maxDist || d < minDist) {
+          // No intersection - return closest point
+          const directionToCenter = Math.atan2(centerY - nodePos.y, centerX - nodePos.x);
+          const isInside = d + nodeRadius < circleRadius;
+          const pointAngle = isInside ? directionToCenter : directionToCenter + Math.PI;
+          const point = {
+            x: nodePos.x + nodeRadius * Math.cos(pointAngle),
+            y: nodePos.y + nodeRadius * Math.sin(pointAngle),
+            nodeId: null // Will be set later
+          };
+          // Calculate angle after point is created
+          point.angle = Math.atan2(point.y - centerY, point.x - centerX);
+          return [point];
+        }
+        
+        // Calculate both intersection points
+        const a = (nodeRadius * nodeRadius - circleRadius * circleRadius + d * d) / (2 * d);
+        const h = Math.sqrt(nodeRadius * nodeRadius - a * a);
+        const p2x = nodePos.x + (a / d) * (centerX - nodePos.x);
+        const p2y = nodePos.y + (a / d) * (centerY - nodePos.y);
+        
+        const intersection1 = {
+          x: p2x + (h / d) * (centerY - nodePos.y),
+          y: p2y - (h / d) * (centerX - nodePos.x),
+          nodeId: null
+        };
+        intersection1.angle = Math.atan2(intersection1.y - centerY, intersection1.x - centerX);
+        
+        const intersection2 = {
+          x: p2x - (h / d) * (centerY - nodePos.y),
+          y: p2y + (h / d) * (centerX - nodePos.x),
+          nodeId: null
+        };
+        intersection2.angle = Math.atan2(intersection2.y - centerY, intersection2.x - centerX);
+        
+        return [intersection1, intersection2];
+      };
+      
+      // Step 2: Find all intersection points (2n points for n nodes)
+      const allIntersections = [];
+      cycleNodes.forEach(node => {
+        const nodeRadius = getNodeRadius(node, node.id);
+        const intersections = findNodeIntersections(node.position, nodeRadius);
+        intersections.forEach(point => {
+          point.nodeId = node.id;
+          allIntersections.push(point);
+        });
+      });
+      
+      // Sort intersections by angle around the circle
+      allIntersections.sort((a, b) => a.angle - b.angle);
+      
+      // Step 3: For this arrow, find the arc segment between fromNode and toNode
+      // that doesn't pass through other nodes
+      const fromRadius = getNodeRadius(fromNode, fromNode.id);
+      const toRadius = getNodeRadius(toNode, toNode.id);
+      const fromIntersections = findNodeIntersections(fromNode.position, fromRadius);
+      const toIntersections = findNodeIntersections(toNode.position, toRadius);
+      
+      // Find the intersection points that form the arc between fromNode and toNode
+      // Choose the pair that forms the shorter arc and doesn't pass through other nodes
+      let bestStart = null;
+      let bestEnd = null;
+      let minArcLength = Infinity;
+      
+      fromIntersections.forEach(fromPoint => {
+        toIntersections.forEach(toPoint => {
+          // Calculate arc length (angle difference)
+          let arcLength = toPoint.angle - fromPoint.angle;
+          if (arcLength > Math.PI) arcLength -= 2 * Math.PI;
+          if (arcLength < -Math.PI) arcLength += 2 * Math.PI;
+          
+          // Check if this arc passes through any other nodes
+          // (simplified: check if any other node's center is on this arc)
+          let passesThroughNode = false;
+          if (Math.abs(arcLength) < Math.PI) { // Only check for arcs < 180 degrees
+            cycleNodes.forEach(node => {
+              if (node.id === fromNode.id || node.id === toNode.id) return;
+              
+              const nodeAngle = Math.atan2(node.position.y - centerY, node.position.x - centerX);
+              let angleFromStart = nodeAngle - fromPoint.angle;
+              if (angleFromStart > Math.PI) angleFromStart -= 2 * Math.PI;
+              if (angleFromStart < -Math.PI) angleFromStart += 2 * Math.PI;
+              
+              // Check if node is between start and end along the arc
+              if (arcLength > 0 && angleFromStart > 0 && angleFromStart < arcLength) {
+                passesThroughNode = true;
+              } else if (arcLength < 0 && angleFromStart < 0 && angleFromStart > arcLength) {
+                passesThroughNode = true;
+              }
+            });
+          }
+          
+          // Prefer shorter arcs that don't pass through nodes
+          const score = Math.abs(arcLength) + (passesThroughNode ? 1000 : 0);
+          if (score < minArcLength) {
+            minArcLength = score;
+            bestStart = fromPoint;
+            bestEnd = toPoint;
+          }
+        });
+      });
+      
+      // Use best points found, or fallback to first intersection of each node
+      const startPoint = bestStart || fromIntersections[0];
+      const endPoint = bestEnd || toIntersections[0];
+      
+      const startX = startPoint.x;
+      const startY = startPoint.y;
+      const endX = endPoint.x;
+      const endY = endPoint.y;
+      
+      // Calculate angles for arc
+      const startAngle = Math.atan2(startY - centerY, startX - centerX);
+      const endAngle = Math.atan2(endY - centerY, endX - centerX);
+      
+      // Calculate angle difference
+      let angleDiff = endAngle - startAngle;
+      if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+      if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+      
+      // SVG arc parameters
+      const largeArcFlag = Math.abs(angleDiff) > Math.PI ? 1 : 0;
+      const sweepFlag = angleDiff > 0 ? 1 : 0;
+      
+      // Note: flipped property only affects by-molecule arrows, not the main cycle arrow
+      // The main arrow direction is determined by the node order in the cycle
+      
+      // Create SVG arc path (this is the segment of the circle between the two nodes)
+      const pathData = `M ${startX},${startY} A ${circleRadius},${circleRadius} 0 ${largeArcFlag},${sweepFlag} ${endX},${endY}`;
+      
+      // Create visible curved arrow path
+      const visibleArrow = this.g.append('path')
+        .attr('class', 'connection connection-cycle')
+        .attr('data-connection-id', connectionId)
+        .attr('d', pathData)
+        .attr('fill', 'none')
+        .attr('stroke', '#2c5f7c')
+        .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+        .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
+        .attr('marker-end', 'url(#arrowhead)');
+      
+      const isReversible = targetReaction && this.isReactionReversible(targetReaction);
+      if (isReversible) {
+        visibleArrow.attr('marker-start', 'url(#arrowhead)');
+      }
+      
+      // Create hit area
+      const hitArea = this.g.append('path')
+        .attr('class', 'connection-hit connection-hit-cycle')
+        .attr('data-connection-id', connectionId)
+        .attr('d', pathData)
+        .attr('fill', 'none')
+        .attr('stroke', 'transparent')
+        .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.hitAreaWidth)
+        .attr('stroke-opacity', 0)
+        .on('mouseenter', () => {
+          visibleArrow
+            .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidthHover)
+            .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacityHover);
+        })
+        .on('mouseleave', () => {
+          visibleArrow
+            .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+            .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity);
+        })
+        .on('click', (event) => {
+          event.stopPropagation();
+          if (targetReaction) {
+            this.selectReaction(targetReaction);
+          }
+        });
+      
+      // Store arrow information
+      if (targetReaction) {
+        const arrowKey = getArrowKey(fromNode.id, toNode.id);
+        this.arrowDataMap.set(arrowKey, {
+          x1: startX,
+          y1: startY,
+          x2: endX,
+          y2: endY,
+          coords: { x1: startX, y1: startY, x2: endX, y2: endY }, // Store coords for by-molecule arrow positioning
+          targetReaction: targetReaction,
+          arrowKey: arrowKey,
+          connectionId: connectionId, // Needed for findMainArrow to identify this arrow
+          fromNodeId: fromNode.id, // Needed for findMainArrow to identify this arrow
+          toNodeId: toNode.id, // Needed for findMainArrow to identify this arrow
+          isCurved: true,
+          pathData: pathData,
+        });
+        
+        if (targetReaction.arrowIds && !targetReaction.arrowIds.includes(connectionId)) {
+          targetReaction.arrowIds.push(connectionId);
+        }
+      }
+      
+      return { visibleArrow, hitArea };
+    };
+    
     // Generalized function to create an arrow with visible line and hit area
     const createArrow = (coords, connectionId, className, onClick, options = {}) => {
       const { isReversible = false } = options;
@@ -1672,6 +1913,8 @@ export class MetabolismViewer {
       
       // Check if this is a curved arrow (which requires either from_id or to_id)
       const isCurved = arrowData.curved === true;
+      // Check if this is a cycle arrow (for curved cycle paths)
+      const isCycleArrow = arrowData.cycleArrow === true;
       
       if (!isCurved) {
         // For non-curved arrows, both nodes are required
@@ -1903,15 +2146,49 @@ export class MetabolismViewer {
         // Only fall back to raw reaction if processed reaction not found
         const finalReaction = processedReaction || targetReaction;
         
-        // Draw straight arrow (normal behavior)
-        createArrowWithData(
-          fromNode,
-          toNode,
-          coords,
-          arrowData.id,
-          '',
-          finalReaction
-        );
+        // Check if this is a cycle arrow that needs curved rendering
+        if (isCycleArrow && arrowData.cyclic_id) {
+          // Look up cycle metadata
+          let cycleMetadata = null;
+          for (const pathwayDef of pathwayDefinitions) {
+            if (pathwayDef.data && pathwayDef.data.cycles) {
+              cycleMetadata = pathwayDef.data.cycles.find(c => c.cyclic_id === arrowData.cyclic_id);
+              if (cycleMetadata) break;
+            }
+          }
+          
+          if (cycleMetadata && cycleMetadata.arrowCurvature && cycleMetadata.arrowCurvature.useCurved) {
+            // Draw curved cycle arrow
+            createCurvedCycleArrow(
+              fromNode,
+              toNode,
+              arrowData.id,
+              finalReaction,
+              cycleMetadata,
+              arrowData // Pass arrowData to access flipped property
+            );
+          } else {
+            // Fallback to straight arrow if cycle metadata not found
+            createArrowWithData(
+              fromNode,
+              toNode,
+              coords,
+              arrowData.id,
+              '',
+              finalReaction
+            );
+          }
+        } else {
+          // Draw straight arrow (normal behavior)
+          createArrowWithData(
+            fromNode,
+            toNode,
+            coords,
+            arrowData.id,
+            '',
+            finalReaction
+          );
+        }
       } else {
         // Draw arrow even if no reaction found (for visual completeness)
         createArrow(coords, arrowData.id, '', () => {
@@ -2390,7 +2667,21 @@ export class MetabolismViewer {
         }
       }
       
-      // Prioritize: find the FIRST node-to-node arrow (not a midpoint connection)
+      // Prioritize cycle arrows first (they should have fromNodeId and toNodeId)
+      for (const arrowData of candidateArrows) {
+        if (!arrowData.isMidpointConnection) {
+          const rawArrow = this.arrowMap.get(arrowData.connectionId);
+          const isCycleArrow = (rawArrow && rawArrow.cycleArrow === true)
+              
+          if (isCycleArrow && 
+              isNodeId(arrowData.fromNodeId) && 
+              isNodeId(arrowData.toNodeId)) {
+            return arrowData; // Return cycle arrow immediately
+          }
+        }
+      }
+      
+      // Then find regular node-to-node arrows (not a midpoint connection)
       // This ensures we only draw by-molecule arrows on the main node-to-node arrow
       for (const arrowData of candidateArrows) {
         if (!arrowData.isMidpointConnection &&
@@ -2474,6 +2765,7 @@ export class MetabolismViewer {
       // Only needed if data comes from reaction (for arrow midpoint attachment)
       // If data comes from node, we'll attach directly to the node
       const mainArrow = dataFromNode ? null : findMainArrow(reaction);
+      const isCycleMainArrow = mainArrow?.isCurved === true;
       
       // Check if the main arrow has byproduct/byreactant
       // For curved arrows: if arrow doesn't have byproduct/byreactant, don't fall back to reaction data
@@ -2605,6 +2897,8 @@ export class MetabolismViewer {
       let startingPointArrowId = null;
       // Track which arrow was used to calculate coords (for midpoint calculation)
       let coordsArrowId = null;
+      // Track cycle metadata for by-arrow angle calculations
+      let cycleMetadata = null;
       
       // Check if this is an enzyme/carrier node (generalized check)
       const isEnzymeOrCarrier = this.isEnzymeOrCarrierNode(reaction);
@@ -2935,10 +3229,98 @@ export class MetabolismViewer {
       }
       
       // Calculate arrow properties
-      dx = coords.x2 - coords.x1;
-      dy = coords.y2 - coords.y1;
-      arrowLength = Math.sqrt(dx * dx + dy * dy);
-      arrowAngle = Math.atan2(dy, dx);
+      // Try to get cycle metadata early - check all reaction arrows, not just curved ones
+      // This ensures we have cycle metadata even for non-curved cycle arrows
+      if (!cycleMetadata) {
+        // Check mainArrow first
+        if (mainArrow && mainArrow.connectionId) {
+          const rawArrow = this.arrowMap.get(mainArrow.connectionId);
+          if (rawArrow && rawArrow.cyclic_id) {
+            for (const pathwayDef of pathwayDefinitions) {
+              if (pathwayDef.data && pathwayDef.data.cycles) {
+                cycleMetadata = pathwayDef.data.cycles.find(c => c.cyclic_id === rawArrow.cyclic_id);
+                if (cycleMetadata) break;
+              }
+            }
+          }
+        }
+        
+        // If still not found, check all reaction arrows
+        if (!cycleMetadata && reaction.arrowIds && reaction.arrowIds.length > 0) {
+          for (const arrowId of reaction.arrowIds) {
+            const arrow = this.arrowMap.get(arrowId);
+            if (arrow && arrow.cyclic_id) {
+              for (const pathwayDef of pathwayDefinitions) {
+                if (pathwayDef.data && pathwayDef.data.cycles) {
+                  cycleMetadata = pathwayDef.data.cycles.find(c => c.cyclic_id === arrow.cyclic_id);
+                  if (cycleMetadata) break;
+                }
+              }
+              if (cycleMetadata) break;
+            }
+          }
+        }
+      }
+      
+      // For cycle arrows with pathData, calculate angle at midpoint of arc using cycle center
+      let arrowAngleCalculated = false;
+      if (mainArrow && mainArrow.isCurved && mainArrow.pathData) {
+        // This is a cycle arrow with arc path
+        // Use cycle metadata we already retrieved (or try again if not found)
+        let cycleCenter = null;
+        if (cycleMetadata && cycleMetadata.center) {
+          cycleCenter = cycleMetadata.center;
+        } else if (mainArrow.connectionId) {
+          const rawArrow = this.arrowMap.get(mainArrow.connectionId);
+          if (rawArrow && rawArrow.cyclic_id) {
+            // Find cycle metadata
+            for (const pathwayDef of pathwayDefinitions) {
+              if (pathwayDef.data && pathwayDef.data.cycles) {
+                cycleMetadata = pathwayDef.data.cycles.find(c => c.cyclic_id === rawArrow.cyclic_id);
+                if (cycleMetadata && cycleMetadata.center) {
+                  cycleCenter = cycleMetadata.center;
+                  break;
+                }
+              }
+            }
+          }
+        }
+        
+        if (cycleCenter) {
+          // Extract arc parameters from pathData (format: "M x1,y1 A rx,ry 0 large-arc-flag,sweep-flag x2,y2")
+          const pathMatch = mainArrow.pathData.match(/M\s+([\d.]+),([\d.]+)\s+A\s+([\d.]+),([\d.]+)\s+0\s+(\d),(\d)\s+([\d.]+),([\d.]+)/);
+          if (pathMatch) {
+            const startX = parseFloat(pathMatch[1]);
+            const startY = parseFloat(pathMatch[2]);
+            const endX = parseFloat(pathMatch[7]);
+            const endY = parseFloat(pathMatch[8]);
+            const sweepFlag = parseInt(pathMatch[6]);
+            
+            // Calculate midpoint along the arc (average of start and end, projected onto circle)
+            const midXArc = (startX + endX) / 2;
+            const midYArc = (startY + endY) / 2;
+            
+            // Calculate angle from cycle center to midpoint
+            const centerToMidAngle = Math.atan2(midYArc - cycleCenter.y, midXArc - cycleCenter.x);
+            
+            // For cycle arrows, the tangent angle is perpendicular to the radius
+            // Add 90 degrees for counterclockwise (sweepFlag=1), subtract for clockwise (sweepFlag=0)
+            arrowAngle = centerToMidAngle + (sweepFlag === 1 ? Math.PI / 2 : -Math.PI / 2);
+            arrowAngleCalculated = true;
+          }
+        }
+      }
+      
+      if (!arrowAngleCalculated) {
+        // Regular arrow: calculate angle from start to end
+        dx = coords.x2 - coords.x1;
+        dy = coords.y2 - coords.y1;
+        arrowLength = Math.sqrt(dx * dx + dy * dy);
+        arrowAngle = Math.atan2(dy, dx);
+      } else {
+        // For cycle arrows, calculate length from path
+        arrowLength = Math.sqrt(Math.pow(coords.x2 - coords.x1, 2) + Math.pow(coords.y2 - coords.y1, 2));
+      }
       
       // Get rotation angle from reaction data (in degrees, defaults to 0)
       // Angle rotates the perpendicular direction: 0 = perpendicular, 90 = along arrow, -90 = opposite
@@ -3055,24 +3437,83 @@ export class MetabolismViewer {
           return 30;
         };
         
-        // Starting point determination for curved arrows - use this arrow's specific from_id or to_id
-        // Also determine if this is a to_id case (to_id exists but no from_id) for concavity flipping
-        if (fromNode) {
-          // from_id exists - use from_id edge position (going right)
-          const fromRadius = getNodeRadius(fromNode);
-          midX = fromNode.position.x + fromRadius;
-          midY = fromNode.position.y;
-        } else if (toNode) {
-          // to_id exists (and no from_id) - use to_id edge position (coming from left)
-          // This is a to_id case - concavity should be flipped by default
-          isMainArrowToIdCase = true;
-          const toRadius = getNodeRadius(toNode);
-          midX = toNode.position.x - toRadius;
-          midY = toNode.position.y;
+        // For cycle arrows with pathData, calculate midpoint along the arc
+        if (mainArrow && mainArrow.pathData && mainArrow.isCurved) {
+          // This is a cycle arrow - calculate midpoint along the arc
+          const pathMatch = mainArrow.pathData.match(/M\s+([\d.]+),([\d.]+)\s+A\s+([\d.]+),([\d.]+)\s+0\s+(\d),(\d)\s+([\d.]+),([\d.]+)/);
+          if (pathMatch) {
+            const startX = parseFloat(pathMatch[1]);
+            const startY = parseFloat(pathMatch[2]);
+            const rx = parseFloat(pathMatch[3]);
+            const ry = parseFloat(pathMatch[4]);
+            const largeArcFlag = parseInt(pathMatch[5]);
+            const sweepFlag = parseInt(pathMatch[6]);
+            const endX = parseFloat(pathMatch[7]);
+            const endY = parseFloat(pathMatch[8]);
+            
+            // Get cycle center from metadata
+            let cycleCenter = null;
+            // Try targetRawArrow first, then mainArrow's connectionId
+            const rawArrowForCycle = targetRawArrow || (mainArrow && mainArrow.connectionId ? this.arrowMap.get(mainArrow.connectionId) : null);
+            if (rawArrowForCycle && rawArrowForCycle.cyclic_id) {
+              for (const pathwayDef of pathwayDefinitions) {
+                if (pathwayDef.data && pathwayDef.data.cycles) {
+                  const cycleMetadata = pathwayDef.data.cycles.find(c => c.cyclic_id === rawArrowForCycle.cyclic_id);
+                  if (cycleMetadata && cycleMetadata.center) {
+                    cycleCenter = cycleMetadata.center;
+                    break;
+                  }
+                }
+              }
+            }
+            
+            if (cycleCenter) {
+              // Calculate midpoint angle along the arc
+              const startAngle = Math.atan2(startY - cycleCenter.y, startX - cycleCenter.x);
+              const endAngle = Math.atan2(endY - cycleCenter.y, endX - cycleCenter.x);
+              
+              // Calculate angle difference, handling wrapping
+              let angleDiff = endAngle - startAngle;
+              if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+              if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+              
+              // Midpoint angle is halfway along the arc
+              const midAngle = startAngle + angleDiff / 2;
+              
+              // Calculate midpoint position on the circle
+              const radius = Math.sqrt(Math.pow(startX - cycleCenter.x, 2) + Math.pow(startY - cycleCenter.y, 2));
+              midX = cycleCenter.x + radius * Math.cos(midAngle);
+              midY = cycleCenter.y + radius * Math.sin(midAngle);
+            } else {
+              // Fallback: use average of start and end points
+              midX = (startX + endX) / 2;
+              midY = (startY + endY) / 2;
+            }
+          } else {
+            // Fallback: use calculated coords midpoint
+            midX = (coords.x1 + coords.x2) / 2;
+            midY = (coords.y1 + coords.y2) / 2;
+          }
         } else {
-          // Fallback: use calculated coords midpoint
-          midX = (coords.x1 + coords.x2) / 2;
-          midY = (coords.y1 + coords.y2) / 2;
+          // Starting point determination for regular curved arrows - use this arrow's specific from_id or to_id
+          // Also determine if this is a to_id case (to_id exists but no from_id) for concavity flipping
+          if (fromNode) {
+            // from_id exists - use from_id edge position (going right)
+            const fromRadius = getNodeRadius(fromNode);
+            midX = fromNode.position.x + fromRadius;
+            midY = fromNode.position.y;
+          } else if (toNode) {
+            // to_id exists (and no from_id) - use to_id edge position (coming from left)
+            // This is a to_id case - concavity should be flipped by default
+            isMainArrowToIdCase = true;
+            const toRadius = getNodeRadius(toNode);
+            midX = toNode.position.x - toRadius;
+            midY = toNode.position.y;
+          } else {
+            // Fallback: use calculated coords midpoint
+            midX = (coords.x1 + coords.x2) / 2;
+            midY = (coords.y1 + coords.y2) / 2;
+          }
         }
       } else {
         // Regular reaction: use arrow midpoint
@@ -3105,22 +3546,113 @@ export class MetabolismViewer {
       if (pathway && PATHWAY_CONFIG.pathwayBehavior[pathway]) {
         const behavior = PATHWAY_CONFIG.pathwayBehavior[pathway];
         offsetDirection = behavior.offsetDirection || 1;
+      }
+      
+      // Check for cycle metadata and apply defaultByArrowAngle for ALL cycles
+      // First try to get from the cycleMetadata we already retrieved (if available)
+      let cycleCenterForOutward = null;
+      let defaultByArrowAngle = 0;
+      
+      if (cycleMetadata && cycleMetadata.center) {
+        cycleCenterForOutward = cycleMetadata.center;
+        defaultByArrowAngle = cycleMetadata.defaultByArrowAngle || 0;
+      } else {
+        // Fallback: try to find cycle metadata from mainArrow or any reaction arrow
+        let rawArrowForCycle = mainArrow && mainArrow.connectionId ? this.arrowMap.get(mainArrow.connectionId) : null;
         
-        // Special handling for citric acid cycle (calculate outward direction)
+        // If mainArrow doesn't have cyclic_id, check all arrows for this reaction
+        if (!rawArrowForCycle || !rawArrowForCycle.cyclic_id) {
+          if (reaction.arrowIds && reaction.arrowIds.length > 0) {
+            for (const arrowId of reaction.arrowIds) {
+              const arrow = this.arrowMap.get(arrowId);
+              if (arrow && arrow.cyclic_id) {
+                rawArrowForCycle = arrow;
+                break;
+              }
+            }
+          }
+        }
+        
+        if (rawArrowForCycle && rawArrowForCycle.cyclic_id) {
+          for (const pathwayDef of pathwayDefinitions) {
+            if (pathwayDef.data && pathwayDef.data.cycles) {
+              const foundCycleMetadata = pathwayDef.data.cycles.find(c => c.cyclic_id === rawArrowForCycle.cyclic_id);
+              if (foundCycleMetadata && foundCycleMetadata.center) {
+                cycleCenterForOutward = foundCycleMetadata.center;
+                defaultByArrowAngle = foundCycleMetadata.defaultByArrowAngle || 0;
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Apply defaultByArrowAngle if we have cycle metadata
+      // Always apply if we have cycle center, even if defaultByArrowAngle is 0 (for consistency)
+      if (cycleCenterForOutward) {
+        // Calculate direction from center to arrow midpoint
+        const centerToMidX = midX - cycleCenterForOutward.x;
+        const centerToMidY = midY - cycleCenterForOutward.y;
+        let centerToMidAngle = Math.atan2(centerToMidY, centerToMidX);
+        
+        // First, calculate the perpendicular angle normally (without defaultByArrowAngle)
+        // Choose the perpendicular direction that points outward (after 180 flip)
+        const perpAngle1 = basePerpAngle + Math.PI;
+        const perpAngle2 = basePerpAngle;
+        
+        const diff1 = Math.abs(centerToMidAngle - perpAngle1);
+        const diff2 = Math.abs(centerToMidAngle - perpAngle2);
+        const wrappedDiff1 = Math.min(diff1, 2 * Math.PI - diff1);
+        const wrappedDiff2 = Math.min(diff2, 2 * Math.PI - diff2);
+        
+        let basePerpAngleChosen = wrappedDiff1 < wrappedDiff2 ? perpAngle1 : perpAngle2;
+        
+        // Now apply defaultByArrowAngle offset to the final perpendicular angle (not to centerToMidAngle)
+        // Values > 10 are likely degrees (common values: 0, 90, 180, 270, 360)
+        // Radian values are typically < 10 (common: 0, π/2≈1.57, π≈3.14, 2π≈6.28)
+        if (defaultByArrowAngle !== 0 && defaultByArrowAngle !== undefined) {
+          const angleOffset = Math.abs(defaultByArrowAngle) > 10
+            ? defaultByArrowAngle * Math.PI / 180  // Convert degrees to radians
+            : defaultByArrowAngle;  // Already in radians
+          
+          perpAngle = basePerpAngleChosen + angleOffset;
+          // Normalize angle to [0, 2π)
+          while (perpAngle < 0) perpAngle += 2 * Math.PI;
+          while (perpAngle >= 2 * Math.PI) perpAngle -= 2 * Math.PI;
+        } else {
+          perpAngle = basePerpAngleChosen;
+        }
+      } else if (pathway && PATHWAY_CONFIG.pathwayBehavior[pathway]) {
+        // Special handling for citric acid cycle (calculate outward direction) - fallback for old behavior
+        const behavior = PATHWAY_CONFIG.pathwayBehavior[pathway];
         if (behavior.calculateOutwardDirection && pathway === 'citric-acid-cycle') {
-          // For citric acid cycle, arrows should face outward (away from cycle center)
-          const cacReactions = this.reactions.filter(r => {
-            const rPathway = this.getPathwayForReaction(r);
-            return rPathway && rPathway.summary.name === PATHWAY_CONFIG.pathwayNames['citric-acid-cycle'];
-          });
-          if (cacReactions.length > 0) {
-            const centerX = cacReactions.reduce((sum, r) => sum + r.position.x, 0) / cacReactions.length;
-            const centerY = cacReactions.reduce((sum, r) => sum + r.position.y, 0) / cacReactions.length;
-            
+          // If still no center, fallback to calculating from reactions
+          if (!cycleCenterForOutward) {
+            const cacReactions = this.reactions.filter(r => {
+              const rPathway = this.getPathwayForReaction(r);
+              return rPathway && rPathway.summary.name === PATHWAY_CONFIG.pathwayNames['citric-acid-cycle'];
+            });
+            if (cacReactions.length > 0) {
+              cycleCenterForOutward = {
+                x: cacReactions.reduce((sum, r) => sum + r.position.x, 0) / cacReactions.length,
+                y: cacReactions.reduce((sum, r) => sum + r.position.y, 0) / cacReactions.length
+              };
+            }
+          }
+          
+          if (cycleCenterForOutward) {
             // Calculate direction from center to arrow midpoint
-            const centerToMidX = midX - centerX;
-            const centerToMidY = midY - centerY;
-            const centerToMidAngle = Math.atan2(centerToMidY, centerToMidX);
+            const centerToMidX = midX - cycleCenterForOutward.x;
+            const centerToMidY = midY - cycleCenterForOutward.y;
+            let centerToMidAngle = Math.atan2(centerToMidY, centerToMidX);
+            
+            // Apply defaultByArrowAngle offset if available
+            if (defaultByArrowAngle !== 0) {
+              const angleOffset = Math.abs(defaultByArrowAngle) > 10
+                ? defaultByArrowAngle * Math.PI / 180
+                : defaultByArrowAngle;
+              centerToMidAngle += angleOffset;
+            }
             
             // Choose the perpendicular direction that points outward (after 180 flip)
             const perpAngle1 = basePerpAngle + Math.PI;
@@ -3181,7 +3713,7 @@ export class MetabolismViewer {
       
       // If main arrow is curved, always draw the full arrow (both sides) even without data
       // hasCurvedArrow is already calculated earlier in the function
-      const shouldDrawFullArrow = isMainArrowCurved || hasCurvedArrow;
+      const shouldDrawFullArrow = hasCurvedArrow;
       
       if (!hasByreactant && !hasByproduct && !shouldDrawFullArrow) {
         return; // Skip if neither is provided and not a curved arrow
@@ -3288,7 +3820,7 @@ export class MetabolismViewer {
         // If node is above reaction center (top), turning point should face up (positive y)
         // If node is below reaction center (bottom), turning point should face down (negative y)
         let yBase = byArrowLength * 1.0; // Default: positive (faces up)
-        if (isMainArrowCurved && referenceY !== null) {
+        if (isMainArrowCurved && referenceY !== null && !isCycleMainArrow) {
           // Compare node y position to referenceY (average of all curved arrow nodes) to determine top vs bottom
           // This ensures consistent concavity calculation when multiple curved arrows share the same reaction_id
           const nodeY = midY;
@@ -3303,8 +3835,7 @@ export class MetabolismViewer {
           if (isMainArrowToIdCase) {
             yBase = -yBase;
           }
-        } else if (isFlipped && !isMainArrowCurved) {
-          // For non-curved arrows, use flipped setting
+        } else if (isFlipped) {
           yBase = -byArrowLength * 1.0;
         }
         const y = yBase * arrowYScale; // Apply y_scale from arrow data (default 1.0)
@@ -3374,7 +3905,7 @@ export class MetabolismViewer {
         // If node is above reaction center (top), turning point should face up (positive y)
         // If node is below reaction center (bottom), turning point should face down (negative y)
         let yBase = byArrowLength * 1.0; // Default: positive (faces up)
-        if (isMainArrowCurved && referenceY !== null) {
+        if (isMainArrowCurved && referenceY !== null && !isCycleMainArrow) {
           // Compare node y position to referenceY (average of all curved arrow nodes) to determine top vs bottom
           // This ensures consistent concavity calculation when multiple curved arrows share the same reaction_id
           const nodeY = midY;
@@ -3389,8 +3920,7 @@ export class MetabolismViewer {
           if (isMainArrowToIdCase) {
             yBase = -yBase;
           }
-        } else if (isFlipped && !isMainArrowCurved) {
-          // For non-curved arrows, use flipped setting
+        } else if (isFlipped) {
           yBase = -byArrowLength * 1.0;
         }
         const y = yBase * arrowYScale; // Apply y_scale from arrow data (default 1.0)
@@ -3474,9 +4004,9 @@ export class MetabolismViewer {
             currentArrowYScale = arrowYScale;
             currentArrowGroup = uArrowGroup;
           } else {
-            // For additional curved arrows without by-molecules, calculate new values
-            currentDrawByreactant = true; // Always draw for curved arrows
-            currentDrawByproduct = true; // Always draw for curved arrows
+            // For additional curved arrows, only draw if there's data (same as main arrow)
+            currentDrawByreactant = drawByreactant; // Only draw if hasByreactant
+            currentDrawByproduct = drawByproduct; // Only draw if hasByproduct
             currentByproductArrowhead = null; // Will be set later when arrowhead is created
             currentArrowXScale = rawArrow.x_scale !== undefined ? rawArrow.x_scale : 1.0;
             currentArrowYScale = rawArrow.y_scale !== undefined ? rawArrow.y_scale : 1.0;
@@ -3552,7 +4082,7 @@ export class MetabolismViewer {
             const targetNode = arrowFromNode || arrowToNode;
             // Determine if this is a to_id case (to_id exists but no from_id)
             const isToIdCase = !!arrowToNode && !arrowFromNode;
-            if (targetNode && referenceY !== null) {
+            if (targetNode && referenceY !== null && !isCycleMainArrow) {
               // Use the target node's actual Y position, not currentMidY
               // This is important for curved arrows where each arrow should use its own node's position
               // Compare with referenceY (average of all curved arrow nodes) instead of reaction.position.y

@@ -18,6 +18,7 @@ import { purineSynthesisNodes, purineSynthesisReactions, purineSynthesisArrows, 
 import { deoxyribonucleotidesNodes, deoxyribonucleotidesReactions, deoxyribonucleotidesArrows, deoxyribonucleotidesData } from './deoxyribonucleotides/deoxyribonucleotides_index.js';
 import { nucleotideBreakdownNodes, nucleotideBreakdownReactions, nucleotideBreakdownArrows, nucleotideBreakdownData } from './nucleotideBreakdown/nucleotideBreakdown_index.js';
 import { aromaticAminoAcidMetabolismNodes, aromaticAminoAcidMetabolismReactions, aromaticAminoAcidMetabolismArrows, aromaticAminoAcidMetabolismData } from './aromaticAminoAcidMetabolism/aromaticAminoAcidMetabolism_index.js';
+import { singleCarbonMetabolismNodes, singleCarbonMetabolismReactions, singleCarbonMetabolismArrows, singleCarbonMetabolismData } from './singleCarbonMetabolism/singleCarbonMetabolism_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -32,7 +33,8 @@ export const allNodes = [
   ...purineSynthesisNodes,
   ...deoxyribonucleotidesNodes,
   ...nucleotideBreakdownNodes,
-  ...aromaticAminoAcidMetabolismNodes
+  ...aromaticAminoAcidMetabolismNodes,
+  ...singleCarbonMetabolismNodes
 ];
 
 // Combine all reactions
@@ -48,7 +50,8 @@ export const allReactions = [
   ...purineSynthesisReactions,
   ...deoxyribonucleotidesReactions,
   ...nucleotideBreakdownReactions,
-  ...aromaticAminoAcidMetabolismReactions
+  ...aromaticAminoAcidMetabolismReactions,
+  ...singleCarbonMetabolismReactions
 ];
 
 // Combine all arrows
@@ -64,7 +67,8 @@ export const allArrows = [
   ...purineSynthesisArrows,
   ...deoxyribonucleotidesArrows,
   ...nucleotideBreakdownArrows,
-  ...aromaticAminoAcidMetabolismArrows
+  ...aromaticAminoAcidMetabolismArrows,
+  ...singleCarbonMetabolismArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -82,7 +86,8 @@ export const PATHWAY_CONFIG = {
     'purine-synthesis': 'Purine Synthesis',
     'deoxyribonucleotides': 'Deoxyribonucleotides Synthesis',
     'nucleotide-breakdown': 'Nucleotide Breakdown',
-    'aromatic-amino-acid-metabolism': 'Aromatic Amino Acid Metabolism'
+    'aromatic-amino-acid-metabolism': 'Aromatic Amino Acid Metabolism',
+    'single-carbon-metabolism': 'Single-Carbon Metabolism and Sulfur-Containing Amino Acids'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -99,7 +104,7 @@ export const PATHWAY_CONFIG = {
     },
     'citric-acid-cycle': {
       rotationAngle: 0, // No base rotation (handled dynamically)
-      offsetDirection: 1, // Below/outward (after 180 flip)
+      offsetDirection: 1, // Below/outward (after 180 flip) //// TODO: it doesn't work
       useStandardShape: false,
       calculateOutwardDirection: true // Special handling for cycle
     },
@@ -144,6 +149,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'aromatic-amino-acid-metabolism': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'single-carbon-metabolism': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -249,6 +259,14 @@ const pathwayDefinitions = [
     reactions: aromaticAminoAcidMetabolismReactions,
     arrows: aromaticAminoAcidMetabolismArrows,
     data: aromaticAminoAcidMetabolismData
+  },
+  {
+    id: 'single-carbon-metabolism',
+    name: 'Single-Carbon Metabolism and Sulfur-Containing Amino Acids',
+    nodes: singleCarbonMetabolismNodes,
+    reactions: singleCarbonMetabolismReactions,
+    arrows: singleCarbonMetabolismArrows,
+    data: singleCarbonMetabolismData
   }
 ];
 
