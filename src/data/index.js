@@ -9,6 +9,7 @@
 import { glycolysisNodes, glycolysisReactions, glycolysisArrows, glycolysisData } from './glycolysis/glycolysis_index.js';
 import { pyruvateOxidationNodes, pyruvateOxidationReactions, pyruvateOxidationArrows, pyruvateOxidationData } from './pyruvateOxidation/pyruvateOxidation_index.js';
 import { citricAcidCycleNodes, citricAcidCycleReactions, citricAcidCycleArrows, citricAcidCycleData } from './citricAcidCycle/citricAcidCycle_index.js';
+import { ammoniumCaptureReleaseNodes, ammoniumCaptureReleaseReactions, ammoniumCaptureReleaseArrows, ammoniumCaptureReleaseData } from './ammoniumCaptureRelease/ammoniumCaptureRelease_index.js';
 import { electronTransportChainNodes, electronTransportChainReactions, electronTransportChainArrows, electronTransportChainData } from './electronTransportChain/electronTransportChain_index.js';
 import { lactateFermentationNodes, lactateFermentationReactions, lactateFermentationArrows, lactateFermentationData } from './lactateFermentation/lactateFermentation_index.js';
 import { ethanolFermentationNodes, ethanolFermentationReactions, ethanolFermentationArrows, ethanolFermentationData } from './ethanolFermentation/ethanolFermentation_index.js';
@@ -27,6 +28,7 @@ export const allNodes = [
   ...glycolysisNodes,
   ...pyruvateOxidationNodes,
   ...citricAcidCycleNodes,
+  ...ammoniumCaptureReleaseNodes,
   ...electronTransportChainNodes,
   ...lactateFermentationNodes,
   ...ethanolFermentationNodes,
@@ -46,6 +48,7 @@ export const allReactions = [
   ...glycolysisReactions,
   ...pyruvateOxidationReactions,
   ...citricAcidCycleReactions,
+  ...ammoniumCaptureReleaseReactions,
   ...electronTransportChainReactions,
   ...lactateFermentationReactions,
   ...ethanolFermentationReactions,
@@ -65,6 +68,7 @@ export const allArrows = [
   ...glycolysisArrows,
   ...pyruvateOxidationArrows,
   ...citricAcidCycleArrows,
+  ...ammoniumCaptureReleaseArrows,
   ...electronTransportChainArrows,
   ...lactateFermentationArrows,
   ...ethanolFermentationArrows,
@@ -86,6 +90,7 @@ export const PATHWAY_CONFIG = {
     'glycolysis': 'Glycolysis',
     'pyruvate-oxidation': 'Pyruvate Oxidation',
     'citric-acid-cycle': 'Citric Acid Cycle (Krebs Cycle)',
+    'ammonium-capture-release': 'Ammonium Capture and Release',
     'electron-transport-chain': 'Electron Transport Chain',
     'lactate-fermentation': 'Lactate Fermentation',
     'ethanol-fermentation': 'Ethanol Fermentation',
@@ -117,6 +122,11 @@ export const PATHWAY_CONFIG = {
       offsetDirection: 1, // Below/outward (after 180 flip) //// TODO: it doesn't work
       useStandardShape: false,
       calculateOutwardDirection: true // Special handling for cycle
+    },
+    'ammonium-capture-release': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
     },
     'electron-transport-chain': {
       rotationAngle: Math.PI, // 180 degrees
@@ -207,6 +217,14 @@ const pathwayDefinitions = [
     reactions: citricAcidCycleReactions,
     arrows: citricAcidCycleArrows,
     data: citricAcidCycleData
+  },
+  {
+    id: 'ammonium-capture-release',
+    name: 'Ammonium Capture and Release',
+    nodes: ammoniumCaptureReleaseNodes,
+    reactions: ammoniumCaptureReleaseReactions,
+    arrows: ammoniumCaptureReleaseArrows,
+    data: ammoniumCaptureReleaseData
   },
   {
     id: 'electron-transport-chain',
