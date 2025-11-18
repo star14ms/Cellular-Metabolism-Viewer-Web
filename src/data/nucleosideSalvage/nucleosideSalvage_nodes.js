@@ -9,7 +9,7 @@
  */
 
 const unit_space = 150;
-const base_x = 4500; // Substrates x position
+const base_x = 5000; // Substrates x position
 const base_y = 2500; // Same y-level as ETC
 const product_x_offset = 200; // Products are to the right of substrates
 

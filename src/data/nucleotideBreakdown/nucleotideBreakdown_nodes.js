@@ -7,7 +7,7 @@
  */
 
 const unit_space = 200;
-const base_x = 1500;
+const base_x = 2000;
 const base_y = 3200;
 const column_spacing = 300; // Horizontal spacing between columns
 

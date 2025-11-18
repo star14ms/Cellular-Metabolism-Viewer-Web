@@ -7,7 +7,7 @@
  */
 
 const unit_space = 200;
-const base_x = 3400; // Positioned to the right of other pathways
+const base_x = 3900; // Positioned to the right of other pathways
 const base_y = 3200; // Start below top to avoid overlap
 const column_spacing = 250; // Horizontal spacing between columns
 

@@ -20,12 +20,18 @@ export function normalizeMoleculeName(moleculeName) {
   
   let normalized = moleculeName;
   
+  // Remove numeric coefficients from the beginning (e.g., "2 Acetyl-CoA" → "Acetyl-CoA")
+  // Handles both whole numbers (e.g., "2") and fractions (e.g., "1/2")
+  // Pattern: matches numbers or fractions followed by a space at the start
+  normalized = normalized.replace(/^(\d+\/\d+|\d+)\s+/, '').trim();
+  
   // Remove "(deoxy)" prefix from the beginning (case-insensitive, with optional spaces)
   // Pattern: matches "(deoxy)" at the start, with optional spaces before and after
   normalized = normalized.replace(/^\s*\(deoxy\)\s*/i, '').trim();
   
-  // Remove parenthetical abbreviations like "(PEP)", "(ATP)", etc. from the end
+  // Remove parenthetical abbreviations like "(PEP)", "(ATP)", "(HMG-CoA)", etc. from the end
   // This helps match names like "Phosphoenolpyruvate (PEP)" to "Phosphoenolpyruvate"
+  // or "β-Hydroxy-β-methylglutaryl-CoA (HMG-CoA)" to "β-Hydroxy-β-methylglutaryl-CoA"
   // Pattern: matches parentheses with optional spaces, e.g., " (PEP)", "(ATP)", etc.
   normalized = normalized.replace(/\s*\([^)]+\)\s*$/, '').trim();
   

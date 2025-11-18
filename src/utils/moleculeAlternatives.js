@@ -93,6 +93,10 @@ export function getAlternativeNames(moleculeName) {
     'Phenyllactate': ['Phenyllactic acid', '2-Hydroxy-3-phenylpropanoic acid', 'Phenyl lactic acid', '3-Phenyllactic acid'],
     'Alkapton': ['Homogentisic acid', 'Homogentisate', '2,5-Dihydroxyphenylacetic acid'],
     'Homogentisate': ['Homogentisic acid', '2,5-Dihydroxyphenylacetic acid'],
+    // Branched-chain amino acid breakdown compounds
+    'β-Methylcrotonyl-CoA': ['beta-Methylcrotonyl-CoA', 'beta-Methylcrotonyl coenzyme A', '3-Methylcrotonyl-CoA', '3-Methylcrotonyl coenzyme A', 'Methylcrotonyl-CoA', '3-Methylbut-2-enoyl-CoA', '3-Methylbut-2-enoyl coenzyme A'],
+    'β-Methylglutaconyl-CoA': ['beta-Methylglutaconyl-CoA', 'beta-Methylglutaconyl coenzyme A', '3-Methylglutaconyl-CoA', '3-Methylglutaconyl coenzyme A', 'Methylglutaconyl-CoA', '3-Methylglutaconyl coenzyme A'],
+    'β-Hydroxy-β-methylglutaryl-CoA (HMG-CoA)': ['3-Hydroxy-3-methylglutaryl-CoA', 'beta-Hydroxy-beta-methylglutaryl-CoA', 'HMG-CoA', '3-Hydroxy-3-methylglutaryl coenzyme A', 'beta-Hydroxy-beta-methylglutaryl coenzyme A', '3-Hydroxy-3-methylglutaryl-CoA', 'Hydroxymethylglutaryl-CoA'],
   };
   
   return alternatives[moleculeName] || [];

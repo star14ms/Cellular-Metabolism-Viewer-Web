@@ -7,7 +7,7 @@
  */
 
 const unit_space = 200;
-const base_x = 3500; // Positioned to the right of pyrimidine synthesis
+const base_x = 4000; // Positioned to the right of pyrimidine synthesis
 const base_y = 0; // Start below top to avoid overlap
 
 export const purineSynthesisNodes = [
