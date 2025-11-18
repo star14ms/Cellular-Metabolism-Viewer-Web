@@ -65,6 +65,44 @@ export class ArrowDetail {
     
     this.currentReaction = reaction;
     
+    // Collect all nodes from arrows sharing the same reaction_id
+    const allSubstrateNodes = new Map(); // Map to avoid duplicates: nodeId -> node
+    const allProductNodes = new Map(); // Map to avoid duplicates: nodeId -> node
+    
+    if (this.viewer && this.viewer.arrowMap && reaction.id) {
+      // Find all arrows with the same reaction_id
+      for (const [arrowId, arrow] of this.viewer.arrowMap.entries()) {
+        if (arrow && arrow.reaction_id === reaction.id) {
+          // Collect from_id nodes as substrates
+          if (arrow.from_id && this.viewer.nodeMap) {
+            const fromNode = this.viewer.nodeMap.get(arrow.from_id);
+            if (fromNode && !allSubstrateNodes.has(arrow.from_id)) {
+              allSubstrateNodes.set(arrow.from_id, {
+                id: fromNode.id,
+                name: fromNode.name,
+                formula: fromNode.formula,
+                description: fromNode.description,
+                smiles: fromNode.smiles
+              });
+            }
+          }
+          // Collect to_id nodes as products
+          if (arrow.to_id && this.viewer.nodeMap) {
+            const toNode = this.viewer.nodeMap.get(arrow.to_id);
+            if (toNode && !allProductNodes.has(arrow.to_id)) {
+              allProductNodes.set(arrow.to_id, {
+                id: toNode.id,
+                name: toNode.name,
+                formula: toNode.formula,
+                description: toNode.description,
+                smiles: toNode.smiles
+              });
+            }
+          }
+        }
+      }
+    }
+    
     // Check if by-molecule arrows start from node (not from midpoint)
     // This happens for enzyme/carrier nodes where arrows attach directly to the node
     // We can detect this by checking if it's a protein complex or mobile carrier
@@ -156,6 +194,25 @@ export class ArrowDetail {
                 ${reaction.substrate.formula ? `<div class="molecule-formula">${reaction.substrate.formula}</div>` : ''}
               </div>
               ` : ''}
+              ${Array.from(allSubstrateNodes.values()).map(node => {
+                // Skip if this node is already shown as the main substrate
+                if (!reaction.hasCurvedArrow && reaction.substrate && reaction.substrate.id === node.id) {
+                  return '';
+                }
+                // Skip if this node is already shown as a product (to avoid showing same node on both sides)
+                if (allProductNodes.has(node.id)) {
+                  return '';
+                }
+                return `
+                  <div class="reaction-molecule clickable-molecule co-reactant" 
+                       data-molecule-name="${node.name}" 
+                       data-molecule-id="${node.id}"
+                       style="cursor: pointer;">
+                    <strong>${node.name}</strong>
+                    ${node.formula ? `<div class="molecule-formula">${node.formula}</div>` : ''}
+                  </div>
+                `;
+              }).join('')}
               ${reaction.coSubstrate ? `
                 <div class="reaction-molecule clickable-molecule co-reactant" 
                      data-molecule-name="${reaction.coSubstrate.name}" 
@@ -291,6 +348,31 @@ export class ArrowDetail {
                 </div>
               `
               ) : ''}
+              ${Array.from(allProductNodes.values()).map(node => {
+                // Skip if this node is already shown as the main product
+                if (!reaction.hasCurvedArrow) {
+                  if (reaction.products && Array.isArray(reaction.products)) {
+                    if (reaction.products.some(p => p.id === node.id)) {
+                      return '';
+                    }
+                  } else if (reaction.product && reaction.product.id === node.id) {
+                    return '';
+                  }
+                }
+                // Skip if this node is already shown as a substrate (to avoid showing same node on both sides)
+                if (allSubstrateNodes.has(node.id)) {
+                  return '';
+                }
+                return `
+                  <div class="reaction-molecule clickable-molecule co-product" 
+                       data-molecule-name="${node.name}" 
+                       data-molecule-id="${node.id}"
+                       style="cursor: pointer;">
+                    <strong>${node.name}</strong>
+                    ${node.formula ? `<div class="molecule-formula">${node.formula}</div>` : ''}
+                  </div>
+                `;
+              }).join('')}
               ${mergedByproduct && !arrowsStartFromNode ? (() => {
                 // mergedByproduct is always an array (from mergeByMolecules)
                 // Show coefficients in Substrate → Product section

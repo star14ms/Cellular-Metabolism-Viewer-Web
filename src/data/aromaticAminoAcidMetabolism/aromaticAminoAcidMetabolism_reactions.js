@@ -418,7 +418,6 @@ export const aromaticAminoAcidMetabolismReactions = [
   {
     id: 'rxn_aromatic_22',
     name: 'Maleylacetoacetate to Succinylacetoacetate',
-    displayByreactant: ['Fumarylacetoacetate'],
     enzyme: {
       name: 'Spontaneous',
       ecNumber: 'Non-enzymatic',
@@ -457,7 +456,6 @@ export const aromaticAminoAcidMetabolismReactions = [
     id: 'rxn_aromatic_25',
     name: 'Fumarylacetoacetate Hydrolysis',
     byreactant: ['H₂O'],
-    displayByproduct: ['Acetoacetate'],
     enzyme: {
       name: 'Fumarylacetoacetate hydrolase',
       ecNumber: 'EC 3.7.1.2',

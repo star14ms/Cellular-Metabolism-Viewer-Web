@@ -30,7 +30,7 @@ export const pyrimidineSynthesisData = {
       'H₂O': { produced: 1, consumed: 0, net: 1 },
     },
     keyRegulatorySteps: [
-      { id: 'carbamoyl_phosphate', text: 'Step 1: Carbamoyl phosphate synthetase II (CPSII) - First committed step' },
+      { id: 'carbamoyl_phosphate_pyrimidine', text: 'Step 1: Carbamoyl phosphate synthetase II (CPSII) - First committed step' },
       { id: 'orotate', text: 'Step 4: Dihydroorotate dehydrogenase - Occurs in mitochondria' },
       { id: 'ctp', text: 'Step 9: CTP synthetase - Allosterically regulated by CTP (feedback inhibition)' }
     ]

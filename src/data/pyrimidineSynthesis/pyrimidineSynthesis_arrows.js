@@ -7,12 +7,12 @@ export const pyrimidineSynthesisArrows = [
   {
     id: 'arrow_pyrimidine_synthesis_1',
     from_id: 'bicarbonate',
-    to_id: 'carbamoyl_phosphate',
+    to_id: 'carbamoyl_phosphate_pyrimidine',
     reaction_id: 'rxn_pyrimidine_synthesis_1'
   },
   {
     id: 'arrow_pyrimidine_synthesis_2b',
-    from_id: 'carbamoyl_phosphate',
+    from_id: 'carbamoyl_phosphate_pyrimidine',
     to_id: 'n_carbamoyl_aspartate',
     reaction_id: 'rxn_pyrimidine_synthesis_2'
   },

@@ -14,7 +14,6 @@ export const pyruvateOxidationReactions = [
     id: 'rxn_pyruvate_1',
     name: 'Pyruvate Decarboxylation & Activation of TPP',
     byproduct: ['CO₂'],
-    displayByreactant: ['Pyruvate','Thiamine pyrophosphate'],
     displayByproduct: ['Hydroxyethyl-TPP'],
     byMoleculeAngle: 180,
     enzyme: {

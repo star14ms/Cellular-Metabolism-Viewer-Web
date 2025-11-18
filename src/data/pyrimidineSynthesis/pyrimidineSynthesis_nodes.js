@@ -42,7 +42,7 @@ export const pyrimidineSynthesisNodes = [
   
   // Pathway intermediates
   {
-    id: 'carbamoyl_phosphate',
+    id: 'carbamoyl_phosphate_pyrimidine',
     type: 'molecule',
     name: 'Carbamoyl phosphate',
     formula: 'CH₂NO₅P',
