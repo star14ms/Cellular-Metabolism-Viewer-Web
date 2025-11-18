@@ -20,6 +20,7 @@ import { nucleotideBreakdownNodes, nucleotideBreakdownReactions, nucleotideBreak
 import { aromaticAminoAcidMetabolismNodes, aromaticAminoAcidMetabolismReactions, aromaticAminoAcidMetabolismArrows, aromaticAminoAcidMetabolismData } from './aromaticAminoAcidMetabolism/aromaticAminoAcidMetabolism_index.js';
 import { singleCarbonMetabolismNodes, singleCarbonMetabolismReactions, singleCarbonMetabolismArrows, singleCarbonMetabolismData } from './singleCarbonMetabolism/singleCarbonMetabolism_index.js';
 import { branchedChainAminoAcidBreakdownNodes, branchedChainAminoAcidBreakdownReactions, branchedChainAminoAcidBreakdownArrows, branchedChainAminoAcidBreakdownData } from './branchedChainAminoAcidBreakdown/branchedChainAminoAcidBreakdown_index.js';
+import { ureaCycleNodes, ureaCycleReactions, ureaCycleArrows, ureaCycleData } from './ureaCycle/ureaCycle_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -36,7 +37,8 @@ export const allNodes = [
   ...nucleotideBreakdownNodes,
   ...aromaticAminoAcidMetabolismNodes,
   ...singleCarbonMetabolismNodes,
-  ...branchedChainAminoAcidBreakdownNodes
+  ...branchedChainAminoAcidBreakdownNodes,
+  ...ureaCycleNodes
 ];
 
 // Combine all reactions
@@ -54,7 +56,8 @@ export const allReactions = [
   ...nucleotideBreakdownReactions,
   ...aromaticAminoAcidMetabolismReactions,
   ...singleCarbonMetabolismReactions,
-  ...branchedChainAminoAcidBreakdownReactions
+  ...branchedChainAminoAcidBreakdownReactions,
+  ...ureaCycleReactions
 ];
 
 // Combine all arrows
@@ -72,7 +75,8 @@ export const allArrows = [
   ...nucleotideBreakdownArrows,
   ...aromaticAminoAcidMetabolismArrows,
   ...singleCarbonMetabolismArrows,
-  ...branchedChainAminoAcidBreakdownArrows
+  ...branchedChainAminoAcidBreakdownArrows,
+  ...ureaCycleArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -92,7 +96,8 @@ export const PATHWAY_CONFIG = {
     'nucleotide-breakdown': 'Nucleotide Breakdown',
     'aromatic-amino-acid-metabolism': 'Aromatic Amino Acid Metabolism',
     'single-carbon-metabolism': 'Single-Carbon Metabolism and Sulfur-Containing Amino Acids',
-    'branched-chain-amino-acid-breakdown': 'Branched Chain Amino Acid Breakdown'
+    'branched-chain-amino-acid-breakdown': 'Branched Chain Amino Acid Breakdown',
+    'urea-cycle': 'Urea Cycle'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -164,6 +169,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'branched-chain-amino-acid-breakdown': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'urea-cycle': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -285,6 +295,14 @@ const pathwayDefinitions = [
     reactions: branchedChainAminoAcidBreakdownReactions,
     arrows: branchedChainAminoAcidBreakdownArrows,
     data: branchedChainAminoAcidBreakdownData
+  },
+  {
+    id: 'urea-cycle',
+    name: 'Urea Cycle',
+    nodes: ureaCycleNodes,
+    reactions: ureaCycleReactions,
+    arrows: ureaCycleArrows,
+    data: ureaCycleData
   }
 ];
 

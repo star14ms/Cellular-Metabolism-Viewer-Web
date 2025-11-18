@@ -97,6 +97,8 @@ export function getAlternativeNames(moleculeName) {
     'β-Methylcrotonyl-CoA': ['beta-Methylcrotonyl-CoA', 'beta-Methylcrotonyl coenzyme A', '3-Methylcrotonyl-CoA', '3-Methylcrotonyl coenzyme A', 'Methylcrotonyl-CoA', '3-Methylbut-2-enoyl-CoA', '3-Methylbut-2-enoyl coenzyme A'],
     'β-Methylglutaconyl-CoA': ['beta-Methylglutaconyl-CoA', 'beta-Methylglutaconyl coenzyme A', '3-Methylglutaconyl-CoA', '3-Methylglutaconyl coenzyme A', 'Methylglutaconyl-CoA', '3-Methylglutaconyl coenzyme A'],
     'β-Hydroxy-β-methylglutaryl-CoA (HMG-CoA)': ['3-Hydroxy-3-methylglutaryl-CoA', 'beta-Hydroxy-beta-methylglutaryl-CoA', 'HMG-CoA', '3-Hydroxy-3-methylglutaryl coenzyme A', 'beta-Hydroxy-beta-methylglutaryl coenzyme A', '3-Hydroxy-3-methylglutaryl-CoA', 'Hydroxymethylglutaryl-CoA'],
+    // Urea cycle compounds
+    'Glutamic Semialdehyde': ['L-Glutamic gamma-semialdehyde', 'L-glutamic 5-semialdehyde', 'Glutamate-5-semialdehyde', 'L-Glutamic 5-semialdehyde', 'Glutamic 5-semialdehyde'],
   };
   
   return alternatives[moleculeName] || [];
