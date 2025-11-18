@@ -649,6 +649,30 @@ export class ArrowDetail {
           }
         }
         
+        // Check if this molecule/node has a pathwayIdToRoute
+        let pathwayIdToRoute = null;
+        if (this.viewer && this.viewer.nodeMap) {
+          // Find the node by moleculeId or moleculeName
+          for (const [nodeId, node] of this.viewer.nodeMap.entries()) {
+            if ((moleculeId && node.id === moleculeId) || (!moleculeId && node.name === moleculeName)) {
+              if (node.pathwayIdToRoute) {
+                pathwayIdToRoute = node.pathwayIdToRoute;
+                break;
+              }
+            }
+          }
+        }
+        
+        // If node has pathwayIdToRoute, route to that pathway instead of selecting molecule
+        if (pathwayIdToRoute && this.viewer && this.viewer.pathways) {
+          const targetPathway = this.viewer.pathways.find(p => p.id === pathwayIdToRoute);
+          if (targetPathway) {
+            // Call selectPathway directly to ensure zoom happens
+            this.viewer.selectPathway(targetPathway);
+            return; // Don't select molecule, just route to pathway
+          }
+        }
+        
         // If by-molecule has a node, treat it like a main molecule (move frame, don't pass reaction context)
         const shouldSkipZoom = isByMolecule && !hasNode;
         const shouldPassReaction = isMainMolecule ? null : (hasNode ? null : reaction);

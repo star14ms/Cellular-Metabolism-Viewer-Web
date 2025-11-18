@@ -241,6 +241,7 @@ export const aromaticAminoAcidMetabolismNodes = [
     formula: 'Multiple',
     imageUrl: 'https://praxilabs.com/en/blog/wp-content/uploads/2024/04/istockphoto-1034141326-612x612-1-1.jpg',
     description: 'Tricarboxylic acid cycle (Krebs cycle)',
+    pathwayIdToRoute: 'citric-acid-cycle', // Route to citric acid cycle pathway when clicked
     position: { x: base_x, y: base_y + unit_space * 6 }
   },
   {

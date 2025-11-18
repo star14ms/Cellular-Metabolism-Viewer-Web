@@ -236,6 +236,8 @@ export class MetabolismViewer {
           nodeId: node.id,
           position: node.position,
           node: node, // Preserve reference to node object (source of truth for node data)
+          // Pathway routing: if node has pathwayIdToRoute, clicking it will route to that pathway
+          pathwayIdToRoute: node.pathwayIdToRoute !== undefined ? node.pathwayIdToRoute : undefined,
           // Set node type flags from node data
           isProteinComplex: node.type === 'complex',
           isMobileCarrier: node.type === 'carrier',
@@ -5019,6 +5021,18 @@ export class MetabolismViewer {
           // For regular reactions positioned at product nodes, use the product (what's displayed on the node)
           // Fallback to substrate if product is not available
           molecule = d.product || d.substrate;
+        }
+        
+        // Check if this node has a pathwayIdToRoute to route to
+        if (d.pathwayIdToRoute) {
+          // Find the pathway by ID
+          const targetPathway = this.pathways.find(p => p.id === d.pathwayIdToRoute);
+          if (targetPathway) {
+            this.selectPathway(targetPathway);
+            return; // Don't select molecule, just route to pathway
+          } else {
+            console.warn(`Pathway with ID "${d.pathwayIdToRoute}" not found for node:`, d.name, d);
+          }
         }
         
         // Ensure molecule is valid before selecting

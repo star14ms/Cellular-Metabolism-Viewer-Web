@@ -508,6 +508,24 @@ export const aromaticAminoAcidMetabolismReactions = [
     }
   },
   {
+    id: 'rxn_aromatic_34',
+    name: 'Tryptophan to Niacin',
+    enzyme: {
+      name: 'Multiple enzymes',
+      ecNumber: 'Multiple steps',
+      cofactors: ['Multiple cofactors'],
+      description: 'Conversion of tryptophan to niacin through multiple enzymatic steps'
+    },
+    conditions: {
+      location: 'Liver',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Multi-step pathway',
+      isReversible: false,
+      notes: 'Multiple steps involved'
+    }
+  },
+  {
     id: 'rxn_aromatic_28',
     name: 'Tryptophan Hydroxylation',
     byreactant: ['bh4_set3'],
@@ -527,25 +545,6 @@ export const aromaticAminoAcidMetabolismReactions = [
       ph: '7.0-7.4',
       temperature: '37°C',
       regulation: 'Rate-limiting step in serotonin synthesis',
-      isReversible: false
-    }
-  },
-  {
-    id: 'rxn_aromatic_29',
-    name: 'BH₂ to BH₄ Regeneration (Serotonin)',
-    byreactant: ['NADPH'],
-    byproduct: ['NADP⁺'],
-    enzyme: {
-      name: 'Dihydrobiopterin reductase',
-      ecNumber: 'EC 1.5.1.33',
-      cofactors: ['NADPH'],
-      description: 'Regenerates tetrahydrobiopterin (BH₄) from dihydrobiopterin (BH₂) using NADPH for serotonin synthesis'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Required for continuous tryptophan hydroxylation',
       isReversible: false
     }
   },
@@ -620,24 +619,6 @@ export const aromaticAminoAcidMetabolismReactions = [
       temperature: '37°C',
       regulation: 'Final step in melatonin synthesis',
       isReversible: false
-    }
-  },
-  {
-    id: 'rxn_aromatic_34',
-    name: 'Tryptophan to Niacin',
-    enzyme: {
-      name: 'Multiple enzymes',
-      ecNumber: 'Multiple steps',
-      cofactors: ['Multiple cofactors'],
-      description: 'Conversion of tryptophan to niacin through multiple enzymatic steps'
-    },
-    conditions: {
-      location: 'Liver',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Multi-step pathway',
-      isReversible: false,
-      notes: 'Multiple steps involved'
     }
   },
 ];

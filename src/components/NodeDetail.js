@@ -327,6 +327,30 @@ export class NodeDetail {
           // The display shows coefficients, but detail page should show only the molecule name
           const moleculeName = removeCoefficients(moleculeNameWithCoefficient);
           
+          // Check if this molecule/node has a pathwayIdToRoute
+          let pathwayIdToRoute = null;
+          if (this.viewer && this.viewer.nodeMap) {
+            // Find the node by moleculeId or moleculeName
+            for (const [nodeId, node] of this.viewer.nodeMap.entries()) {
+              if ((moleculeId && node.id === moleculeId) || (!moleculeId && node.name === moleculeName)) {
+                if (node.pathwayIdToRoute) {
+                  pathwayIdToRoute = node.pathwayIdToRoute;
+                  break;
+                }
+              }
+            }
+          }
+          
+          // If node has pathwayIdToRoute, route to that pathway instead of selecting molecule
+          if (pathwayIdToRoute && this.viewer && this.viewer.pathways) {
+            const targetPathway = this.viewer.pathways.find(p => p.id === pathwayIdToRoute);
+            if (targetPathway) {
+              // Call selectPathway directly to ensure zoom happens
+              this.viewer.selectPathway(targetPathway);
+              return; // Don't select molecule, just route to pathway
+            }
+          }
+          
           // Determine if this is a byreactant or byproduct
           // Since we only show by-molecules in complex nodes, all clicks are for by-molecules
           let isByreactant = null;
