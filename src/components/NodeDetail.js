@@ -26,10 +26,34 @@ export class NodeDetail {
     this.currentMolecule = null;
     this.pubchemCache = new Map();
     this.viewerContainer = null; // Will be set to the metabolism viewer container
+    this.viewer = null; // Will be set to the MetabolismViewer instance
   }
   
   setViewerContainer(viewerContainer) {
     this.viewerContainer = viewerContainer;
+  }
+  
+  setViewer(viewer) {
+    this.viewer = viewer;
+  }
+  
+  /**
+   * Helper function to resolve a by-molecule value (could be node_id or molecule name)
+   * Returns an object with name and id
+   */
+  resolveByMolecule(value) {
+    if (!value || typeof value !== 'string') {
+      return { name: value, id: '' };
+    }
+    
+    // Check if it's a node_id (exists in nodeMap)
+    if (this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(value)) {
+      const node = this.viewer.nodeMap.get(value);
+      return { name: node.name, id: node.id };
+    }
+    
+    // Otherwise, treat as molecule name
+    return { name: value, id: '' };
   }
   
   render(molecule, reactionNode = null, isDirectNodeClick = true) {
@@ -172,39 +196,43 @@ export class NodeDetail {
                   // Handle different byreactant formats: string, array, or object with molecules array
                   // Show coefficients in Substrate → Product section
                   if (typeof reactionNode.byreactant === 'string') {
+                    const resolved = this.resolveByMolecule(reactionNode.byreactant);
                     return `
                       <div class="reaction-molecule clickable-molecule co-reactant" 
-                           data-molecule-name="${reactionNode.byreactant}" 
-                           data-molecule-id="">
-                        <strong>${reactionNode.byreactant}</strong>
+                           data-molecule-name="${resolved.name}" 
+                           data-molecule-id="${resolved.id}">
+                        <strong>${resolved.name}</strong>
                       </div>
                     `;
                   } else if (Array.isArray(reactionNode.byreactant)) {
                     return reactionNode.byreactant.map(mol => {
+                      const resolved = this.resolveByMolecule(mol);
                       return `
                       <div class="reaction-molecule clickable-molecule co-reactant" 
-                           data-molecule-name="${mol}" 
-                           data-molecule-id="">
-                        <strong>${mol}</strong>
+                           data-molecule-name="${resolved.name}" 
+                           data-molecule-id="${resolved.id}">
+                        <strong>${resolved.name}</strong>
                       </div>
                     `;
                     }).join('');
                   } else if (reactionNode.byreactant.molecules && Array.isArray(reactionNode.byreactant.molecules)) {
                     return reactionNode.byreactant.molecules.map(mol => {
+                      const resolved = this.resolveByMolecule(mol);
                       return `
                       <div class="reaction-molecule clickable-molecule co-reactant" 
-                           data-molecule-name="${mol}" 
-                           data-molecule-id="">
-                        <strong>${mol}</strong>
+                           data-molecule-name="${resolved.name}" 
+                           data-molecule-id="${resolved.id}">
+                        <strong>${resolved.name}</strong>
                       </div>
                     `;
                     }).join('');
                   } else if (reactionNode.byreactant.name) {
+                    const resolved = this.resolveByMolecule(reactionNode.byreactant.name);
                     return `
                       <div class="reaction-molecule clickable-molecule co-reactant" 
-                           data-molecule-name="${reactionNode.byreactant.name}" 
-                           data-molecule-id="">
-                        <strong>${reactionNode.byreactant.name}</strong>
+                           data-molecule-name="${resolved.name}" 
+                           data-molecule-id="${resolved.id}">
+                        <strong>${resolved.name}</strong>
                       </div>
                     `;
                   }
@@ -217,38 +245,42 @@ export class NodeDetail {
                   // Handle different byproduct formats: string, array, object with name, or object with molecules array
                   // Show coefficients in Substrate → Product section
                   if (typeof reactionNode.byproduct === 'string') {
+                    const resolved = this.resolveByMolecule(reactionNode.byproduct);
                     return `
                       <div class="reaction-molecule clickable-molecule co-product" 
-                           data-molecule-name="${reactionNode.byproduct}" 
-                           data-molecule-id="">
-                        <strong>${reactionNode.byproduct}</strong>
+                           data-molecule-name="${resolved.name}" 
+                           data-molecule-id="${resolved.id}">
+                        <strong>${resolved.name}</strong>
                       </div>
                     `;
                   } else if (Array.isArray(reactionNode.byproduct)) {
                     return reactionNode.byproduct.map(mol => {
+                      const resolved = this.resolveByMolecule(mol);
                       return `
                       <div class="reaction-molecule clickable-molecule co-product" 
-                           data-molecule-name="${mol}" 
-                           data-molecule-id="">
-                        <strong>${mol}</strong>
+                           data-molecule-name="${resolved.name}" 
+                           data-molecule-id="${resolved.id}">
+                        <strong>${resolved.name}</strong>
                       </div>
                     `;
                     }).join('');
                   } else if (reactionNode.byproduct.name) {
+                    const resolved = this.resolveByMolecule(reactionNode.byproduct.name);
                     return `
                       <div class="reaction-molecule clickable-molecule co-product" 
-                           data-molecule-name="${reactionNode.byproduct.name}" 
-                           data-molecule-id="">
-                        <strong>${reactionNode.byproduct.name}</strong>
+                           data-molecule-name="${resolved.name}" 
+                           data-molecule-id="${resolved.id}">
+                        <strong>${resolved.name}</strong>
                       </div>
                     `;
                   } else if (reactionNode.byproduct.molecules && Array.isArray(reactionNode.byproduct.molecules)) {
                     return reactionNode.byproduct.molecules.map(mol => {
+                      const resolved = this.resolveByMolecule(mol);
                       return `
                       <div class="reaction-molecule clickable-molecule co-product" 
-                           data-molecule-name="${mol}" 
-                           data-molecule-id="">
-                        <strong>${mol}</strong>
+                           data-molecule-name="${resolved.name}" 
+                           data-molecule-id="${resolved.id}">
+                        <strong>${resolved.name}</strong>
                       </div>
                     `;
                   }).join('');

@@ -253,7 +253,8 @@ export const aromaticAminoAcidMetabolismReactions = [
   {
     id: 'rxn_aromatic_13',
     name: 'Dopamine Hydroxylation',
-    byreactant: ['O₂', 'H₂O'],
+    byreactant: ['O₂'],
+    byproduct: ['H₂O'],
     enzyme: {
       name: 'Dopamine β-hydroxylase',
       ecNumber: 'EC 1.14.17.1',
@@ -289,8 +290,8 @@ export const aromaticAminoAcidMetabolismReactions = [
   {
     id: 'rxn_aromatic_14',
     name: 'Norepinephrine Methylation',
-    byreactant: ['SAM (S-adenosylmethionine)'],
-    byproduct: ['SAH (S-adenosylhomocysteine)'],
+    byreactant: ['SAM'],
+    byproduct: ['SAH'],
     enzyme: {
       name: 'Phenylethanolamine N-methyltransferase',
       ecNumber: 'EC 2.1.1.28',
@@ -456,7 +457,7 @@ export const aromaticAminoAcidMetabolismReactions = [
     id: 'rxn_aromatic_25',
     name: 'Fumarylacetoacetate Hydrolysis',
     byreactant: ['H₂O'],
-    displayByproduct: ['Acetoacetate', 'Fumarate'],
+    displayByproduct: ['Acetoacetate'],
     enzyme: {
       name: 'Fumarylacetoacetate hydrolase',
       ecNumber: 'EC 3.7.1.2',
@@ -605,8 +606,8 @@ export const aromaticAminoAcidMetabolismReactions = [
   {
     id: 'rxn_aromatic_33',
     name: 'N-Acetyl-5-HT to Melatonin',
-    byreactant: ['SAM (S-adenosylmethionine)'],
-    byproduct: ['SAH (S-adenosylhomocysteine)'],
+    byreactant: ['SAM'],
+    byproduct: ['SAH'],
     enzyme: {
       name: 'Hydroxyindole O-methyltransferase',
       ecNumber: 'EC 2.1.1.4',

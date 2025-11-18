@@ -42,7 +42,7 @@ export function getAlternativeNames(moleculeName) {
     'NADP⁺': ['Nicotinamide adenine dinucleotide phosphate'],
     'NADPH': ['Nicotinamide adenine dinucleotide phosphate (reduced)'],
     'FADH₂': ['Flavin adenine dinucleotide (reduced)'],
-    'H₂O': [],
+    'H₂O': ['H2O'],
     'Pi': ['Inorganic phosphate'],
     'CO₂': ['Carbon dioxide'],
     'CO2': ['Carbon dioxide'],

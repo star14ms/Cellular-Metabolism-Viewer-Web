@@ -42,7 +42,7 @@ function removeCoefficients(moleculeName) {
 // Extend it here with non-pathway-specific settings
 const VIEWER_CONFIG = {
   // Common by-molecules that don't have dedicated nodes
-  commonByMolecules: ['ATP', 'ADP', 'AMP', 'NAD⁺', 'NADH', 'NADP⁺', 'NADPH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'PPi', 'H₂O', 'H₂O₂', 'H2O2', 'GDP', 'GTP', 'NH₄⁺', 'NH4+', 'PRPP', 'Glutamine', 'Glutamate', 'Glycine', 'Aspartate', 'Fumarate', 'N¹⁰-formyl-THF', 'THF', '(deoxy) ribose-1-P', 'deoxyribose-1-P', 'Uracil', 'Serine', 'Formate'],
+  commonByMolecules: ['ATP', 'ADP', 'AMP', 'NAD⁺', 'NADH', 'NADP⁺', 'NADPH', 'FAD', 'FADH₂', 'CO₂', 'CoA', 'Pi', 'PPi', 'H₂O', 'H₂O₂', 'H2O2', 'GDP', 'GTP', 'NH₄⁺', 'NH4+', 'PRPP', 'Glutamine', 'Glutamate', 'Glycine', 'Aspartate', 'Fumarate', 'N¹⁰-formyl-THF', 'THF', '(deoxy) ribose-1-P', 'deoxyribose-1-P', 'Uracil', 'Serine', 'Formate', 'α-Ketoglutarate', "SAM", "SAH"],
   
   // Node ID patterns for special node types
   nodeIdPatterns: {
@@ -3901,7 +3901,8 @@ export class MetabolismViewer {
               arrowData.hitArea.on('click', (event) => {
                 event.stopPropagation();
                 // Select the reaction when clicking any arrow with this reaction_id
-                this.selectReaction(reaction);
+                // Use node_id only (not name-based highlighting) when clicking arrows
+                this.selectReaction(reaction, { useNodeIdOnly: true });
               });
               
               // Hover events - highlight all arrows with the same reaction_id
@@ -4171,7 +4172,8 @@ export class MetabolismViewer {
               }
             } else {
               // Select the reaction when clicking arrow that starts from midpoint
-              this.selectReaction(reaction);
+              // Use node_id only (not name-based highlighting) when clicking arrows
+              this.selectReaction(reaction, { useNodeIdOnly: true });
             }
           })
           .on('mouseenter', () => {
@@ -5397,7 +5399,7 @@ export class MetabolismViewer {
     // Highlight all arrows representing this reaction (by reaction_id, not nodeId)
     this.highlightReactionArrows(reaction.id, PATHWAY_CONFIG.arrowSettings.strokeWidthHover);
     
-    this.applyReactionHighlight(reaction);
+    this.applyReactionHighlight(reaction, { useNodeIdOnly: options.useNodeIdOnly || false });
     
     // Check if this reaction has any curved arrows
     let hasCurvedArrow = false;
@@ -5444,6 +5446,10 @@ export class MetabolismViewer {
    * Restores pathway-specific colors instead of default colors
    */
   resetAllNodeHighlights() {
+    // Clear highlighted node IDs tracking
+    if (this.highlightedNodeIds) {
+      this.highlightedNodeIds.clear();
+    }
     // Capture viewer instance for use in callbacks
     const viewer = this;
     
@@ -5619,7 +5625,7 @@ export class MetabolismViewer {
     this.applyNodeHighlightStyle(nodeGroup, colorType);
   }
   
-  applyReactionHighlight(reaction) {
+  applyReactionHighlight(reaction, options = {}) {
     // Reset all node highlights using unified function
     this.resetAllNodeHighlights();
     
@@ -5628,11 +5634,17 @@ export class MetabolismViewer {
       .attr('stroke-width', 4)
       .attr('stroke-opacity', 0.7);
     
+    // Option to only use node_id (not search by name) - used when selecting from pathway detail page
+    const useNodeIdOnly = options.useNodeIdOnly || false;
+    
     // Unified logic: Get all arrows having current reaction_id
     // Reactant nodes: all nodes in from_id
     // Product nodes: all nodes in to_id
     const reactantNodeIds = new Set();
     const productNodeIds = new Set();
+    
+    // Store highlighted node IDs for zoom calculation
+    this.highlightedNodeIds = new Set();
     
     // Helper function to resolve an ID to a node ID
     // If it's an arrow ID, recursively resolve to find the actual node
@@ -5696,8 +5708,8 @@ export class MetabolismViewer {
           // First check if it's a node ID (exists in nodeMap)
           if (this.nodeMap.has(byreactant)) {
             reactantNodeIds.add(byreactant);
-          } else {
-            // Fall back to searching by molecule name
+          } else if (!useNodeIdOnly) {
+            // Fall back to searching by molecule name (only if not using node_id only)
             for (const [nodeId, node] of this.nodeMap.entries()) {
               if (node.name === byreactant) {
                 reactantNodeIds.add(nodeId);
@@ -5717,8 +5729,8 @@ export class MetabolismViewer {
           // First check if it's a node ID (exists in nodeMap)
           if (this.nodeMap.has(byproduct)) {
             productNodeIds.add(byproduct);
-          } else {
-            // Fall back to searching by molecule name
+          } else if (!useNodeIdOnly) {
+            // Fall back to searching by molecule name (only if not using node_id only)
             for (const [nodeId, node] of this.nodeMap.entries()) {
               if (node.name === byproduct) {
                 productNodeIds.add(nodeId);
@@ -5731,7 +5743,8 @@ export class MetabolismViewer {
     }
     
     // Check displayByreactant from reaction data - find nodes by molecule name
-    if (reaction.displayByreactant) {
+    // Only search by name if not using node_id only
+    if (reaction.displayByreactant && !useNodeIdOnly) {
       const displayByreactantArray = Array.isArray(reaction.displayByreactant) ? reaction.displayByreactant : [reaction.displayByreactant];
       displayByreactantArray.forEach(displayByreactant => {
         if (typeof displayByreactant === 'string') {
@@ -5747,7 +5760,8 @@ export class MetabolismViewer {
     }
     
     // Check displayByproduct from reaction data - find nodes by molecule name
-    if (reaction.displayByproduct) {
+    // Only search by name if not using node_id only
+    if (reaction.displayByproduct && !useNodeIdOnly) {
       const displayByproductArray = Array.isArray(reaction.displayByproduct) ? reaction.displayByproduct : [reaction.displayByproduct];
       displayByproductArray.forEach(displayByproduct => {
         if (typeof displayByproduct === 'string') {
@@ -5765,11 +5779,13 @@ export class MetabolismViewer {
     // Highlight all reactant nodes in blue
     reactantNodeIds.forEach(nodeId => {
       this.highlightNode(nodeId, 'reactant');
+      this.highlightedNodeIds.add(nodeId);
     });
     
     // Highlight all product nodes in red
     productNodeIds.forEach(nodeId => {
       this.highlightNode(nodeId, 'product');
+      this.highlightedNodeIds.add(nodeId);
     });
   }
   
@@ -6692,43 +6708,101 @@ export class MetabolismViewer {
   
   /**
    * Zoom to the arrow representing a reaction, not the node
-   * Finds the first arrow representing this reaction and zooms to its midpoint
+   * Finds the first arrow representing this reaction and zooms to fit all highlighted nodes
    */
   zoomToReactionArrow(reaction) {
-    const reactionNodeId = reaction.nodeId;
-    let targetCoords = null;
-    
-    // Find the first arrow representing this reaction
-    for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
-      const targetReactionNodeId = arrowData.targetReaction?.nodeId;
-      if (targetReactionNodeId === reactionNodeId && arrowData.coords) {
-        // Calculate midpoint of the arrow
-        const midpoint = calculateArrowMidpoint(arrowData.coords);
-        targetCoords = midpoint;
-        break; // Use the first arrow found
-      }
-    }
-    
-    // If no arrow found, fall back to node position
-    if (!targetCoords) {
-      targetCoords = reaction.position;
-    }
-    
-    const scale = 2;
-    const x = this.options.width / 2 - targetCoords.x * scale;
-    const y = this.options.height / 2 - targetCoords.y * scale;
-    
-    const transform = d3.zoomIdentity
-      .translate(x, y)
-      .scale(scale);
-    
-    this.svg.transition()
-      .duration(750)
-      .call(this.zoom.transform, transform);
-    
-    this.currentTransform = transform;
-    this.currentZoom = scale;
-    this.updateNodeDisplay(scale);
+    // Wait for highlighting to complete before calculating bounds
+    // Use requestAnimationFrame to ensure DOM updates are complete
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // Collect all highlighted node positions using stored node IDs
+        const highlightedPositions = [];
+        
+        if (this.highlightedNodeIds && this.highlightedNodeIds.size > 0) {
+          // Get positions from reactions that match highlighted node IDs
+          this.reactions.forEach(reaction => {
+            if (reaction.nodeId && this.highlightedNodeIds.has(reaction.nodeId) && reaction.position) {
+              highlightedPositions.push(reaction.position);
+            }
+          });
+        }
+        
+        // If we have highlighted nodes, calculate bounds to fit them all
+        if (highlightedPositions.length > 0) {
+          const padding = 100; // Padding around the bounds
+          
+          // Calculate bounding box
+          const xs = highlightedPositions.map(p => p.x);
+          const ys = highlightedPositions.map(p => p.y);
+          const minX = Math.min(...xs) - padding;
+          const maxX = Math.max(...xs) + padding;
+          const minY = Math.min(...ys) - padding;
+          const maxY = Math.max(...ys) + padding;
+          
+          const width = maxX - minX;
+          const height = maxY - minY;
+          const centerX = (minX + maxX) / 2;
+          const centerY = (minY + maxY) / 2;
+          
+          // Calculate scale to fit the bounds in the viewport
+          const scaleX = (this.options.width * 0.9) / width;
+          const scaleY = (this.options.height * 0.9) / height;
+          const scale = Math.min(scaleX, scaleY, 3); // Cap at 3x zoom
+          
+          // Calculate translation to center the bounds
+          const x = this.options.width / 2 - centerX * scale;
+          const y = this.options.height / 2 - centerY * scale;
+          
+          const transform = d3.zoomIdentity
+            .translate(x, y)
+            .scale(scale);
+          
+          this.svg.transition()
+            .duration(750)
+            .call(this.zoom.transform, transform);
+          
+          this.currentTransform = transform;
+          this.currentZoom = scale;
+          this.updateNodeDisplay(scale);
+        } else {
+          // Fallback: zoom to arrow midpoint or reaction position
+          const reactionNodeId = reaction.nodeId;
+          let targetCoords = null;
+          
+          // Find the first arrow representing this reaction
+          for (const [arrowKey, arrowData] of this.arrowDataMap.entries()) {
+            const targetReactionNodeId = arrowData.targetReaction?.nodeId;
+            if (targetReactionNodeId === reactionNodeId && arrowData.coords) {
+              // Calculate midpoint of the arrow
+              const midpoint = calculateArrowMidpoint(arrowData.coords);
+              targetCoords = midpoint;
+              break; // Use the first arrow found
+            }
+          }
+          
+          // If no arrow found, fall back to node position
+          if (!targetCoords) {
+            targetCoords = reaction.position;
+          }
+          
+          const scale = 2;
+          const x = this.options.width / 2 - targetCoords.x * scale;
+          const y = this.options.height / 2 - targetCoords.y * scale;
+          
+          const transform = d3.zoomIdentity
+            .translate(x, y)
+            .scale(scale);
+          
+          this.svg.transition()
+            .duration(750)
+            .call(this.zoom.transform, transform);
+          
+          this.currentTransform = transform;
+          this.currentZoom = scale;
+          this.updateNodeDisplay(scale);
+        }
+      });
+    });
   }
   
   resetZoom() {

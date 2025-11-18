@@ -37,6 +37,25 @@ export class ArrowDetail {
     this.viewer = viewer;
   }
   
+  /**
+   * Helper function to resolve a by-molecule value (could be node_id or molecule name)
+   * Returns an object with name and id
+   */
+  resolveByMolecule(value) {
+    if (!value || typeof value !== 'string') {
+      return { name: value, id: '' };
+    }
+    
+    // Check if it's a node_id (exists in nodeMap)
+    if (this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(value)) {
+      const node = this.viewer.nodeMap.get(value);
+      return { name: node.name, id: node.id };
+    }
+    
+    // Otherwise, treat as molecule name
+    return { name: value, id: '' };
+  }
+
   render(reaction) {
     if (!reaction) {
       this.container.innerHTML = '<div class="detail-placeholder">Click a reaction arrow to view reaction details</div>';
@@ -156,16 +175,19 @@ export class ArrowDetail {
                 if (Array.isArray(mergedByreactant)) {
                   return mergedByreactant
                     .filter(mol => {
+                      // Resolve to get name for comparison
+                      const resolved = this.resolveByMolecule(mol);
                       // Filter out molecules that match coSubstrate
-                      return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
+                      return !coSubstrateName || removeCoefficients(resolved.name) !== removeCoefficients(coSubstrateName);
                     })
                     .map(mol => {
+                      const resolved = this.resolveByMolecule(mol);
                       return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
-                         data-molecule-name="${mol}" 
-                         data-molecule-id=""
+                         data-molecule-name="${resolved.name}" 
+                         data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
-                      <strong>${mol}</strong>
+                      <strong>${resolved.name}</strong>
                     </div>
                   `;
                     }).join('');
@@ -179,61 +201,67 @@ export class ArrowDetail {
                 const coSubstrateName = reaction.coSubstrate ? reaction.coSubstrate.name : null;
                 
                 if (typeof reaction.displayByreactant === 'string') {
+                  const resolved = this.resolveByMolecule(reaction.displayByreactant);
                   // Skip if this displayByreactant matches coSubstrate
-                  if (coSubstrateName && removeCoefficients(reaction.displayByreactant) === removeCoefficients(coSubstrateName)) {
+                  if (coSubstrateName && removeCoefficients(resolved.name) === removeCoefficients(coSubstrateName)) {
                     return '';
                   }
                   return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
-                         data-molecule-name="${reaction.displayByreactant}" 
-                         data-molecule-id=""
+                         data-molecule-name="${resolved.name}" 
+                         data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
-                      <strong>${reaction.displayByreactant}</strong>
+                      <strong>${resolved.name}</strong>
                     </div>
                   `;
                 } else if (Array.isArray(reaction.displayByreactant)) {
                   return reaction.displayByreactant
                     .filter(mol => {
+                      const resolved = this.resolveByMolecule(mol);
                       // Filter out molecules that match coSubstrate
-                      return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
+                      return !coSubstrateName || removeCoefficients(resolved.name) !== removeCoefficients(coSubstrateName);
                     })
                     .map(mol => {
+                      const resolved = this.resolveByMolecule(mol);
                       return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
-                         data-molecule-name="${mol}" 
-                         data-molecule-id=""
+                         data-molecule-name="${resolved.name}" 
+                         data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
-                      <strong>${mol}</strong>
+                      <strong>${resolved.name}</strong>
                     </div>
                   `;
                     }).join('');
                 } else if (reaction.displayByreactant.molecules && Array.isArray(reaction.displayByreactant.molecules)) {
                   return reaction.displayByreactant.molecules
                     .filter(mol => {
+                      const resolved = this.resolveByMolecule(mol);
                       // Filter out molecules that match coSubstrate
-                      return !coSubstrateName || removeCoefficients(mol) !== removeCoefficients(coSubstrateName);
+                      return !coSubstrateName || removeCoefficients(resolved.name) !== removeCoefficients(coSubstrateName);
                     })
                     .map(mol => {
+                      const resolved = this.resolveByMolecule(mol);
                       return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
-                         data-molecule-name="${mol}" 
-                         data-molecule-id=""
+                         data-molecule-name="${resolved.name}" 
+                         data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
-                      <strong>${mol}</strong>
+                      <strong>${resolved.name}</strong>
                     </div>
                   `;
                     }).join('');
                 } else if (reaction.displayByreactant.name) {
+                  const resolved = this.resolveByMolecule(reaction.displayByreactant.name);
                   // Skip if this displayByreactant matches coSubstrate
-                  if (coSubstrateName && removeCoefficients(reaction.displayByreactant.name) === removeCoefficients(coSubstrateName)) {
+                  if (coSubstrateName && removeCoefficients(resolved.name) === removeCoefficients(coSubstrateName)) {
                     return '';
                   }
                   return `
                     <div class="reaction-molecule clickable-molecule co-reactant" 
-                         data-molecule-name="${reaction.displayByreactant.name}" 
-                         data-molecule-id=""
+                         data-molecule-name="${resolved.name}" 
+                         data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
-                      <strong>${reaction.displayByreactant.name}</strong>
+                      <strong>${resolved.name}</strong>
                     </div>
                   `;
                 }
@@ -268,12 +296,13 @@ export class ArrowDetail {
                 // Show coefficients in Substrate → Product section
                 if (Array.isArray(mergedByproduct)) {
                   return mergedByproduct.map(mol => {
+                    const resolved = this.resolveByMolecule(mol);
                     return `
                     <div class="reaction-molecule clickable-molecule co-product" 
-                         data-molecule-name="${mol}" 
-                         data-molecule-id=""
+                         data-molecule-name="${resolved.name}" 
+                         data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
-                      <strong>${mol}</strong>
+                      <strong>${resolved.name}</strong>
                     </div>
                   `;
                   }).join('');
@@ -285,42 +314,46 @@ export class ArrowDetail {
                 // Same format support as byproduct: string, array, object with name, or object with molecules array
                 // Show coefficients in Substrate → Product section
                 if (typeof reaction.displayByproduct === 'string') {
+                  const resolved = this.resolveByMolecule(reaction.displayByproduct);
                   return `
                     <div class="reaction-molecule clickable-molecule co-product" 
-                         data-molecule-name="${reaction.displayByproduct}" 
-                         data-molecule-id=""
+                         data-molecule-name="${resolved.name}" 
+                         data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
-                      <strong>${reaction.displayByproduct}</strong>
+                      <strong>${resolved.name}</strong>
                     </div>
                   `;
                 } else if (Array.isArray(reaction.displayByproduct)) {
                   return reaction.displayByproduct.map(mol => {
+                    const resolved = this.resolveByMolecule(mol);
                     return `
                     <div class="reaction-molecule clickable-molecule co-product" 
-                         data-molecule-name="${mol}" 
-                         data-molecule-id=""
+                         data-molecule-name="${resolved.name}" 
+                         data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
-                      <strong>${mol}</strong>
+                      <strong>${resolved.name}</strong>
                     </div>
                   `;
                   }).join('');
                 } else if (reaction.displayByproduct.name) {
+                  const resolved = this.resolveByMolecule(reaction.displayByproduct.name);
                   return `
                     <div class="reaction-molecule clickable-molecule co-product" 
-                         data-molecule-name="${reaction.displayByproduct.name}" 
-                         data-molecule-id=""
+                         data-molecule-name="${resolved.name}" 
+                         data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
-                      <strong>${reaction.displayByproduct.name}</strong>
+                      <strong>${resolved.name}</strong>
                     </div>
                   `;
                 } else if (reaction.displayByproduct.molecules && Array.isArray(reaction.displayByproduct.molecules)) {
                   return reaction.displayByproduct.molecules.map(mol => {
+                    const resolved = this.resolveByMolecule(mol);
                     return `
                     <div class="reaction-molecule clickable-molecule co-product" 
-                         data-molecule-name="${mol}" 
-                         data-molecule-id=""
+                         data-molecule-name="${resolved.name}" 
+                         data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
-                      <strong>${mol}</strong>
+                      <strong>${resolved.name}</strong>
                     </div>
                   `;
                   }).join('');
@@ -374,17 +407,18 @@ export class ArrowDetail {
             if (mergedByproduct.length === 1) {
               // Single byproduct
               const mol = mergedByproduct[0];
-              const displayName = removeCoefficients(mol);
+              const resolved = this.resolveByMolecule(mol);
+              const displayName = removeCoefficients(resolved.name);
               return `
               <div class="detail-section">
                 <h3>Byproduct</h3>
                 <div class="byproduct-info clickable-molecule" 
                      id="byproduct-info"
-                     data-molecule-name="${mol}" 
-                     data-molecule-id=""
+                     data-molecule-name="${resolved.name}" 
+                     data-molecule-id="${resolved.id}"
                      style="cursor: pointer;">
                   <div class="molecule-name">${displayName}</div>
-                  <div class="pubchem-loading" data-molecule="${mol}">
+                  <div class="pubchem-loading" data-molecule="${resolved.name}">
                     <div class="loading-indicator">Loading PubChem data...</div>
                   </div>
                 </div>
@@ -396,15 +430,16 @@ export class ArrowDetail {
               <div class="detail-section">
                 <h3>Byproducts</h3>
                 ${mergedByproduct.map((mol, idx) => {
-                  const displayName = removeCoefficients(mol);
+                  const resolved = this.resolveByMolecule(mol);
+                  const displayName = removeCoefficients(resolved.name);
                   return `
                   <div class="byproduct-info clickable-molecule" 
                        id="byproduct-info-${idx}"
-                       data-molecule-name="${mol}" 
-                       data-molecule-id=""
+                       data-molecule-name="${resolved.name}" 
+                       data-molecule-id="${resolved.id}"
                        style="cursor: pointer; margin-bottom: 10px;">
                     <div class="molecule-name">${displayName}</div>
-                    <div class="pubchem-loading" data-molecule="${mol}">
+                    <div class="pubchem-loading" data-molecule="${resolved.name}">
                       <div class="loading-indicator">Loading PubChem data...</div>
                     </div>
                   </div>

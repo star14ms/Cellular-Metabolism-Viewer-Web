@@ -161,6 +161,7 @@ if (!app) {
       pathwayView.setViewerContainer(viewerContainer)
       arrowDetail.setViewerContainer(viewerContainer)
       arrowDetail.setViewer(viewer) // Set viewer instance to access arrowMap
+      nodeDetail.setViewer(viewer) // Set viewer instance to access nodeMap for resolving node_ids
       nodeDetail.setViewerContainer(viewerContainer)
 
       // Tab switching
@@ -468,8 +469,9 @@ if (!app) {
         }
         
         // If we found a target reaction, select it
+        // When selecting from pathway detail page, use node_id only (not name-based highlighting)
         if (targetReaction) {
-          viewer.selectReaction(targetReaction, { skipTabSwitch: true });
+          viewer.selectReaction(targetReaction, { skipTabSwitch: true, useNodeIdOnly: true });
           if (!skipZoom) {
             viewer.zoomToReactionArrow(targetReaction);
           }
