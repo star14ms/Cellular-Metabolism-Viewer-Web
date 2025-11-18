@@ -178,8 +178,8 @@ export const singleCarbonMetabolismReactions = [
   {
     id: 'rxn_single_carbon_9',
     name: 'Serine to Glycine Conversion',
-    byreactant: ['THF'],
-    byproduct: ['N5,N10-methylene-THF'],
+    byreactant: ['thf'],
+    byproduct: ['n5_n10_methylene_thf'],
     hideByreactantLabels: true,
     hideByproductLabels: true,
     enzyme: {
@@ -203,10 +203,8 @@ export const singleCarbonMetabolismReactions = [
   {
     id: 'rxn_single_carbon_10',
     name: 'N5,N10-methylene-THF to Glycine',
-    byreactant: ['N5,N10-methylene-THF'],
-    byproduct: ['THF'],
-    hideByreactantLabels: true,
-    hideByproductLabels: true,
+    byreactant: ['NADH', 'NH₃', 'CO₂'],
+    byproduct: ['NAD⁺', 'THF'],
     enzyme: {
       name: 'Glycine cleavage complex (reverse)',
       ecNumber: 'EC 1.4.4.2',
@@ -354,7 +352,7 @@ export const singleCarbonMetabolismReactions = [
   {
     id: 'rxn_single_carbon_17',
     name: 'Homocysteine Remethylation to Methionine',
-    byreactant: ['N5-methyl-THF'],
+    byreactant: ['n5_methyl_thf'],
     byproduct: ['THF'],
     hideByreactantLabels: true,
     enzyme: {
@@ -460,7 +458,7 @@ export const singleCarbonMetabolismReactions = [
   {
     id: 'rxn_single_carbon_23',
     name: 'Cystathionine γ-Lyase Reaction',
-    byproduct: ['α-Ketobutyrate'],
+    byproduct: ['alpha_ketobutyrate'],
     hideByproductLabels: true,
     enzyme: {
       name: 'Cystathionine γ-lyase (CGL)',

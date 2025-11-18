@@ -26,8 +26,8 @@ export const ammoniumCaptureReleaseReactions = [
   // 2. Glutamate ↔ Many Amino Acids (Transaminases)
   {
     id: 'rxn_acr_4',
-    name: 'Transamination (Forward)',
-    byreactant: ['α-Ketoglutarate'],
+    name: 'Transamination',
+    byreactant: ['alpha_ketobutyrate_single_carbon'],
     byproduct: ['glutamate'],
     hideByreactantLabels: true,
     hideByproductLabels: true,

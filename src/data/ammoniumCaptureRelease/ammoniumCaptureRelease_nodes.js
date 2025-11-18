@@ -80,6 +80,7 @@ export const ammoniumCaptureReleaseNodes = [
     id: 'many_amino_acids',
     type: 'molecule',
     name: 'Many Amino Acids',
+    imageUrl: 'https://c8.alamy.com/comp/E7YMP7/amino-acids-chemical-structures-glycine-alanine-valine-leucine-isoleucine-E7YMP7.jpg',
     formula: 'Various',
     description: 'Various amino acids that can undergo transamination with glutamate',
     smiles: '',

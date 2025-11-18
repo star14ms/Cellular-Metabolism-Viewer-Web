@@ -25,7 +25,7 @@ export const pyrimidineSynthesisReactions = [
   {
     id: 'rxn_pyrimidine_synthesis_2',
     name: 'N-carbamoyl Aspartate Synthesis',
-    byreactant: ['Aspartate'],
+    byreactant: ['aspartate'],
     byproduct: ['Pi'],
     hideByreactantLabels: true,
     enzyme: {
@@ -82,7 +82,7 @@ export const pyrimidineSynthesisReactions = [
   {
     id: 'rxn_pyrimidine_synthesis_5',
     name: 'Orotidine-5\'-monophosphate (OMP) Synthesis',
-    byreactant: ['5-Phosphoribosyl-1-pyrophosphate (PRPP)'],
+    byreactant: ['prpp_pyrimidine'],
     byproduct: ['PPi'],
     hideByreactantLabels: true,
     enzyme: {

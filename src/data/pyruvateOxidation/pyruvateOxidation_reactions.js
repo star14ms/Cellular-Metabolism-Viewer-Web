@@ -31,8 +31,8 @@ export const pyruvateOxidationReactions = [
   {
     id: 'rxn_pyruvate_2',
     name: 'Oxidation and Transfer',
-    byreactant: ['Hydroxyethyl-TPP'],
-    byproduct: ['Thiamine pyrophosphate'],
+    byreactant: ['hydroxyethyl-tpp'],
+    byproduct: ['thiamine-pyrophosphate'],
     hideByreactantLabels: true,
     hideByproductLabels: true,
     enzyme: {

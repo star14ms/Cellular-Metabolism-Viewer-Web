@@ -99,6 +99,8 @@ export function getAlternativeNames(moleculeName) {
     'β-Hydroxy-β-methylglutaryl-CoA (HMG-CoA)': ['3-Hydroxy-3-methylglutaryl-CoA', 'beta-Hydroxy-beta-methylglutaryl-CoA', 'HMG-CoA', '3-Hydroxy-3-methylglutaryl coenzyme A', 'beta-Hydroxy-beta-methylglutaryl coenzyme A', '3-Hydroxy-3-methylglutaryl-CoA', 'Hydroxymethylglutaryl-CoA'],
     // Urea cycle compounds
     'Glutamic Semialdehyde': ['L-Glutamic gamma-semialdehyde', 'L-glutamic 5-semialdehyde', 'Glutamate-5-semialdehyde', 'L-Glutamic 5-semialdehyde', 'Glutamic 5-semialdehyde'],
+    // Ammonium Capture and Release compounds
+    'Many α-Ketoacids': ['alpha-ketoglutarate'],
   };
   
   return alternatives[moleculeName] || [];

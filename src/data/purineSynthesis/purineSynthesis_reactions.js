@@ -292,7 +292,7 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_20',
     name: 'AMP Synthesis from Adenine',
-    byreactant: ['PRPP'],
+    byreactant: ['prpp_purine2'],
     byproduct: ['PPi'],
     hideByreactantLabels: true,
     enzyme: {

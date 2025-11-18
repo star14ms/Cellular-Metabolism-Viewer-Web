@@ -310,8 +310,8 @@ export const deoxyribonucleotidesReactions = [
   {
     id: 'rxn_deoxy_17',
     name: 'dUMP Methylation to dTMP',
-    byreactant: ['N⁵,N¹⁰-methylene-THF'],
-    byproduct: ['Dihydrofolate'],
+    byreactant: ['n5n10_methylene_thf'],
+    byproduct: ['dihydrofolate'],
     hideByreactantLabels: true,
     hideByproductLabels: true,
     enzyme: {

@@ -31,7 +31,7 @@ export const pyrimidineSynthesisNodes = [
     position: { x: base_x - unit_space * 0.5, y: base_y + unit_space * 1.15 }
   },
   {
-    id: 'prpp',
+    id: 'prpp_pyrimidine',
     type: 'molecule',
     name: '5-Phosphoribosyl-1-pyrophosphate (PRPP)',
     formula: 'C₅H₁₃O₁₄P₃',
