@@ -183,6 +183,326 @@ export const glycolysisReactions = [
       regulation: 'Allosterically activated by fructose-1,6-bisphosphate; inhibited by ATP and alanine',
       isReversible: false
     }
+  },
+
+  // Polyol Pathway
+  {
+    id: 'rxn_aldose_reductase',
+    name: 'Glucose to Sorbitol Reduction',
+    byreactant: ['NADPH'],
+    byproduct: ['NADP⁺'],
+    enzyme: {
+      name: 'Aldose Reductase',
+      ecNumber: 'EC 1.1.1.21',
+      cofactors: ['NADPH'],
+      description: 'Catalyzes the reduction of glucose to sorbitol using NADPH as a cofactor'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Part of the polyol pathway, important in diabetes and hyperglycemia',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_sorbitol_dehydrogenase',
+    name: 'Sorbitol to Fructose Oxidation',
+    byreactant: ['NAD⁺'],
+    byproduct: ['NADH'],
+    enzyme: {
+      name: 'Sorbitol Dehydrogenase',
+      ecNumber: 'EC 1.1.1.14',
+      cofactors: ['NAD⁺'],
+      description: 'Catalyzes the oxidation of sorbitol to fructose using NAD⁺ as a cofactor'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Part of the polyol pathway, converts sorbitol to fructose',
+      isReversible: true
+    }
+  },
+
+  // Mannose Pathway
+  {
+    id: 'rxn_mannose_kinase',
+    name: 'Mannose Phosphorylation',
+    byreactant: ['ATP'],
+    byproduct: ['ADP'],
+    enzyme: {
+      name: 'Hexokinase',
+      ecNumber: 'EC 2.7.1.1',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the phosphorylation of mannose to mannose-6-phosphate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Same enzyme as glucose phosphorylation',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_phosphomannose_isomerase',
+    name: 'Mannose-6-phosphate Isomerization',
+    enzyme: {
+      name: 'Phosphomannose Isomerase',
+      ecNumber: 'EC 5.3.1.8',
+      cofactors: ['None'],
+      description: 'Converts mannose-6-phosphate to fructose-6-phosphate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Near equilibrium reaction',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_phosphofructokinase_2',
+    name: 'Fructose-6-phosphate to Fructose-2,6-bisphosphate',
+    byreactant: ['ATP'],
+    byproduct: ['ADP'],
+    enzyme: {
+      name: 'Phosphofructokinase-2 (PFK-2)',
+      ecNumber: 'EC 2.7.1.105',
+      cofactors: ['Mg²⁺'],
+      description: 'Bifunctional enzyme that phosphorylates fructose-6-phosphate to fructose-2,6-bisphosphate. Part of the PFK-2/FBPase-2 bifunctional enzyme complex.'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Regulated by hormonal signals; fructose-2,6-bisphosphate is a key allosteric regulator of PFK-1',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_fructose_bisphosphatase_2',
+    name: 'Fructose-2,6-bisphosphate to Fructose-6-phosphate',
+    byreactant: ['ADP'],
+    byproduct: ['ATP'],
+    enzyme: {
+      name: 'Fructose Bisphosphatase-2 (FBPase-2)',
+      ecNumber: 'EC 3.1.3.46',
+      cofactors: ['None'],
+      description: 'Bifunctional enzyme that dephosphorylates fructose-2,6-bisphosphate to fructose-6-phosphate. Part of the PFK-2/FBPase-2 bifunctional enzyme complex.'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Regulated by hormonal signals; opposite activity of PFK-2',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_glutamine_f6p_aminotransferase',
+    name: 'Glucosamine-6-phosphate Synthesis',
+    byreactant: ['Glutamine'],
+    byproduct: ['Glutamate'],
+    enzyme: {
+      name: 'Glutamine:F6P Aminotransferase',
+      ecNumber: 'EC 2.6.1.16',
+      cofactors: ['B₆ (Pyridoxal phosphate)'],
+      description: 'Catalyzes the conversion of fructose-6-phosphate to glucosamine-6-phosphate using glutamine as the amino donor'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'First committed step in hexosamine biosynthesis pathway',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_gags_synthesis',
+    name: 'Glycosaminoglycan Synthesis',
+    enzyme: {
+      name: 'Multiple enzymes',
+      ecNumber: 'N/A',
+      cofactors: ['UDP-sugars'],
+      description: 'Complex pathway leading from glucosamine-6-phosphate to glycosaminoglycans (GAGs)'
+    },
+    conditions: {
+      location: 'Cytoplasm and Golgi',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Involves multiple enzymatic steps',
+      isReversible: false
+    }
+  },
+
+  // Glycerol Pathway
+  {
+    id: 'rxn_glycerol_kinase',
+    name: 'Glycerol Phosphorylation',
+    byreactant: ['ATP'],
+    byproduct: ['ADP'],
+    enzyme: {
+      name: 'Glycerol Kinase',
+      ecNumber: 'EC 2.7.1.30',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the phosphorylation of glycerol to glycerol-3-phosphate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Regulated by glycerol availability',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_glycerol_3_phosphate_dehydrogenase',
+    name: 'Glycerol-3-phosphate Oxidation',
+    byreactant: ['NAD⁺'],
+    byproduct: ['NADH'],
+    enzyme: {
+      name: 'Glycerol-3-phosphate Dehydrogenase',
+      ecNumber: 'EC 1.1.1.8',
+      cofactors: ['NAD⁺'],
+      description: 'Oxidizes glycerol-3-phosphate to dihydroxyacetone phosphate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Near equilibrium reaction',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_mitochondrial_glycerol_3_phosphate_dehydrogenase',
+    name: 'Mitochondrial Glycerol-3-phosphate Oxidation',
+    byproduct: ['dihydroxyacetone_phosphate', 'fadh2_glycolysis'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
+    enzyme: {
+      name: 'Mitochondrial Glycerol-3-phosphate Dehydrogenase (Flavoprotein)',
+      ecNumber: 'EC 1.1.5.3',
+      cofactors: ['FAD'],
+      description: 'Oxidizes glycerol-3-phosphate to dihydroxyacetone phosphate in the mitochondrial matrix, reducing FAD to FADH₂'
+    },
+    conditions: {
+      location: 'Mitochondrial Matrix',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Links cytoplasmic glycerol metabolism to electron transport chain',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_fadh2_to_coenzyme_q',
+    name: 'FADH₂ to Coenzyme Q Electron Transfer',
+    byproduct: ['coenzyme_q_reduced', 'fad_glycolysis'],
+    enzyme: {
+      name: 'Electron Transfer System',
+      ecNumber: 'N/A',
+      cofactors: ['None'],
+      description: 'Transfers electrons from FADH₂ to Coenzyme Q, reducing it'
+    },
+    conditions: {
+      location: 'Mitochondrial Matrix',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Part of electron transport chain',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_fructokinase',
+    name: 'Fructose Phosphorylation',
+    byreactant: ['ATP'],
+    byproduct: ['ADP'],
+    enzyme: {
+      name: 'Fructokinase',
+      ecNumber: 'EC 2.7.1.4',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the phosphorylation of fructose to fructose-1-phosphate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Regulated by fructose availability',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_fructose_1p_aldolase',
+    name: 'Fructose-1-phosphate Cleavage',
+    enzyme: {
+      name: 'Fructose-1-P Aldolase (Aldolase B)',
+      ecNumber: 'EC 4.1.2.13',
+      cofactors: ['None'],
+      description: 'Cleaves fructose-1-phosphate into dihydroxyacetone phosphate and glyceraldehyde'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Near equilibrium reaction',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_triose_kinase',
+    name: 'Glyceraldehyde Phosphorylation',
+    byreactant: ['ATP'],
+    byproduct: ['ADP'],
+    enzyme: {
+      name: 'Triose Kinase',
+      ecNumber: 'EC 2.7.1.28',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the phosphorylation of glyceraldehyde to glyceraldehyde-3-phosphate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Regulated by glyceraldehyde availability',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_bisphosphoglycerate_mutase',
+    name: '1,3-Bisphosphoglycerate to 2,3-Bisphosphoglycerate',
+    enzyme: {
+      name: 'Bisphosphoglycerate Mutase',
+      ecNumber: 'EC 5.4.2.4',
+      cofactors: ['None'],
+      description: 'Converts 1,3-bisphosphoglycerate to 2,3-bisphosphoglycerate by transferring the phosphate from position 1 to position 2'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Alternative pathway for phosphoglycerate mutase',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_bisphosphoglycerate_phosphatase',
+    name: '2,3-Bisphosphoglycerate Dephosphorylation',
+    byproduct: ['Pi'],
+    enzyme: {
+      name: 'Bisphosphoglycerate Phosphatase',
+      ecNumber: 'EC 3.1.3.13',
+      cofactors: ['None'],
+      description: 'Converts 2,3-bisphosphoglycerate to 2-phosphoglycerate, releasing inorganic phosphate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Alternative pathway for phosphoglycerate mutase',
+      isReversible: false
+    }
   }
 ];
 

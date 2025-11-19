@@ -11,7 +11,7 @@ export const glycolysisData = {
   reactions: glycolysisReactions,
   arrows: glycolysisArrows,
   summary: {
-    name: 'Glycolysis',
+    name: 'Glycolysis and Gluconeogenesis',
     pathwayType: 'carbohydrates',
     description: 'The metabolic pathway that converts glucose into pyruvate, releasing energy and producing ATP and NADH.',
     location: 'Cytoplasm',
@@ -26,6 +26,44 @@ export const glycolysisData = {
       { id: 'pyruvate', text: 'Step 10: Pyruvate kinase (allosteric regulation)' }
     ]
   },
+  // Sub-pathways definition
+  subPathways: [
+    {
+      id: 'main-glycolysis',
+      name: 'Main Glycolysis Pathway',
+      description: 'The core ten-step pathway that converts glucose to pyruvate, producing ATP and NADH. Steps 1-10: Glucose → Glucose-6-phosphate → Fructose-6-phosphate → Fructose-1,6-bisphosphate → Glyceraldehyde-3-phosphate → 1,3-Bisphosphoglycerate → 3-Phosphoglycerate → 2-Phosphoglycerate → Phosphoenolpyruvate → Pyruvate.',
+      reactionIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], // Steps 1-10
+      nodeIds: ['glucose', 'glucose_6_phosphate', 'fructose_6_phosphate', 'fructose_1_6_bisphosphate', 'dihydroxyacetone_phosphate', 'glyceraldehyde_3_phosphate', '1_3_bisphosphoglycerate', '3_phosphoglycerate', '2_phosphoglycerate', 'phosphoenolpyruvate', 'pyruvate']
+    },
+    {
+      id: 'polyol-pathway',
+      name: 'Polyol Pathway',
+      description: 'Alternative pathway for glucose metabolism. Steps 11-12: Glucose is reduced to sorbitol by aldose reductase (using NADPH), and sorbitol is oxidized to fructose by sorbitol dehydrogenase (using NAD⁺).',
+      reactionIndices: [10, 11], // Steps 11-12
+      nodeIds: ['glucose', 'sorbitol', 'fructose_polyol']
+    },
+    {
+      id: 'mannose-hexosamine-pathway',
+      name: 'Mannose, Fructose-2,6-bisphosphate Regulation, and Hexosamine Pathway',
+      description: 'Pathways involving mannose metabolism, fructose-2,6-bisphosphate regulation, and hexosamine biosynthesis. Steps 13-18: Mannose → Mannose-6-phosphate → Fructose-6-phosphate; Fructose-6-phosphate ↔ Fructose-2,6-bisphosphate (regulatory cycle); Fructose-6-phosphate → Glucosamine-6-phosphate → GAGs.',
+      reactionIndices: [12, 13, 14, 15, 16, 17], // Steps 13-18
+      nodeIds: ['mannose', 'mannose_6_phosphate', 'fructose_6_phosphate', 'fructose_2_6_bisphosphate', 'glucosamine_6_phosphate', 'gags']
+    },
+    {
+      id: 'glycerol-fructose-metabolism',
+      name: 'Glycerol and Fructose Metabolism',
+      description: 'Pathways for glycerol and fructose entry into glycolysis. Steps 19-25: Glycerol → Glycerol-3-phosphate → Dihydroxyacetone phosphate (via cytoplasmic or mitochondrial pathways); Fructose → Fructose-1-phosphate → Dihydroxyacetone phosphate + Glyceraldehyde → Glyceraldehyde-3-phosphate.',
+      reactionIndices: [18, 19, 20, 21, 22, 23, 24], // Steps 19-25
+      nodeIds: ['glycerol', 'glycerol_3_phosphate', 'dihydroxyacetone_phosphate', 'fad_glycolysis', 'fadh2_glycolysis', 'coenzyme_q_reduced', 'coenzyme_q_oxidized', 'fructose', 'fructose_1_phosphate', 'glyceraldehyde', 'glyceraldehyde_3_phosphate']
+    },
+    {
+      id: 'bisphosphoglycerate-shunt',
+      name: '2,3-Bisphosphoglycerate Shunt',
+      description: 'Alternative pathway for phosphoglycerate mutase. Steps 26-27: 1,3-Bisphosphoglycerate → 2,3-Bisphosphoglycerate → 2-Phosphoglycerate. This shunt is important in red blood cells for regulating oxygen affinity of hemoglobin.',
+      reactionIndices: [25, 26], // Steps 26-27
+      nodeIds: ['1_3_bisphosphoglycerate', '2_3_bisphosphoglycerate', '2_phosphoglycerate']
+    }
+  ]
 };
 
 export { glycolysisNodes, glycolysisReactions, glycolysisArrows };

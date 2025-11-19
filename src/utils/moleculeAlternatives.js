@@ -16,6 +16,7 @@ export function getAlternativeNames(moleculeName) {
     'Glucose-6-phosphate': [],
     'Fructose-6-phosphate': ['F6P'],
     'Fructose-1,6-bisphosphate': ['F1,6BP'],
+    'Fructose-2,6-bisphosphate': ['F2,6BP', 'Fructose 2,6-bisphosphate', 'Fructose-2,6-diphosphate', 'D-Fructose 2,6-bisphosphate'],
     'Glyceraldehyde-3-phosphate': ['GAP'],
     'Dihydroxyacetone phosphate': ['DHAP'],
     '1,3-Bisphosphoglycerate': ['1,3-BPG'],

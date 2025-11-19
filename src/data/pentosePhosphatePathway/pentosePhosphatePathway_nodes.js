@@ -12,7 +12,7 @@ const unit_space = 150;
 // Use glucose-6-phosphate position as (0, 0) reference
 // glucose-6-phosphate is at: { x: 100, y: 150 } in glycolysis
 const base_x = 400; // x position of glucose-6-phosphate
-const base_y = 0; // y position of glucose-6-phosphate
+const base_y = -150; // y position of glucose-6-phosphate
 
 export const pentosePhosphatePathwayNodes = [
   // (1,0) 6-phosphogluconolactone
@@ -143,7 +143,7 @@ export const pentosePhosphatePathwayNodes = [
     formula: 'C₅H₁₁O₈P',
     smiles: 'C(C(C(C(C(=O)CO)O)O)O)OP(=O)(O)O',
     description: 'Xylulose-5-phosphate, 5-carbon sugar intermediate',
-    position: { x: base_x, y: base_y + unit_space * 3.5 }
+    position: { x: base_x, y: base_y + unit_space * 4 }
   },
   
   // Glutathione (oxidized) - GSSG (position not specified, placing near other nodes)

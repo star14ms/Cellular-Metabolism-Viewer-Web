@@ -87,7 +87,7 @@ export const allArrows = [
 export const PATHWAY_CONFIG = {
   // Pathway ID to display name mapping
   pathwayNames: {
-    'glycolysis': 'Glycolysis',
+    'glycolysis': 'Glycolysis and Gluconeogenesis',
     'pyruvate-oxidation': 'Pyruvate Oxidation',
     'citric-acid-cycle': 'Citric Acid Cycle (Krebs Cycle)',
     'electron-transport-chain': 'Electron Transport Chain',
@@ -198,11 +198,12 @@ export const PATHWAY_CONFIG = {
 const pathwayDefinitions = [
   {
     id: 'glycolysis',
-    name: 'Glycolysis',
+    name: 'Glycolysis and Gluconeogenesis',
     nodes: glycolysisNodes,
     reactions: glycolysisReactions,
     arrows: glycolysisArrows,
-    data: glycolysisData
+    data: glycolysisData,
+    subPathways: glycolysisData.subPathways // Include sub-pathways
   },
   {
     id: 'pyruvate-oxidation',

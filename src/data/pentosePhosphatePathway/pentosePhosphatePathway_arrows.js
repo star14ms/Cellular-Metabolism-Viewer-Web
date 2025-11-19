@@ -120,7 +120,7 @@ export const pentosePhosphatePathwayArrows = [
     curved: true,
     flipped: true,
     x_scale: 3,
-    y_scale: 1,
+    y_scale: 1.25,
     byMoleculeAngle: 270, // Custom angle for this arrow
   },
   
@@ -178,7 +178,7 @@ export const pentosePhosphatePathwayArrows = [
     from_id: 'erythrose_4_phosphate',
     reaction_id: 'rxn_ppp_12',
     curved: true,
-    x_scale: 2.25,
+    x_scale: 3,
     y_scale: -1.8,
     byMoleculeAngle: 90,
   },
@@ -188,7 +188,7 @@ export const pentosePhosphatePathwayArrows = [
     reaction_id: 'rxn_ppp_12',
     curved: true,
     flipped: true,
-    x_scale: 3.8,
+    x_scale: 6,
     y_scale: -1.8,
     byMoleculeAngle: 270,
   }

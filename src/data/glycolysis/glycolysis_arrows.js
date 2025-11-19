@@ -35,6 +35,94 @@ export const glycolysisArrows = [
     reaction_id: 'rxn_glycolysis_4'
   },
   {
+    id: 'arrow_glycolysis_glucose_to_sorbitol',
+    from_id: 'glucose',
+    to_id: 'sorbitol',
+    reaction_id: 'rxn_aldose_reductase'
+  },
+  {
+    id: 'arrow_glycolysis_sorbitol_to_fructose',
+    from_id: 'sorbitol',
+    to_id: 'fructose_polyol',
+    reaction_id: 'rxn_sorbitol_dehydrogenase'
+  },
+  {
+    id: 'arrow_glycolysis_mannose_to_m6p',
+    from_id: 'mannose',
+    to_id: 'mannose_6_phosphate',
+    reaction_id: 'rxn_mannose_kinase'
+  },
+  {
+    id: 'arrow_glycolysis_m6p_to_f6p',
+    from_id: 'mannose_6_phosphate',
+    to_id: 'fructose_6_phosphate',
+    reaction_id: 'rxn_phosphomannose_isomerase'
+  },
+  {
+    id: 'arrow_glycolysis_f6p_to_f26bp',
+    from_id: 'fructose_6_phosphate',
+    to_id: 'fructose_2_6_bisphosphate',
+    reaction_id: 'rxn_phosphofructokinase_2',
+    flipped: true
+  },
+  {
+    id: 'arrow_glycolysis_f26bp_to_f6p',
+    from_id: 'fructose_2_6_bisphosphate',
+    to_id: 'fructose_6_phosphate',
+    reaction_id: 'rxn_fructose_bisphosphatase_2',
+    flipped: true
+  },
+  {
+    id: 'arrow_glycolysis_f6p_to_glucosamine6p',
+    from_id: 'fructose_6_phosphate',
+    to_id: 'glucosamine_6_phosphate',
+    reaction_id: 'rxn_glutamine_f6p_aminotransferase'
+  },
+  {
+    id: 'arrow_glycolysis_glucosamine6p_to_gags',
+    from_id: 'glucosamine_6_phosphate',
+    to_id: 'gags',
+    reaction_id: 'rxn_gags_synthesis'
+  },
+  {
+    id: 'arrow_glycolysis_glycerol_to_g3p',
+    from_id: 'glycerol',
+    to_id: 'glycerol_3_phosphate',
+    reaction_id: 'rxn_glycerol_kinase',
+    flipped: true
+  },
+  {
+    id: 'arrow_glycolysis_g3p_to_dhap',
+    from_id: 'glycerol_3_phosphate',
+    to_id: 'dihydroxyacetone_phosphate',
+    reaction_id: 'rxn_glycerol_3_phosphate_dehydrogenase',
+    flipped: true
+  },
+  {
+    id: 'arrow_glycolysis_fructose_to_f1p',
+    from_id: 'fructose',
+    to_id: 'fructose_1_phosphate',
+    reaction_id: 'rxn_fructokinase'
+  },
+  {
+    id: 'arrow_glycolysis_f1p_to_dhap',
+    from_id: 'fructose_1_phosphate',
+    to_id: 'dihydroxyacetone_phosphate',
+    reaction_id: 'rxn_fructose_1p_aldolase'
+  },
+  {
+    id: 'arrow_glycolysis_f1p_to_glyceraldehyde',
+    from_id: 'fructose_1_phosphate',
+    to_id: 'glyceraldehyde',
+    reaction_id: 'rxn_fructose_1p_aldolase'
+  },
+  {
+    id: 'arrow_glycolysis_glyceraldehyde_to_g3p',
+    from_id: 'glyceraldehyde',
+    to_id: 'glyceraldehyde_3_phosphate',
+    reaction_id: 'rxn_triose_kinase'
+  },
+  {
     id: 'arrow_glycolysis_5',
     from_id: 'dihydroxyacetone_phosphate',
     to_id: 'glyceraldehyde_3_phosphate',
@@ -59,6 +147,18 @@ export const glycolysisArrows = [
     reaction_id: 'rxn_glycolysis_8'
   },
   {
+    id: 'arrow_glycolysis_13bpg_to_23bpg',
+    from_id: '1_3_bisphosphoglycerate',
+    to_id: '2_3_bisphosphoglycerate',
+    reaction_id: 'rxn_bisphosphoglycerate_mutase'
+  },
+  {
+    id: 'arrow_glycolysis_23bpg_to_2pg',
+    from_id: '2_3_bisphosphoglycerate',
+    to_id: '2_phosphoglycerate',
+    reaction_id: 'rxn_bisphosphoglycerate_phosphatase'
+  },
+  {
     id: 'arrow_glycolysis_9',
     from_id: '2_phosphoglycerate',
     to_id: 'phosphoenolpyruvate',
@@ -69,6 +169,49 @@ export const glycolysisArrows = [
     from_id: 'phosphoenolpyruvate',
     to_id: 'pyruvate',
     reaction_id: 'rxn_glycolysis_10'
+  },
+  
+  // Mitochondrial Glycerol-3-phosphate Dehydrogenase Pathway - Curved arrows
+  // 1. Mitochondrial Glycerol-3-phosphate Dehydrogenase - Curved arrows from glycerol-3-phosphate and FAD
+  {
+    id: 'arrow_glycolysis_mito_g3p_1',
+    from_id: 'glycerol_3_phosphate',
+    reaction_id: 'rxn_mitochondrial_glycerol_3_phosphate_dehydrogenase',
+    curved: true,
+    flipped: true,
+    x_scale: 3,
+    y_scale: -1,
+  },
+  {
+    id: 'arrow_glycolysis_mito_g3p_2',
+    from_id: 'fad_glycolysis',
+    reaction_id: 'rxn_mitochondrial_glycerol_3_phosphate_dehydrogenase',
+    curved: true,
+    x_scale: 1.5,
+    y_scale: -0.66,
+  },
+  
+  // 2. FADH₂ to Coenzyme Q Electron Transfer - Curved arrows from FADH2 and Coenzyme Q (oxidized)
+  {
+    id: 'arrow_glycolysis_fadh2_to_coq_1',
+    from_id: 'fadh2_glycolysis',
+    reaction_id: 'rxn_fadh2_to_coenzyme_q',
+    curved: true,
+    byproduct: ['Coenzyme Q (reduced)'],
+    x_scale: 1.5,
+    y_scale: 0.66,
+    byMoleculeAngle: 180,
+  },
+  {
+    id: 'arrow_glycolysis_fadh2_to_coq_2',
+    from_id: 'coenzyme_q_oxidized',
+    reaction_id: 'rxn_fadh2_to_coenzyme_q',
+    curved: true,
+    flipped: true,
+    byreactant: ['Coenzyme Q (oxidized)'],
+    x_scale: 1.5,
+    y_scale: -0.66,
+    byMoleculeAngle: 180,
   }
 ];
 
