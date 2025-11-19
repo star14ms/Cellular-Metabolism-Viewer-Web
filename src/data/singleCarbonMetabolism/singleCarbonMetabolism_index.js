@@ -58,6 +58,55 @@ export const singleCarbonMetabolismData = {
       { id: 'alpha_ketobutyrate', text: 'α-Ketobutyrate - Connects threonine and cystathionine catabolism to TCA cycle via succinyl-CoA' }
     ]
   },
+  // Sub-pathways definition - 7 sub-pathways
+  subPathways: [
+    {
+      id: 'folate-metabolism',
+      name: 'Folate Metabolism',
+      description: 'Folate activation and single-carbon unit metabolism. Includes reduction of folate to dihydrofolate and THF, formylation to N10-formyl-THF, cyclization to N5,N10-methenyl-THF, and reduction to N5,N10-methylene-THF.',
+      reactionIndices: [0, 1, 2, 3, 4], // Steps 1, 2, 3, 4, 5
+      nodeIds: ['folate', 'dihydrofolate_single_carbon', 'thf', 'n10_formyl_thf', 'n5_n10_methenyl_thf', 'n5_n10_methylene_thf']
+    },
+    {
+      id: 'serine-glycine-synthesis',
+      name: 'Serine and Glycine Synthesis',
+      description: 'Synthesis of serine and glycine from glycolysis intermediates. Includes 3-phosphoglycerate dehydrogenation, transamination to 3-phosphoserine, dephosphorylation to serine, and conversion of serine to glycine with transfer of methylene group to THF.',
+      reactionIndices: [5, 6, 7, 8], // Steps 6, 7, 8, 9
+      nodeIds: ['3_phosphoglycerate', '3_phosphopyruvate', '3_phosphoserine', 'serine', 'glycine', 'thf', 'n5_n10_methylene_thf']
+    },
+    {
+      id: 'creatine-synthesis',
+      name: 'Creatine Synthesis and Degradation',
+      description: 'Creatine synthesis pathway from N5,N10-methylene-THF and glycine. Includes conversion to guanidinoacetate, methylation to creatine, and degradation pathways to creatinine (direct or via phosphocreatine).',
+      reactionIndices: [9, 10, 11, 12, 13, 14], // Steps 10, 11, 12, 13, 14, 15
+      nodeIds: ['n5_n10_methylene_thf', 'glycine', 'guanidinoacetate', 'creatine', 'creatinine', 'phosphocreatine']
+    },
+    {
+      id: 'methionine-homocysteine-cycle',
+      name: 'Methionine-Homocysteine Cycle',
+      description: 'Methionine-homocysteine cycle for methyl group transfer. Includes reduction of N5,N10-methylene-THF to N5-methyl-THF, remethylation of homocysteine to methionine, activation of methionine to SAM, SAM methylation to SAH, and hydrolysis of SAH to homocysteine.',
+      reactionIndices: [15, 16, 17, 18, 19], // Steps 16, 17, 18, 19, 20
+      nodeIds: ['n5_n10_methylene_thf', 'n5_methyl_thf', 'methionine', 'sam', 'sah', 'homocysteine']
+    },
+    {
+      id: 'homocysteine-catabolism-threonine',
+      name: 'Homocysteine Catabolism and Threonine Catabolism',
+      description: 'Homocysteine catabolism through transsulfuration pathway and threonine catabolism. Includes homocysteine to cystathionine, cystathionine to cysteine, cysteine to cysteine sulfinate, cysteine sulfinate to hypotaurine, and threonine to α-ketobutyrate.',
+      reactionIndices: [20, 21, 22, 23, 24], // Steps 21, 22, 23, 24, 25 (Step 25 = Threonine → α-Ketobutyrate)
+    },
+    {
+      id: 'cysteine-catabolism-pyruvate',
+      name: 'Cysteine Catabolism to Pyruvate',
+      description: 'Cysteine catabolism pathway to pyruvate via transsulfuration. Includes homocysteine to cystathionine, cystathionine to cysteine, hypotaurine to taurine, threonine to α-ketobutyrate, and α-ketobutyrate to succinyl-CoA.',
+      reactionIndices: [20, 21, 25, 26, 27], // Steps 21, 22, 26, 27, 28 (Step 26 = Hypotaurine → Taurine, Step 27 = Threonine → α-Ketobutyrate, Step 28 = α-Ketobutyrate → Succinyl-CoA)
+    },
+    {
+      id: 'taurine-biosynthesis',
+      name: 'Taurine Biosynthesis',
+      description: 'Taurine biosynthesis pathway from cysteine via transsulfuration. Includes homocysteine to cystathionine, cystathionine to cysteine, cysteine to cysteine sulfinate, cysteine sulfinate to hypotaurine, hypotaurine to taurine, and taurine to bile salts.',
+      reactionIndices: [20, 21, 25, 28, 29, 30], // Steps 21, 22, 29, 30, 31 (Step 29 = Cysteine Sulfinate → Hypotaurine, Step 30 = Hypotaurine → Taurine, Step 31 = Taurine → Bile Salts)
+    }
+  ]
 };
 
 export { singleCarbonMetabolismNodes, singleCarbonMetabolismReactions, singleCarbonMetabolismArrows };

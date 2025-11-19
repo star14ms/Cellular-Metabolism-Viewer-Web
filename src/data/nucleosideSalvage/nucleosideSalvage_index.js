@@ -26,6 +26,51 @@ export const nucleosideSalvageData = {
       { id: 'dtmp', text: 'Thymidine kinase: Phosphorylates thymidine and deoxyuridine' }
     ]
   },
+  // Sub-pathways definition - 6 individual sub-pathways, one for each reaction
+  subPathways: [
+    {
+      id: 'adenosine-phosphorylation',
+      name: 'Adenosine Phosphorylation',
+      description: 'Phosphorylation of adenosine to adenosine-5\'-monophosphate (AMP) using ATP, catalyzed by adenosine kinase.',
+      reactionIndices: [0], // Adenosine → AMP
+      nodeIds: ['adenosine', 'amp']
+    },
+    {
+      id: 'cytidine-phosphorylation',
+      name: 'Cytidine Phosphorylation',
+      description: 'Phosphorylation of cytidine to cytidine-5\'-monophosphate (CMP) using ATP, catalyzed by uridine-cytidine kinase.',
+      reactionIndices: [1], // Cytidine → CMP
+      nodeIds: ['cytidine', 'cmp']
+    },
+    {
+      id: 'uridine-phosphorylation',
+      name: 'Uridine Phosphorylation',
+      description: 'Phosphorylation of uridine to uridine-5\'-monophosphate (UMP) using ATP, catalyzed by uridine-cytidine kinase.',
+      reactionIndices: [2], // Uridine → UMP
+      nodeIds: ['uridine', 'ump']
+    },
+    {
+      id: 'deoxycytidine-phosphorylation',
+      name: 'Deoxycytidine Phosphorylation',
+      description: 'Phosphorylation of deoxycytidine to deoxycytidine-5\'-monophosphate (dCMP) using ATP, catalyzed by deoxycytidine kinase.',
+      reactionIndices: [3], // Deoxycytidine → dCMP
+      nodeIds: ['deoxycytidine', 'dcmp']
+    },
+    {
+      id: 'thymidine-phosphorylation',
+      name: 'Thymidine Phosphorylation',
+      description: 'Phosphorylation of thymidine to deoxythymidine-5\'-monophosphate (dTMP) using ATP, catalyzed by thymidine kinase.',
+      reactionIndices: [4], // Thymidine → dTMP
+      nodeIds: ['thymidine', 'dtmp']
+    },
+    {
+      id: 'deoxyuridine-phosphorylation',
+      name: 'Deoxyuridine Phosphorylation',
+      description: 'Phosphorylation of deoxyuridine to deoxyuridine-5\'-monophosphate (dUMP) using ATP, catalyzed by thymidine kinase.',
+      reactionIndices: [5], // Deoxyuridine → dUMP
+      nodeIds: ['deoxyuridine', 'dump']
+    }
+  ]
 };
 
 export { nucleosideSalvageNodes, nucleosideSalvageReactions, nucleosideSalvageArrows };

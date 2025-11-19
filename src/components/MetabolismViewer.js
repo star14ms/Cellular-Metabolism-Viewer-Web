@@ -353,6 +353,11 @@ export class MetabolismViewer {
     this.selectedReaction = null;
     this.selectedPathway = null;
     this.currentZoom = 1;
+    // Sub-pathway navigation state
+    this.currentParentPathway = null; // The pathway whose sub-pathways are currently shown
+    this.viewingSubPathways = false; // Whether we're currently viewing sub-pathways (depth 2)
+    this.subPathwaySelected = false; // Whether a sub-pathway is currently selected (depth 3)
+    this.currentVirtualPathway = null; // The currently selected virtual sub-pathway (if any)
     this.moleculeImages = new Map(); // Cache for molecule 2D images (id -> imageUrl)
     this.pubchemDataCache = new Map(); // Cache for PubChem data (moleculeName -> pubchemData)
     
@@ -933,7 +938,7 @@ export class MetabolismViewer {
     
     // Add "Show All" button first (replaces reset zoom)
     const showAllButton = buttonGroup.append('g')
-      .attr('class', 'pathway-button btn')
+      .attr('class', 'pathway-button btn show-all-button')
       .attr('transform', `translate(${20}, ${buttonY})`);
     
     const showAllText = 'Show All';
@@ -1060,6 +1065,479 @@ export class MetabolismViewer {
   }
   
   /**
+   * Render sub-pathway buttons (used for both depth 2 and depth 3)
+   * @param {Object} parentPathway - The parent pathway
+   * @param {string|null} selectedSubPathwayId - ID of selected sub-pathway (for depth 3), null for depth 2
+   */
+  renderSubPathwayButtons(parentPathway, selectedSubPathwayId = null) {
+    if (!parentPathway.subPathways || parentPathway.subPathways.length === 0) {
+      return;
+    }
+    
+    // Remove existing pathway buttons (except "Show All")
+    const buttonGroup = this.pathwayButtonGroup;
+    if (!buttonGroup) return;
+    
+    // Remove all pathway buttons except "Show All"
+    buttonGroup.selectAll('.pathway-button').each(function() {
+      if (!d3.select(this).classed('show-all-button')) {
+        d3.select(this).remove();
+      }
+    });
+    
+    // Button styling constants
+    const buttonY = 20;
+    const buttonHeight = 28;
+    const buttonGap = 15;
+    const lineHeight = buttonHeight + 10;
+    const rightMargin = 150;
+    const horizontalPadding = 16;
+    
+    // Helper to calculate button width
+    const calculateButtonWidth = (text) => {
+      const tempText = this.svg.append('text')
+        .attr('font-size', '10px')
+        .attr('font-weight', '600')
+        .text(text)
+        .style('visibility', 'hidden');
+      const textWidth = tempText.node().getBBox().width;
+      tempText.remove();
+      return textWidth + horizontalPadding;
+    };
+    
+    // Get available width
+    const getAvailableWidth = () => {
+      const svgWidth = this.svg.attr('width') ? parseFloat(this.svg.attr('width')) : this.options.width;
+      const detailPanelWidth = this.container.closest('.main-content')?.querySelector('.detail-panel')?.clientWidth || 0;
+      return svgWidth;
+    };
+    
+    // Add "Back" button first
+    let currentX = 20;
+    let currentY = buttonY;
+    const showAllButton = buttonGroup.select('.pathway-button').node();
+    if (showAllButton) {
+      const showAllRect = d3.select(showAllButton).select('rect');
+      const showAllWidth = showAllRect.attr('width') ? parseFloat(showAllRect.attr('width')) : 0;
+      currentX = 20 + showAllWidth + buttonGap;
+    }
+    
+    // Create "Back" button
+    const backButton = buttonGroup.append('g')
+      .attr('class', 'pathway-button back-button')
+      .attr('transform', `translate(${currentX}, ${currentY})`);
+    
+    const backText = '← Back';
+    const backWidth = calculateButtonWidth(backText);
+    const backButtonColors = { fill: '#666666', hover: '#777777', selected: '#555555' };
+    
+    backButton.append('rect')
+      .attr('width', backWidth)
+      .attr('height', buttonHeight)
+      .attr('rx', 6)
+      .attr('fill', backButtonColors.fill)
+      .attr('stroke', backButtonColors.hover)
+      .attr('stroke-width', 2);
+    
+    backButton.append('text')
+      .attr('x', backWidth / 2)
+      .attr('y', buttonHeight / 2 + 3)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'white')
+      .attr('font-size', '10px')
+      .attr('font-weight', '600')
+      .text(backText);
+    
+    backButton.on('mouseenter', function() {
+      d3.select(this).select('rect')
+        .attr('fill', backButtonColors.hover)
+        .attr('stroke-width', 3);
+    })
+    .on('mouseleave', function() {
+      d3.select(this).select('rect')
+        .attr('fill', backButtonColors.fill)
+        .attr('stroke-width', 2);
+    })
+    .on('click', (event) => {
+      event.stopPropagation();
+      // Back button behavior depends on depth:
+      // Depth 3 (subPathwaySelected = true) → go to depth 2 (show all sub-pathways)
+      // Depth 2 (subPathwaySelected = false) → go to depth 1 (show all pathways)
+      if (this.subPathwaySelected) {
+        // Depth 3 → Depth 2: Show all sub-pathways (but keep parent pathway selected)
+        this.subPathwaySelected = false;
+        this.currentVirtualPathway = null;
+        this.selectPathway(parentPathway);
+      } else {
+        // Depth 2 → Depth 1: Show all pathways
+        this.showMainPathways();
+      }
+    });
+    
+    currentX += backWidth + buttonGap;
+    
+    // Add sub-pathway buttons
+    const viewer = this;
+    parentPathway.subPathways.forEach((subPathway) => {
+      const buttonWidth = calculateButtonWidth(subPathway.name);
+      const availableWidth = getAvailableWidth();
+      
+      // Check if button would overflow, wrap to new line if needed
+      if (currentX + buttonWidth > availableWidth - rightMargin) {
+        currentX = 20;
+        currentY += lineHeight;
+      }
+      
+      const button = buttonGroup.append('g')
+        .attr('class', 'pathway-button sub-pathway-button')
+        .attr('transform', `translate(${currentX}, ${currentY})`)
+        .attr('data-sub-pathway-id', subPathway.id);
+      
+      // Get pathway type from parent pathway
+      const pathwayType = parentPathway.summary?.pathwayType || null;
+      const buttonColors = viewer.getPathwayButtonColors(pathwayType);
+      
+      // Determine if this button should be highlighted (selected)
+      const isSelected = selectedSubPathwayId === subPathway.id;
+      
+      // Button background
+      button.append('rect')
+        .attr('width', buttonWidth)
+        .attr('height', buttonHeight)
+        .attr('rx', 6)
+        .attr('fill', isSelected ? buttonColors.selected : buttonColors.fill)
+        .attr('stroke', buttonColors.hover)
+        .attr('stroke-width', isSelected ? 3 : 2);
+      
+      // Button text
+      button.append('text')
+        .attr('x', buttonWidth / 2)
+        .attr('y', buttonHeight / 2 + 3)
+        .attr('text-anchor', 'middle')
+        .attr('fill', 'white')
+        .attr('font-size', '10px')
+        .attr('font-weight', '600')
+        .text(subPathway.name);
+      
+      // Hover effects
+      button.on('mouseenter', function() {
+        if (!isSelected) {
+          d3.select(this).select('rect')
+            .attr('fill', buttonColors.hover)
+            .attr('stroke-width', 3);
+        }
+      })
+      .on('mouseleave', function() {
+        if (!isSelected) {
+          d3.select(this).select('rect')
+            .attr('fill', buttonColors.fill)
+            .attr('stroke-width', 2);
+        }
+      })
+      .on('click', (event) => {
+        event.stopPropagation();
+        viewer.selectSubPathway(parentPathway, subPathway);
+      });
+      
+      currentX += buttonWidth + buttonGap;
+    });
+  }
+  
+  /**
+   * Show sub-pathway buttons for a pathway that has sub-pathways (depth 2)
+   */
+  showSubPathways(parentPathway) {
+    if (!parentPathway.subPathways || parentPathway.subPathways.length === 0) {
+      return;
+    }
+    
+    // Set state
+    this.currentParentPathway = parentPathway;
+    this.viewingSubPathways = true;
+    this.subPathwaySelected = false; // Not at depth 3 yet
+    
+    // Render sub-pathway buttons (depth 2, no selection)
+    this.renderSubPathwayButtons(parentPathway, null);
+  }
+  
+  /**
+   * Show main pathway buttons again (called when clicking "Back")
+   */
+  showMainPathways() {
+    // Reset state
+    this.currentParentPathway = null;
+    this.viewingSubPathways = false;
+    this.subPathwaySelected = false;
+    this.currentVirtualPathway = null;
+    
+    // Clear pathway selection
+    this.selectedPathway = null;
+    this.selectedReaction = null;
+    this.selectedMolecule = null;
+    this.selectedNode = null;
+    
+    // Reset all highlighting
+    this.resetAllNodeHighlights();
+    this.g.selectAll('.connection')
+      .attr('stroke-width', 4)
+      .attr('stroke-opacity', 0.7)
+      .attr('stroke', '#2c5f7c');
+    
+    // Clear pathway detail view
+    this.container.dispatchEvent(new CustomEvent('clear-selection'));
+    
+    // Remove all buttons except "Show All"
+    const buttonGroup = this.pathwayButtonGroup;
+    if (!buttonGroup) return;
+    
+    // Remove all buttons except "Show All"
+    buttonGroup.selectAll('.pathway-button').each(function() {
+      if (!d3.select(this).classed('show-all-button')) {
+        d3.select(this).remove();
+      }
+    });
+    
+    // Re-draw main pathway buttons
+    const buttonY = 20;
+    const buttonHeight = 28;
+    const buttonGap = 15;
+    const lineHeight = buttonHeight + 10;
+    const rightMargin = 150;
+    const horizontalPadding = 16;
+    
+    // Helper to calculate button width
+    const calculateButtonWidth = (text) => {
+      const tempText = this.svg.append('text')
+        .attr('font-size', '10px')
+        .attr('font-weight', '600')
+        .text(text)
+        .style('visibility', 'hidden');
+      const textWidth = tempText.node().getBBox().width;
+      tempText.remove();
+      return textWidth + horizontalPadding;
+    };
+    
+    // Get available width
+    const getAvailableWidth = () => {
+      const svgWidth = this.svg.attr('width') ? parseFloat(this.svg.attr('width')) : this.options.width;
+      const detailPanelWidth = this.container.closest('.main-content')?.querySelector('.detail-panel')?.clientWidth || 0;
+      return svgWidth - detailPanelWidth;
+    };
+    
+    // Get "Show All" button width
+    const showAllButton = buttonGroup.select('.pathway-button').node();
+    let currentX = 20;
+    if (showAllButton) {
+      const showAllRect = d3.select(showAllButton).select('rect');
+      const showAllWidth = showAllRect.attr('width') ? parseFloat(showAllRect.attr('width')) : 0;
+      currentX = 20 + showAllWidth + buttonGap;
+    }
+    let currentY = buttonY;
+    
+    // Re-draw all pathway buttons
+    const viewer = this;
+    this.pathways.forEach((pathway) => {
+      const buttonWidth = calculateButtonWidth(pathway.name);
+      const availableWidth = getAvailableWidth();
+      
+      // Check if button would overflow, wrap to new line if needed
+      if (currentX + buttonWidth > availableWidth - rightMargin) {
+        currentX = 20;
+        currentY += lineHeight;
+      }
+      
+      const button = buttonGroup.append('g')
+        .attr('class', 'pathway-button btn')
+        .attr('transform', `translate(${currentX}, ${currentY})`);
+      
+      // Get pathway type and button colors
+      const pathwayType = pathway.summary?.pathwayType || null;
+      const buttonColors = viewer.getPathwayButtonColors(pathwayType);
+      
+      // Button background
+      button.append('rect')
+        .attr('width', buttonWidth)
+        .attr('height', buttonHeight)
+        .attr('rx', 6)
+        .attr('fill', buttonColors.fill)
+        .attr('stroke', buttonColors.hover)
+        .attr('stroke-width', 2);
+      
+      // Button text
+      button.append('text')
+        .attr('x', buttonWidth / 2)
+        .attr('y', buttonHeight / 2 + 3)
+        .attr('text-anchor', 'middle')
+        .attr('fill', 'white')
+        .attr('font-size', '10px')
+        .attr('font-weight', '600')
+        .text(pathway.name);
+      
+      // Store button colors for later use
+      pathway.buttonColors = buttonColors;
+      
+      // Update currentX for next button
+      currentX += buttonWidth + buttonGap;
+      
+      // Hover effects
+      button.on('mouseenter', function() {
+        d3.select(this).select('rect')
+          .attr('fill', buttonColors.hover)
+          .attr('stroke-width', 3);
+      })
+      .on('mouseleave', function() {
+        if (viewer.selectedPathway !== pathway.id) {
+          d3.select(this).select('rect')
+            .attr('fill', buttonColors.fill)
+            .attr('stroke-width', 2);
+        }
+      })
+      .on('click', (event) => {
+        event.stopPropagation();
+        viewer.selectPathway(pathway);
+      });
+      
+      // Store button reference
+      pathway.button = button;
+    });
+  }
+  
+  /**
+   * Select a sub-pathway (creates a virtual pathway from the sub-pathway definition)
+   */
+  selectSubPathway(parentPathway, subPathway) {
+    // Create a virtual pathway object from the sub-pathway
+    const subPathwayReactions = subPathway.reactionIndices.map(index => parentPathway.reactions[index]);
+    const subPathwayNodes = subPathway.nodeIds ? subPathway.nodeIds.map(nodeId => {
+      return parentPathway.nodes.find(n => n.id === nodeId);
+    }).filter(n => n !== undefined) : [];
+    
+    // Calculate start and end indices for the sub-pathway
+    // Find the first reaction's index in the full reactions array
+    const firstReaction = subPathwayReactions[0];
+    const startIndex = this.reactions.findIndex(r => r.id === firstReaction.id);
+    const endIndex = startIndex + subPathwayReactions.length;
+    
+    // Get arrows that correspond to sub-pathway reactions
+    const subPathwayReactionIds = new Set(subPathwayReactions.map(r => r.id));
+    const subPathwayArrows = parentPathway.arrows ? 
+      parentPathway.arrows.filter(arrow => arrow.reaction_id && subPathwayReactionIds.has(arrow.reaction_id)) : 
+      [];
+    
+    // Create a virtual pathway object
+    const virtualPathway = {
+      id: `${parentPathway.id}-${subPathway.id}`,
+      name: subPathway.name,
+      reactions: subPathwayReactions,
+      nodes: subPathwayNodes,
+      arrows: subPathwayArrows, // Include arrows for node highlighting and zooming
+      summary: {
+        name: subPathway.name,
+        pathwayType: parentPathway.summary?.pathwayType || 'nucleotides',
+        description: subPathway.description || subPathway.name,
+        location: parentPathway.summary?.location || 'Cytoplasm',
+        netProducts: parentPathway.summary?.netProducts || {},
+        keyRegulatorySteps: []
+      },
+      startIndex: startIndex,
+      endIndex: endIndex,
+      subPathways: null // Sub-pathways don't have their own sub-pathways
+    };
+    
+    // Reset all node highlighting
+    this.resetAllNodeHighlights();
+    
+    // Reset all arrow highlighting
+    this.g.selectAll('.connection')
+      .attr('stroke-width', 4)
+      .attr('stroke-opacity', 0.7)
+      .attr('stroke', '#2c5f7c');
+    
+    // Highlight nodes from the sub-pathway
+    // Collect node IDs from sub-pathway definition (includes nodes from other pathways)
+    const subPathwayNodeIds = new Set();
+    if (subPathway.nodeIds) {
+      subPathway.nodeIds.forEach(nodeId => subPathwayNodeIds.add(nodeId));
+    } else {
+      // Fallback: use nodes from subPathwayNodes
+      subPathwayNodes.forEach(n => subPathwayNodeIds.add(n.id));
+    }
+    
+    // Also collect node IDs from arrows that correspond to sub-pathway reactions
+    // This ensures extended nodes from other pathways are highlighted
+    if (parentPathway.arrows) {
+      const subPathwayReactionIds = new Set(subPathwayReactions.map(r => r.id));
+      parentPathway.arrows.forEach(arrow => {
+        // Check if this arrow corresponds to a reaction in the sub-pathway
+        if (arrow.reaction_id && subPathwayReactionIds.has(arrow.reaction_id)) {
+          if (arrow.from_id) {
+            subPathwayNodeIds.add(arrow.from_id);
+          }
+          if (arrow.to_id) {
+            subPathwayNodeIds.add(arrow.to_id);
+          }
+        }
+      });
+    }
+    
+    // Highlight all nodes from the sub-pathway (including extended nodes from other pathways)
+    subPathwayNodeIds.forEach(nodeId => {
+      // Check if the node exists in nodeMap (it might be from another pathway)
+      if (this.nodeMap.has(nodeId)) {
+        const reaction = this.reactions.find(r => r.nodeId === nodeId);
+        if (reaction) {
+          const reactionGroup = this.reactionGroups.filter(d => d && d.nodeId === nodeId);
+          if (!reactionGroup.empty()) {
+            this.applyNodeHighlightStyle(reactionGroup, 'product');
+          }
+        }
+      }
+      // Note: If a node doesn't exist in nodeMap or doesn't have a reaction,
+      // it means it's not being drawn (e.g., hidden node or doesn't exist), so we skip it
+    });
+    
+    this.selectedPathway = virtualPathway.id;
+    this.selectedReaction = null;
+    this.selectedMolecule = null;
+    this.selectedNode = null;
+    // Store the virtual pathway so we can preserve it when selecting reactions
+    this.currentVirtualPathway = virtualPathway;
+    // Mark that we're at depth 3 (sub-pathway selected)
+    this.subPathwaySelected = true;
+    
+    // Show sub-pathway buttons again (third depth) - same buttons but keep highlighting
+    this.renderSubPathwayButtons(parentPathway, subPathway.id);
+    
+    // Dispatch custom event for pathway detail view
+    const detailEvent = new CustomEvent('pathway-selected', {
+      detail: {
+        summary: virtualPathway.summary,
+        reactions: virtualPathway.reactions,
+        pathway: virtualPathway
+      }
+    });
+    this.container.dispatchEvent(detailEvent);
+    
+    // Zoom and pan to show the sub-pathway
+    if (this.handleResize) {
+      this.handleResize();
+    }
+    
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (this.handleResize) {
+            this.handleResize();
+          }
+          setTimeout(() => {
+            this.zoomToPathway(virtualPathway);
+          }, 50);
+        }, 50);
+      });
+    });
+  }
+  
+  /**
    * Update pathway button positions to wrap based on current available width
    * Called on window resize or when detail panel opens/closes
    */
@@ -1121,6 +1599,18 @@ export class MetabolismViewer {
   }
   
   selectPathway(pathway) {
+    // Check if this pathway has sub-pathways - if so, show them but continue with pathway selection
+    if (pathway.subPathways && pathway.subPathways.length > 0) {
+      // Show sub-pathway buttons, but don't return - continue to select the whole pathway
+      this.showSubPathways(pathway);
+    } else {
+      // If no sub-pathways, reset sub-pathway view state
+      this.currentParentPathway = null;
+      this.viewingSubPathways = false;
+      this.subPathwaySelected = false;
+      this.currentVirtualPathway = null;
+    }
+    
     // Clear previous pathway selection
     if (this.selectedPathway) {
       const prevPathway = this.pathways.find(p => p.id === this.selectedPathway);
@@ -1151,6 +1641,7 @@ export class MetabolismViewer {
     
     // Highlight all nodes from the pathway's data file
     // This ensures ALL nodes are highlighted, including final products like pyruvate and carriers
+    // Also includes nodes from arrows and sub-pathways (even if they're from other pathways)
     const pathwayNodeIds = new Set();
     if (pathway.nodes) {
       // Use nodes from pathway data file - highlight ALL nodes, even if hidden
@@ -1166,22 +1657,49 @@ export class MetabolismViewer {
       });
     }
     
-    // Highlight all reactions that correspond to nodes from the pathway's data file
-    // This includes all nodes from the pathway data file, even if they don't have reactions
+    // Also collect node IDs from arrows (for extended nodes from other pathways)
+    if (pathway.arrows) {
+      pathway.arrows.forEach(arrow => {
+        if (arrow.from_id) {
+          pathwayNodeIds.add(arrow.from_id);
+        }
+        if (arrow.to_id) {
+          pathwayNodeIds.add(arrow.to_id);
+        }
+      });
+    }
+    
+    // Also collect node IDs from sub-pathways (for extended nodes from other pathways)
+    if (pathway.subPathways) {
+      pathway.subPathways.forEach(subPathway => {
+        if (subPathway.nodeIds) {
+          subPathway.nodeIds.forEach(nodeId => {
+            pathwayNodeIds.add(nodeId);
+          });
+        }
+      });
+    }
+    
+    // Highlight all reactions that correspond to nodes from the pathway
+    // This includes all nodes from the pathway data file, arrows, and sub-pathways
+    // even if they're from other pathways (like alpha_ketoglutarate and succinate from TCA cycle)
     pathwayNodeIds.forEach(nodeId => {
-      // Find the reaction that corresponds to this node ID
-      const reaction = this.reactions.find(r => r.nodeId === nodeId);
-      if (reaction) {
-        // Filter reactionGroups to find the group for this reaction
-        // Compare by nodeId to ensure we find the correct reaction
-        const reactionGroup = this.reactionGroups.filter(d => d && d.nodeId === nodeId);
-        if (!reactionGroup.empty()) {
-          // Use 'product' color type for pathway highlighting (red color)
-          this.applyNodeHighlightStyle(reactionGroup, 'product');
+      // Check if the node exists in nodeMap (it might be from another pathway)
+      if (this.nodeMap.has(nodeId)) {
+        // Find the reaction that corresponds to this node ID
+        const reaction = this.reactions.find(r => r.nodeId === nodeId);
+        if (reaction) {
+          // Filter reactionGroups to find the group for this reaction
+          // Compare by nodeId to ensure we find the correct reaction
+          const reactionGroup = this.reactionGroups.filter(d => d && d.nodeId === nodeId);
+          if (!reactionGroup.empty()) {
+            // Use 'product' color type for pathway highlighting (red color)
+            this.applyNodeHighlightStyle(reactionGroup, 'product');
+          }
         }
       }
-      // Note: If a node from the pathway data file doesn't have a reaction,
-      // it means it's not being drawn (e.g., hidden node), so we skip it
+      // Note: If a node doesn't exist in nodeMap or doesn't have a reaction,
+      // it means it's not being drawn (e.g., hidden node or doesn't exist), so we skip it
     });
     
     this.selectedPathway = pathway.id;
@@ -1225,6 +1743,7 @@ export class MetabolismViewer {
   
   zoomToPathway(pathway) {
     // Get all nodes from the pathway data file (same as highlighting logic)
+    // Also includes nodes from arrows and sub-pathways (even if they're from other pathways)
     const pathwayNodeIds = new Set();
     if (pathway.nodes) {
       // Use nodes from pathway data file - include ALL nodes
@@ -1235,6 +1754,29 @@ export class MetabolismViewer {
       pathwayReactions.forEach(reaction => {
         if (reaction.nodeId) {
           pathwayNodeIds.add(reaction.nodeId);
+        }
+      });
+    }
+    
+    // Also collect node IDs from arrows (for extended nodes from other pathways)
+    if (pathway.arrows) {
+      pathway.arrows.forEach(arrow => {
+        if (arrow.from_id) {
+          pathwayNodeIds.add(arrow.from_id);
+        }
+        if (arrow.to_id) {
+          pathwayNodeIds.add(arrow.to_id);
+        }
+      });
+    }
+    
+    // Also collect node IDs from sub-pathways (for extended nodes from other pathways)
+    if (pathway.subPathways) {
+      pathway.subPathways.forEach(subPathway => {
+        if (subPathway.nodeIds) {
+          subPathway.nodeIds.forEach(nodeId => {
+            pathwayNodeIds.add(nodeId);
+          });
         }
       });
     }
@@ -6153,7 +6695,24 @@ export class MetabolismViewer {
     this.container.dispatchEvent(detailEvent);
     
     // Also update pathway detail panel with the pathway this reaction belongs to
-    const pathway = this.getPathwayForReaction(reaction);
+    // If we're viewing a sub-pathway and the reaction belongs to it, use the virtual pathway
+    let pathway = null;
+    if (this.currentVirtualPathway) {
+      // Check if the reaction belongs to the current virtual sub-pathway
+      const belongsToSubPathway = this.currentVirtualPathway.reactions.some(r => r.id === reaction.id);
+      if (belongsToSubPathway) {
+        pathway = this.currentVirtualPathway;
+      } else {
+        // Reaction doesn't belong to current sub-pathway, fall back to parent pathway
+        pathway = this.getPathwayForReaction(reaction);
+        // Clear virtual pathway since we're switching away from it
+        this.currentVirtualPathway = null;
+      }
+    } else {
+      // Not viewing a sub-pathway, use normal pathway lookup
+      pathway = this.getPathwayForReaction(reaction);
+    }
+    
     if (pathway) {
       const pathwayEvent = new CustomEvent('pathway-updated', {
         detail: {
@@ -6434,44 +6993,34 @@ export class MetabolismViewer {
       }
     }
     
-    // Check byreactant from reaction data - can be node IDs or molecule names
+    // Check byreactant from reaction data - only highlight if it has a node_id (exists in nodeMap)
+    // Do not search by molecule name for by-molecules to prevent highlighting by-molecules without nodes
     if (reaction.byreactant) {
       const byreactantArray = Array.isArray(reaction.byreactant) ? reaction.byreactant : [reaction.byreactant];
       byreactantArray.forEach(byreactant => {
         if (typeof byreactant === 'string') {
-          // First check if it's a node ID (exists in nodeMap)
+          // Only highlight if it's a node ID (exists in nodeMap)
+          // Do not fall back to searching by molecule name for by-molecules
           if (this.nodeMap.has(byreactant)) {
             reactantNodeIds.add(byreactant);
-          } else if (!useNodeIdOnly) {
-            // Fall back to searching by molecule name (only if not using node_id only)
-            for (const [nodeId, node] of this.nodeMap.entries()) {
-              if (node.name === byreactant) {
-                reactantNodeIds.add(nodeId);
-                break; // Found the node, no need to continue searching
-              }
-            }
           }
+          // Removed name-based search for by-molecules - they must have a node_id to be highlighted
         }
       });
     }
     
-    // Check byproduct from reaction data - can be node IDs or molecule names
+    // Check byproduct from reaction data - only highlight if it has a node_id (exists in nodeMap)
+    // Do not search by molecule name for by-molecules to prevent highlighting by-molecules without nodes
     if (reaction.byproduct) {
       const byproductArray = Array.isArray(reaction.byproduct) ? reaction.byproduct : [reaction.byproduct];
       byproductArray.forEach(byproduct => {
         if (typeof byproduct === 'string') {
-          // First check if it's a node ID (exists in nodeMap)
+          // Only highlight if it's a node ID (exists in nodeMap)
+          // Do not fall back to searching by molecule name for by-molecules
           if (this.nodeMap.has(byproduct)) {
             productNodeIds.add(byproduct);
-          } else if (!useNodeIdOnly) {
-            // Fall back to searching by molecule name (only if not using node_id only)
-            for (const [nodeId, node] of this.nodeMap.entries()) {
-              if (node.name === byproduct) {
-                productNodeIds.add(nodeId);
-                break; // Found the node, no need to continue searching
-              }
-            }
           }
+          // Removed name-based search for by-molecules - they must have a node_id to be highlighted
         }
       });
     }

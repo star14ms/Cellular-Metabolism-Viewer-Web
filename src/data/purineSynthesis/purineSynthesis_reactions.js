@@ -191,6 +191,25 @@ export const purineSynthesisReactions = [
       isReversible: false
     }
   },
+  {
+    id: 'rxn_purine_synthesis_15',
+    name: 'IMP Synthesis from Hypoxanthine',
+    byreactant: ['PRPP'],
+    byproduct: ['PPi'],
+    enzyme: {
+      name: 'Hypoxanthine-guanine phosphoribosyltransferase (HGPRT)',
+      ecNumber: 'EC 2.4.2.8',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the salvage of hypoxanthine to IMP using PRPP, releasing pyrophosphate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Key enzyme in purine base salvage pathway',
+      isReversible: false
+    }
+  },
   
   // Left branch: IMP → AMP pathway
   {
@@ -231,105 +250,42 @@ export const purineSynthesisReactions = [
     }
   },
   {
-    id: 'rxn_purine_synthesis_13',
-    name: 'ADP Synthesis',
-    byreactant: ['ATP'],
-    byproduct: ['ADP'],
+    id: 'rxn_purine_synthesis_25',
+    name: 'AMP to IMP Conversion',
+    byproduct: ['NH₄⁺'],
     enzyme: {
-      name: 'Adenylate kinase',
-      ecNumber: 'EC 2.7.4.3',
-      cofactors: ['Mg²⁺'],
-      description: 'Catalyzes the phosphorylation of AMP to ADP using ATP'
+      name: 'AMP deaminase',
+      ecNumber: 'EC 3.5.4.6',
+      cofactors: ['None'],
+      description: 'Catalyzes the deamination of AMP to IMP, releasing ammonium ion'
     },
     conditions: {
       location: 'Cytoplasm',
       ph: '7.0-7.4',
       temperature: '37°C',
-      regulation: 'Reversible reaction maintaining ATP/ADP balance',
+      regulation: 'Reversible reaction converting AMP back to IMP',
       isReversible: true
     }
   },
   {
-    id: 'rxn_purine_synthesis_14',
-    name: 'ATP Synthesis',
-    byreactant: ['GTP'],
-    byproduct: ['GDP'],
+    id: 'rxn_purine_synthesis_24',
+    name: 'Ribose-1-phosphate Synthesis from Uridine',
+    byreactant: ['Pi'],
+    byproduct: ['Uracil'],
     enzyme: {
-      name: 'Nucleoside diphosphate kinase',
-      ecNumber: 'EC 2.7.4.6',
-      cofactors: ['Mg²⁺'],
-      description: 'Catalyzes the phosphorylation of ADP to ATP using GTP'
+      name: 'Uridine phosphorylase',
+      ecNumber: 'EC 2.4.2.3',
+      cofactors: ['None'],
+      description: 'Catalyzes the conversion of uridine to uracil and ribose-1-phosphate, consuming inorganic phosphate'
     },
     conditions: {
       location: 'Cytoplasm',
       ph: '7.0-7.4',
       temperature: '37°C',
-      regulation: 'Reversible reaction maintaining nucleotide balance',
+      regulation: 'Part of pyrimidine nucleoside salvage pathway',
       isReversible: true
     }
   },
-  
-  // Base salvage pathway reactions
-  {
-    id: 'rxn_purine_synthesis_15',
-    name: 'IMP Synthesis from Hypoxanthine',
-    byreactant: ['PRPP'],
-    byproduct: ['PPi'],
-    enzyme: {
-      name: 'Hypoxanthine-guanine phosphoribosyltransferase (HGPRT)',
-      ecNumber: 'EC 2.4.2.8',
-      cofactors: ['Mg²⁺'],
-      description: 'Catalyzes the salvage of hypoxanthine to IMP using PRPP, releasing pyrophosphate'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Key enzyme in purine base salvage pathway',
-      isReversible: false
-    }
-  },
-  {
-    id: 'rxn_purine_synthesis_20',
-    name: 'AMP Synthesis from Adenine',
-    byreactant: ['prpp_purine2'],
-    byproduct: ['PPi'],
-    hideByreactantLabels: true,
-    enzyme: {
-      name: 'Adenine phosphoribosyltransferase',
-      ecNumber: 'EC 2.4.2.7',
-      cofactors: ['Mg²⁺'],
-      description: 'Catalyzes the salvage of adenine to AMP using PRPP, releasing pyrophosphate'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Key enzyme in purine base salvage pathway',
-      isReversible: false
-    }
-  },
-  {
-    id: 'rxn_purine_synthesis_21',
-    name: 'GMP Synthesis from Guanine',
-    byreactant: ['PRPP'],
-    byproduct: ['PPi'],
-    enzyme: {
-      name: 'Hypoxanthine-guanine phosphoribosyltransferase (HGPRT)',
-      ecNumber: 'EC 2.4.2.8',
-      cofactors: ['Mg²⁺'],
-      description: 'Catalyzes the salvage of guanine to GMP using PRPP, releasing pyrophosphate'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Key enzyme in purine base salvage pathway',
-      isReversible: false
-    }
-  },
-  
-  // PRPP synthesis and pyrimidine salvage pathway
   {
     id: 'rxn_purine_synthesis_22',
     name: 'Ribose-1-phosphate and Ribose-5-phosphate Interconversion',
@@ -367,21 +323,60 @@ export const purineSynthesisReactions = [
     }
   },
   {
-    id: 'rxn_purine_synthesis_24',
-    name: 'Ribose-1-phosphate Synthesis from Uridine',
-    byreactant: ['Pi'],
-    byproduct: ['Uracil'],
+    id: 'rxn_purine_synthesis_20',
+    name: 'AMP Synthesis from Adenine',
+    byreactant: ['prpp_purine2'],
+    byproduct: ['PPi'],
+    hideByreactantLabels: true,
     enzyme: {
-      name: 'Uridine phosphorylase',
-      ecNumber: 'EC 2.4.2.3',
-      cofactors: ['None'],
-      description: 'Catalyzes the conversion of uridine to uracil and ribose-1-phosphate, consuming inorganic phosphate'
+      name: 'Adenine phosphoribosyltransferase',
+      ecNumber: 'EC 2.4.2.7',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the salvage of adenine to AMP using PRPP, releasing pyrophosphate'
     },
     conditions: {
       location: 'Cytoplasm',
       ph: '7.0-7.4',
       temperature: '37°C',
-      regulation: 'Part of pyrimidine nucleoside salvage pathway',
+      regulation: 'Key enzyme in purine base salvage pathway',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_purine_synthesis_13',
+    name: 'ADP Synthesis',
+    byreactant: ['ATP'],
+    byproduct: ['ADP'],
+    enzyme: {
+      name: 'Adenylate kinase',
+      ecNumber: 'EC 2.7.4.3',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the phosphorylation of AMP to ADP using ATP'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Reversible reaction maintaining ATP/ADP balance',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_purine_synthesis_14',
+    name: 'ATP Synthesis',
+    byreactant: ['GTP'],
+    byproduct: ['GDP'],
+    enzyme: {
+      name: 'Nucleoside diphosphate kinase',
+      ecNumber: 'EC 2.7.4.6',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the phosphorylation of ADP to ATP using GTP'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Reversible reaction maintaining nucleotide balance',
       isReversible: true
     }
   },
@@ -426,6 +421,44 @@ export const purineSynthesisReactions = [
     }
   },
   {
+    id: 'rxn_purine_synthesis_26',
+    name: 'GMP to IMP Conversion',
+    byreactant: ['NADPH'],
+    byproduct: ['NH₄⁺', 'NADP⁺'],
+    enzyme: {
+      name: 'GMP reductase',
+      ecNumber: 'EC 1.7.1.7',
+      cofactors: ['NADPH'],
+      description: 'Catalyzes the reduction of GMP to IMP, consuming NADPH and producing NADP⁺ and ammonium ion'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Reversible reaction converting GMP back to IMP',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_purine_synthesis_21',
+    name: 'GMP Synthesis from Guanine',
+    byreactant: ['PRPP'],
+    byproduct: ['PPi'],
+    enzyme: {
+      name: 'Hypoxanthine-guanine phosphoribosyltransferase (HGPRT)',
+      ecNumber: 'EC 2.4.2.8',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the salvage of guanine to GMP using PRPP, releasing pyrophosphate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Key enzyme in purine base salvage pathway',
+      isReversible: false
+    }
+  },
+  {
     id: 'rxn_purine_synthesis_18',
     name: 'GDP Synthesis',
     byreactant: ['ATP'],
@@ -460,45 +493,6 @@ export const purineSynthesisReactions = [
       ph: '7.0-7.4',
       temperature: '37°C',
       regulation: 'Reversible reaction maintaining nucleotide balance',
-      isReversible: true
-    }
-  },
-  
-  // Reverse reactions: AMP and GMP to IMP
-  {
-    id: 'rxn_purine_synthesis_25',
-    name: 'AMP to IMP Conversion',
-    byproduct: ['NH₄⁺'],
-    enzyme: {
-      name: 'AMP deaminase',
-      ecNumber: 'EC 3.5.4.6',
-      cofactors: ['None'],
-      description: 'Catalyzes the deamination of AMP to IMP, releasing ammonium ion'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Reversible reaction converting AMP back to IMP',
-      isReversible: true
-    }
-  },
-  {
-    id: 'rxn_purine_synthesis_26',
-    name: 'GMP to IMP Conversion',
-    byreactant: ['NADPH'],
-    byproduct: ['NH₄⁺', 'NADP⁺'],
-    enzyme: {
-      name: 'GMP reductase',
-      ecNumber: 'EC 1.7.1.7',
-      cofactors: ['NADPH'],
-      description: 'Catalyzes the reduction of GMP to IMP, consuming NADPH and producing NADP⁺ and ammonium ion'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Reversible reaction converting GMP back to IMP',
       isReversible: true
     }
   },

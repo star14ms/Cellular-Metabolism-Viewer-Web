@@ -10,8 +10,7 @@ import { glycolysisNodes, glycolysisReactions, glycolysisArrows, glycolysisData 
 import { pyruvateOxidationNodes, pyruvateOxidationReactions, pyruvateOxidationArrows, pyruvateOxidationData } from './pyruvateOxidation/pyruvateOxidation_index.js';
 import { citricAcidCycleNodes, citricAcidCycleReactions, citricAcidCycleArrows, citricAcidCycleData } from './citricAcidCycle/citricAcidCycle_index.js';
 import { electronTransportChainNodes, electronTransportChainReactions, electronTransportChainArrows, electronTransportChainData } from './electronTransportChain/electronTransportChain_index.js';
-import { lactateFermentationNodes, lactateFermentationReactions, lactateFermentationArrows, lactateFermentationData } from './lactateFermentation/lactateFermentation_index.js';
-import { ethanolFermentationNodes, ethanolFermentationReactions, ethanolFermentationArrows, ethanolFermentationData } from './ethanolFermentation/ethanolFermentation_index.js';
+import { fermentationNodes, fermentationReactions, fermentationArrows, fermentationData } from './fermentation/fermentation_index.js';
 import { purineSynthesisNodes, purineSynthesisReactions, purineSynthesisArrows, purineSynthesisData } from './purineSynthesis/purineSynthesis_index.js';
 import { pyrimidineSynthesisNodes, pyrimidineSynthesisReactions, pyrimidineSynthesisArrows, pyrimidineSynthesisData } from './pyrimidineSynthesis/pyrimidineSynthesis_index.js';
 import { nucleotideBreakdownNodes, nucleotideBreakdownReactions, nucleotideBreakdownArrows, nucleotideBreakdownData } from './nucleotideBreakdown/nucleotideBreakdown_index.js';
@@ -30,8 +29,7 @@ export const allNodes = [
   ...pyruvateOxidationNodes,
   ...citricAcidCycleNodes,
   ...electronTransportChainNodes,
-  ...lactateFermentationNodes,
-  ...ethanolFermentationNodes,
+  ...fermentationNodes,
   ...purineSynthesisNodes,
   ...pyrimidineSynthesisNodes,
   ...nucleotideBreakdownNodes,
@@ -51,8 +49,7 @@ export const allReactions = [
   ...pyruvateOxidationReactions,
   ...citricAcidCycleReactions,
   ...electronTransportChainReactions,
-  ...lactateFermentationReactions,
-  ...ethanolFermentationReactions,
+  ...fermentationReactions,
   ...purineSynthesisReactions,
   ...pyrimidineSynthesisReactions,
   ...nucleotideBreakdownReactions,
@@ -72,8 +69,7 @@ export const allArrows = [
   ...pyruvateOxidationArrows,
   ...citricAcidCycleArrows,
   ...electronTransportChainArrows,
-  ...lactateFermentationArrows,
-  ...ethanolFermentationArrows,
+  ...fermentationArrows,
   ...purineSynthesisArrows,
   ...pyrimidineSynthesisArrows,
   ...nucleotideBreakdownArrows,
@@ -95,8 +91,7 @@ export const PATHWAY_CONFIG = {
     'pyruvate-oxidation': 'Pyruvate Oxidation',
     'citric-acid-cycle': 'Citric Acid Cycle (Krebs Cycle)',
     'electron-transport-chain': 'Electron Transport Chain',
-    'lactate-fermentation': 'Lactate Fermentation',
-    'ethanol-fermentation': 'Ethanol Fermentation',
+    'fermentation': 'Fermentation',
     
     'purine-synthesis': 'Purine Synthesis',
     'pyrimidine-synthesis': 'Pyrimidine Synthesis',
@@ -135,12 +130,7 @@ export const PATHWAY_CONFIG = {
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
     },
-    'lactate-fermentation': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
-    'ethanol-fermentation': {
+    'fermentation': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -239,20 +229,13 @@ const pathwayDefinitions = [
     data: electronTransportChainData
   },
   {
-    id: 'lactate-fermentation',
-    name: 'Lactate Fermentation',
-    nodes: lactateFermentationNodes,
-    reactions: lactateFermentationReactions,
-    arrows: lactateFermentationArrows,
-    data: lactateFermentationData
-  },
-  {
-    id: 'ethanol-fermentation',
-    name: 'Ethanol Fermentation',
-    nodes: ethanolFermentationNodes,
-    reactions: ethanolFermentationReactions,
-    arrows: ethanolFermentationArrows,
-    data: ethanolFermentationData
+    id: 'fermentation',
+    name: 'Fermentation',
+    nodes: fermentationNodes,
+    reactions: fermentationReactions,
+    arrows: fermentationArrows,
+    data: fermentationData,
+    subPathways: fermentationData.subPathways // Include sub-pathways
   },
   {
     id: 'purine-synthesis',
@@ -260,7 +243,8 @@ const pathwayDefinitions = [
     nodes: purineSynthesisNodes,
     reactions: purineSynthesisReactions,
     arrows: purineSynthesisArrows,
-    data: purineSynthesisData
+    data: purineSynthesisData,
+    subPathways: purineSynthesisData.subPathways // Include sub-pathways
   },
   {
     id: 'pyrimidine-synthesis',
@@ -276,7 +260,8 @@ const pathwayDefinitions = [
     nodes: nucleotideBreakdownNodes,
     reactions: nucleotideBreakdownReactions,
     arrows: nucleotideBreakdownArrows,
-    data: nucleotideBreakdownData
+    data: nucleotideBreakdownData,
+    subPathways: nucleotideBreakdownData.subPathways // Include sub-pathways
   },
   {
     id: 'deoxyribonucleotides',
@@ -284,7 +269,8 @@ const pathwayDefinitions = [
     nodes: deoxyribonucleotidesNodes,
     reactions: deoxyribonucleotidesReactions,
     arrows: deoxyribonucleotidesArrows,
-    data: deoxyribonucleotidesData
+    data: deoxyribonucleotidesData,
+    subPathways: deoxyribonucleotidesData.subPathways // Include sub-pathways
   },
   {
     id: 'nucleoside-salvage',
@@ -292,7 +278,8 @@ const pathwayDefinitions = [
     nodes: nucleosideSalvageNodes,
     reactions: nucleosideSalvageReactions,
     arrows: nucleosideSalvageArrows,
-    data: nucleosideSalvageData
+    data: nucleosideSalvageData,
+    subPathways: nucleosideSalvageData.subPathways // Include sub-pathways
   },
   {
     id: 'aromatic-amino-acid-metabolism',
@@ -300,7 +287,8 @@ const pathwayDefinitions = [
     nodes: aromaticAminoAcidMetabolismNodes,
     reactions: aromaticAminoAcidMetabolismReactions,
     arrows: aromaticAminoAcidMetabolismArrows,
-    data: aromaticAminoAcidMetabolismData
+    data: aromaticAminoAcidMetabolismData,
+    subPathways: aromaticAminoAcidMetabolismData.subPathways // Include sub-pathways
   },
   {
     id: 'single-carbon-metabolism',
@@ -308,7 +296,8 @@ const pathwayDefinitions = [
     nodes: singleCarbonMetabolismNodes,
     reactions: singleCarbonMetabolismReactions,
     arrows: singleCarbonMetabolismArrows,
-    data: singleCarbonMetabolismData
+    data: singleCarbonMetabolismData,
+    subPathways: singleCarbonMetabolismData.subPathways // Include sub-pathways
   },
   {
     id: 'ammonium-capture-release',
@@ -316,7 +305,8 @@ const pathwayDefinitions = [
     nodes: ammoniumCaptureReleaseNodes,
     reactions: ammoniumCaptureReleaseReactions,
     arrows: ammoniumCaptureReleaseArrows,
-    data: ammoniumCaptureReleaseData
+    data: ammoniumCaptureReleaseData,
+    subPathways: ammoniumCaptureReleaseData.subPathways // Include sub-pathways
   },
   {
     id: 'branched-chain-amino-acid-breakdown',
@@ -324,7 +314,8 @@ const pathwayDefinitions = [
     nodes: branchedChainAminoAcidBreakdownNodes,
     reactions: branchedChainAminoAcidBreakdownReactions,
     arrows: branchedChainAminoAcidBreakdownArrows,
-    data: branchedChainAminoAcidBreakdownData
+    data: branchedChainAminoAcidBreakdownData,
+    subPathways: branchedChainAminoAcidBreakdownData.subPathways // Include sub-pathways
   },
   {
     id: 'urea-cycle',
@@ -332,7 +323,8 @@ const pathwayDefinitions = [
     nodes: ureaCycleNodes,
     reactions: ureaCycleReactions,
     arrows: ureaCycleArrows,
-    data: ureaCycleData
+    data: ureaCycleData,
+    subPathways: ureaCycleData.subPathways // Include sub-pathways
   },
   {
     id: 'pentose-phosphate-pathway',
@@ -359,9 +351,11 @@ export function generatePathwaysArray() {
       name: pathway.name,
       reactions: pathway.reactions,
       nodes: pathway.nodes,
+      arrows: pathway.arrows, // Include arrows for node highlighting
       summary: pathway.data.summary,
       startIndex,
-      endIndex
+      endIndex,
+      subPathways: pathway.subPathways || null // Include sub-pathways if they exist
     };
   });
 }

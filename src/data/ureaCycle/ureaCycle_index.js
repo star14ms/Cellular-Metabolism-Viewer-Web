@@ -54,6 +54,37 @@ export const ureaCycleData = {
       { id: 'glutamic_semialdehyde', text: 'Ornithine Catabolism - Branch to glutamic semialdehyde, leads to glutamate or proline synthesis' }
     ]
   },
+  // Sub-pathways definition - 4 sub-pathways: main cycle and 3 branches
+  subPathways: [
+    {
+      id: 'urea-cycle-main',
+      name: 'Main Urea Cycle',
+      description: 'The central cyclic pathway for ammonia detoxification and urea synthesis. Includes nitric oxide synthesis (arginine → citrulline), ornithine transcarbamoylation to citrulline, argininosuccinate synthesis, and asparagine metabolism (aspartate ↔ asparagine).',
+      reactionIndices: [1, 2, 6, 8, 7], // Step 9 (NO Synthesis), Step 2 (Ornithine → Citrulline), Step 3 (Citrulline → Argininosuccinate), Step 7 (Asparagine Synthesis), Step 8 (Asparagine Hydrolysis) - Excludes Step 5 and 6
+      nodeIds: ['arginine', 'citrulline', 'ornithine', 'argininosuccinate']
+    },
+    {
+      id: 'carbamoyl-phosphate-branch',
+      name: 'Carbamoyl Phosphate Synthesis Branch',
+      description: 'Branch pathway for carbamoyl phosphate synthesis from bicarbonate, ammonia, and ATP. This is the first committed step of the urea cycle, producing carbamoyl phosphate which is used in ornithine transcarbamoylation.',
+      reactionIndices: [0], // Step 1: Carbamoyl Phosphate Synthesis
+      nodeIds: ['bicarbonate_urea', 'carbamoyl_phosphate_urea']
+    },
+    {
+      id: 'arginine-breakdown-branch',
+      name: 'Arginine Breakdown Branch',
+      description: 'Branch pathway for arginine breakdown. Includes argininosuccinate cleavage to arginine and fumarate, arginine hydrolysis to ornithine and urea, and oxaloacetate transamination to aspartate.',
+      reactionIndices: [3, 4, 5], // Step 4: Argininosuccinate Cleavage, Step 5: Arginine Hydrolysis, Step 6: Oxaloacetate Transamination
+      nodeIds: ['oxaloacetate_urea', 'aspartate_urea', 'asparagine_urea']
+    },
+    {
+      id: 'ornithine-catabolism-branch',
+      name: 'Ornithine Catabolism Branch',
+      description: 'Branch pathway from ornithine for amino acid synthesis. Ornithine is transaminated to glutamic semialdehyde, which can be oxidized to glutamate or cyclized to pyrroline-5-carboxylate and reduced to proline.',
+      reactionIndices: [9, 10, 11, 12], // Step 10: Ornithine Transamination, Step 11: Glutamic Semialdehyde Oxidation, Step 12: Pyrroline-5-carboxylate Formation, Step 13: Proline Synthesis
+      nodeIds: ['ornithine', 'glutamic_semialdehyde', 'glutamate_urea', 'pyrroline_5_carboxylate', 'proline_urea']
+    }
+  ]
 };
 
 export { ureaCycleNodes, ureaCycleReactions, ureaCycleArrows };
