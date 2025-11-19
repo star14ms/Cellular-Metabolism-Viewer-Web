@@ -30,7 +30,7 @@ export const ammoniumCaptureReleaseArrows = [
     to_id: 'many_alpha_ketoacids',
     reaction_id: 'rxn_acr_4',
     x_scale: 6.5,
-    y_scale: 2,
+    y_scale: 1.4,
   },
 
   // 3,Glutamate ↔ Glutamine (bidirectional, two separate arrows)

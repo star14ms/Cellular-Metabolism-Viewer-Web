@@ -27,7 +27,7 @@ export const ammoniumCaptureReleaseReactions = [
   {
     id: 'rxn_acr_4',
     name: 'Transamination',
-    byreactant: ['alpha_ketobutyrate_single_carbon'],
+    byreactant: ['alpha_ketoglutarate'],
     byproduct: ['glutamate'],
     hideByreactantLabels: true,
     hideByproductLabels: true,

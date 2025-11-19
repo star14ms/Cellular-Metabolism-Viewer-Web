@@ -63,7 +63,7 @@ export const ammoniumCaptureReleaseNodes = [
     formula: 'C₄H₉NO₂',
     description: 'Neurotransmitter synthesized from glutamate',
     smiles: 'C(CC(=O)O)CN',
-    position: { x: base_x + unit_space * 1.5, y: base_y + unit_space * 1.5 }
+    position: { x: base_x + unit_space * 1.5, y: 2359 }
   },
   {
     id: 'succinic_semialdehyde',
@@ -84,7 +84,7 @@ export const ammoniumCaptureReleaseNodes = [
     formula: 'Various',
     description: 'Various amino acids that can undergo transamination with glutamate',
     smiles: '',
-    position: { x: base_x + unit_space * -1.25, y: base_y + unit_space * 0.75}
+    position: { x: base_x + unit_space * -1.25, y: base_y + unit_space * 0.5 }
   },
   {
     id: 'many_alpha_ketoacids',
@@ -93,7 +93,7 @@ export const ammoniumCaptureReleaseNodes = [
     formula: 'Various',
     description: 'Various α-ketoacids produced from transamination reactions',
     smiles: '',
-    position: { x: base_x + unit_space * 0.75, y: base_y + unit_space * 0.75 }
+    position: { x: base_x + unit_space * 0.75, y: base_y + unit_space * 0.5 }
   },
   
   // Note: α-ketoglutarate and succinate are extended from citric acid cycle
