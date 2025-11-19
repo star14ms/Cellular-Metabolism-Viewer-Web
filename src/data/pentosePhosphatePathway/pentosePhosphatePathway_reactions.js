@@ -35,7 +35,7 @@ export const pentosePhosphatePathwayReactions = [
   {
     id: 'rxn_ppp_2',
     name: 'Glutathione Reductase Reaction',
-    byproduct: ['NADP⁺', 'glutathione_reduced'],
+    byproduct: ['nadp_plus', 'glutathione_reduced'],
     enzyme: {
       name: 'Glutathione Reductase',
       ecNumber: 'EC 1.8.1.7',
@@ -55,8 +55,8 @@ export const pentosePhosphatePathwayReactions = [
   {
     id: 'rxn_ppp_3',
     name: 'Glucose-6-phosphate Dehydrogenation',
-    byreactant: ['NADP⁺'],
-    byproduct: ['NADPH'],
+    byreactant: ['nadp_plus'],
+    byproduct: ['nadph'],
     hideByreactantLabels: true,
     hideByproductLabels: true,
     enzyme: {

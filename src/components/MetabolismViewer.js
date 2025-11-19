@@ -903,7 +903,7 @@ export class MetabolismViewer {
     .on('mouseleave', function() {
       d3.select(this).select('circle')
         .transition().duration(200)
-        .attr('fill', PATHWAY_CONFIG.colors.primary)
+        .attr('fill', 'transparent')
         .attr('stroke-width', 2);
     });
   }
@@ -948,7 +948,7 @@ export class MetabolismViewer {
       .attr('width', showAllWidth)
       .attr('height', buttonHeight)
       .attr('rx', 6)
-      .attr('fill', PATHWAY_CONFIG.colors.primary)
+      .attr('fill', 'transparent')
       .attr('stroke', PATHWAY_CONFIG.colors.primaryHover)
       .attr('stroke-width', 2);
     
@@ -969,7 +969,7 @@ export class MetabolismViewer {
     })
     .on('mouseleave', function() {
       d3.select(this).select('rect')
-        .attr('fill', PATHWAY_CONFIG.colors.primary)
+        .attr('fill', 'transparent')
         .attr('stroke-width', 2);
     })
     .on('click', (event) => {
@@ -1018,7 +1018,7 @@ export class MetabolismViewer {
         .attr('width', buttonWidth)
         .attr('height', buttonHeight)
         .attr('rx', 6)
-        .attr('fill', buttonColors.fill)
+        .attr('fill', 'transparent')
         .attr('stroke', buttonColors.hover)
         .attr('stroke-width', 2);
       
@@ -1047,7 +1047,7 @@ export class MetabolismViewer {
       .on('mouseleave', function() {
         if (viewer.selectedPathway !== pathway.id) {
           d3.select(this).select('rect')
-            .attr('fill', buttonColors.fill)
+            .attr('fill', 'transparent')
             .attr('stroke-width', 2);
         }
       })
@@ -1124,7 +1124,7 @@ export class MetabolismViewer {
     
     // Create "Back" button
     const backButton = buttonGroup.append('g')
-      .attr('class', 'pathway-button back-button')
+      .attr('class', 'pathway-button btn back-button')
       .attr('transform', `translate(${currentX}, ${currentY})`);
     
     const backText = '← Back';
@@ -1135,7 +1135,7 @@ export class MetabolismViewer {
       .attr('width', backWidth)
       .attr('height', buttonHeight)
       .attr('rx', 6)
-      .attr('fill', backButtonColors.fill)
+      .attr('fill', 'transparent')
       .attr('stroke', backButtonColors.hover)
       .attr('stroke-width', 2);
     
@@ -1155,7 +1155,7 @@ export class MetabolismViewer {
     })
     .on('mouseleave', function() {
       d3.select(this).select('rect')
-        .attr('fill', backButtonColors.fill)
+        .attr('fill', 'transparent')
         .attr('stroke-width', 2);
     })
     .on('click', (event) => {
@@ -1189,7 +1189,7 @@ export class MetabolismViewer {
       }
       
       const button = buttonGroup.append('g')
-        .attr('class', 'pathway-button sub-pathway-button')
+        .attr('class', 'pathway-button btn sub-pathway-button')
         .attr('transform', `translate(${currentX}, ${currentY})`)
         .attr('data-sub-pathway-id', subPathway.id);
       
@@ -1205,7 +1205,7 @@ export class MetabolismViewer {
         .attr('width', buttonWidth)
         .attr('height', buttonHeight)
         .attr('rx', 6)
-        .attr('fill', isSelected ? buttonColors.selected : buttonColors.fill)
+        .attr('fill', isSelected ? buttonColors.selected : 'transparent')
         .attr('stroke', buttonColors.hover)
         .attr('stroke-width', isSelected ? 3 : 2);
       
@@ -1230,7 +1230,7 @@ export class MetabolismViewer {
       .on('mouseleave', function() {
         if (!isSelected) {
           d3.select(this).select('rect')
-            .attr('fill', buttonColors.fill)
+            .attr('fill', 'transparent')
             .attr('stroke-width', 2);
         }
       })
@@ -1359,7 +1359,7 @@ export class MetabolismViewer {
         .attr('width', buttonWidth)
         .attr('height', buttonHeight)
         .attr('rx', 6)
-        .attr('fill', buttonColors.fill)
+        .attr('fill', 'transparent')
         .attr('stroke', buttonColors.hover)
         .attr('stroke-width', 2);
       
@@ -1388,7 +1388,7 @@ export class MetabolismViewer {
       .on('mouseleave', function() {
         if (viewer.selectedPathway !== pathway.id) {
           d3.select(this).select('rect')
-            .attr('fill', buttonColors.fill)
+            .attr('fill', 'transparent')
             .attr('stroke-width', 2);
         }
       })
@@ -1617,7 +1617,7 @@ export class MetabolismViewer {
       if (prevPathway && prevPathway.button) {
         const buttonColors = prevPathway.buttonColors || this.getPathwayButtonColors(prevPathway.summary?.pathwayType);
         prevPathway.button.select('rect')
-          .attr('fill', buttonColors.fill)
+          .attr('fill', 'transparent')
           .attr('stroke-width', 2);
       }
     }
@@ -1883,7 +1883,7 @@ export class MetabolismViewer {
       if (prevPathway && prevPathway.button) {
         const buttonColors = prevPathway.buttonColors || this.getPathwayButtonColors(prevPathway.summary?.pathwayType);
         prevPathway.button.select('rect')
-          .attr('fill', buttonColors.fill)
+          .attr('fill', 'transparent')
           .attr('stroke-width', 2);
       }
       this.selectedPathway = null;
@@ -6213,6 +6213,9 @@ export class MetabolismViewer {
   }
   
   setupInteractions() {
+    // Capture viewer instance for use in callbacks
+    const viewer = this;
+    
     // Click on reaction node - show molecule info
     this.reactionGroups.select('.reaction-node')
       .on('click', (event, d) => {
@@ -6273,6 +6276,121 @@ export class MetabolismViewer {
         this.zoomToReaction(d);
       });
     
+    // Add hover handlers for opacity changes when pathway is selected
+    // Only reduce opacity on hover, not immediately after selection
+    this.reactionGroups
+      .on('mouseenter', function(event, d) {
+        if (!viewer.selectedPathway) return;
+        
+        // Get pathway node IDs for the selected pathway
+        const pathway = viewer.pathways.find(p => p.id === viewer.selectedPathway);
+        if (!pathway) return;
+        
+        const pathwayNodeIds = new Set();
+        if (pathway.nodes) {
+          pathway.nodes.forEach(n => pathwayNodeIds.add(n.id));
+        }
+        if (pathway.arrows) {
+          pathway.arrows.forEach(arrow => {
+            if (arrow.from_id) pathwayNodeIds.add(arrow.from_id);
+            if (arrow.to_id) pathwayNodeIds.add(arrow.to_id);
+          });
+        }
+        if (pathway.subPathways) {
+          pathway.subPathways.forEach(subPathway => {
+            if (subPathway.nodeIds) {
+              subPathway.nodeIds.forEach(nodeId => pathwayNodeIds.add(nodeId));
+            }
+          });
+        }
+        
+        // If this node is not part of the selected pathway, reduce opacity on hover
+        if (d && d.nodeId && !pathwayNodeIds.has(d.nodeId)) {
+          const nodeGroup = d3.select(this);
+          nodeGroup.attr('opacity', 0.3);
+        }
+      })
+      .on('mouseleave', function(event, d) {
+        if (!viewer.selectedPathway) return;
+        
+        // Get pathway node IDs for the selected pathway
+        const pathway = viewer.pathways.find(p => p.id === viewer.selectedPathway);
+        if (!pathway) return;
+        
+        const pathwayNodeIds = new Set();
+        if (pathway.nodes) {
+          pathway.nodes.forEach(n => pathwayNodeIds.add(n.id));
+        }
+        if (pathway.arrows) {
+          pathway.arrows.forEach(arrow => {
+            if (arrow.from_id) pathwayNodeIds.add(arrow.from_id);
+            if (arrow.to_id) pathwayNodeIds.add(arrow.to_id);
+          });
+        }
+        if (pathway.subPathways) {
+          pathway.subPathways.forEach(subPathway => {
+            if (subPathway.nodeIds) {
+              subPathway.nodeIds.forEach(nodeId => pathwayNodeIds.add(nodeId));
+            }
+          });
+        }
+        
+        // If this node is not part of the selected pathway, restore opacity on mouse leave
+        if (d && d.nodeId && !pathwayNodeIds.has(d.nodeId)) {
+          const nodeGroup = d3.select(this);
+          nodeGroup.attr('opacity', 1);
+        }
+      });
+    
+    // Add hover handlers for arrows when pathway is selected
+    this.g.selectAll('.connection')
+      .on('mouseenter', function(event) {
+        if (!viewer.selectedPathway) return;
+        
+        const arrow = d3.select(this);
+        const connectionId = arrow.attr('data-connection-id');
+        if (!connectionId) return;
+        
+        // Get pathway arrow IDs for the selected pathway
+        const pathway = viewer.pathways.find(p => p.id === viewer.selectedPathway);
+        if (!pathway) return;
+        
+        const pathwayArrowIds = new Set();
+        if (pathway.arrows) {
+          pathway.arrows.forEach(a => {
+            if (a.id) pathwayArrowIds.add(a.id);
+          });
+        }
+        
+        // If this arrow is not part of the selected pathway, reduce opacity on hover
+        if (!pathwayArrowIds.has(connectionId)) {
+          arrow.attr('opacity', 0.3);
+        }
+      })
+      .on('mouseleave', function(event) {
+        if (!viewer.selectedPathway) return;
+        
+        const arrow = d3.select(this);
+        const connectionId = arrow.attr('data-connection-id');
+        if (!connectionId) return;
+        
+        // Get pathway arrow IDs for the selected pathway
+        const pathway = viewer.pathways.find(p => p.id === viewer.selectedPathway);
+        if (!pathway) return;
+        
+        const pathwayArrowIds = new Set();
+        if (pathway.arrows) {
+          pathway.arrows.forEach(a => {
+            if (a.id) pathwayArrowIds.add(a.id);
+          });
+        }
+        
+        // If this arrow is not part of the selected pathway, restore opacity on mouse leave
+        if (!pathwayArrowIds.has(connectionId)) {
+          arrow.attr('opacity', 1);
+        }
+      });
+    
     // Cursor style is now handled by CSS (:active pseudo-class)
     
     // Prevent detail window from showing when clicking background (SVG or g element)
@@ -6308,7 +6426,7 @@ export class MetabolismViewer {
       if (pathway.button) {
         const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
         pathway.button.select('rect')
-          .attr('fill', buttonColors.fill)
+          .attr('fill', 'transparent')
           .attr('stroke-width', 2);
       }
     });
@@ -6648,7 +6766,7 @@ export class MetabolismViewer {
       if (pathway.button) {
         const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
         pathway.button.select('rect')
-          .attr('fill', buttonColors.fill)
+          .attr('fill', 'transparent')
           .attr('stroke-width', 2);
       }
     });
@@ -7800,7 +7918,7 @@ export class MetabolismViewer {
       if (pathway.button) {
         const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
         pathway.button.select('rect')
-          .attr('fill', buttonColors.fill)
+          .attr('fill', 'transparent')
           .attr('stroke-width', 2);
       }
     });
