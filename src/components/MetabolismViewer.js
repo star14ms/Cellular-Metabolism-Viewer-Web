@@ -3543,9 +3543,17 @@ export class MetabolismViewer {
       }
       
       // Store byMoleculeAngle for later use (will rotate the whole arrow, not change shape)
-      const byMoleculeRotationAngle = reaction.byMoleculeAngle !== undefined 
-        ? reaction.byMoleculeAngle * Math.PI / 180 
-        : 0;
+      // Priority: main arrow data > reaction data > default to 0
+      // Check main arrow first, then fall back to reaction data
+      const mainArrowByMoleculeAngle = rawMainArrow && rawMainArrow.byMoleculeAngle !== undefined 
+        ? rawMainArrow.byMoleculeAngle 
+        : (reaction.byMoleculeAngle !== undefined ? reaction.byMoleculeAngle : 0);
+      let byMoleculeRotationAngle = mainArrowByMoleculeAngle * Math.PI / 180;
+      
+      // When flipped: true, negate the rotation angle for main arrow
+      if (rawMainArrow && rawMainArrow.flipped === true) {
+        byMoleculeRotationAngle = -byMoleculeRotationAngle;
+      }
       
       // Helper function to rotate a point around a center
       const rotatePoint = (x, y, centerX, centerY, angle) => {
@@ -4024,6 +4032,71 @@ export class MetabolismViewer {
             currentArrowXScale = arrowXScale;
             currentArrowYScale = arrowYScale;
             currentArrowGroup = uArrowGroup;
+            
+            // If this arrow has its own byMoleculeAngle that's different from rawMainArrow,
+            // we need to re-apply the rotation with the correct angle
+            const arrowByMoleculeAngle = rawArrow.byMoleculeAngle !== undefined 
+              ? rawArrow.byMoleculeAngle 
+              : (reaction.byMoleculeAngle !== undefined ? reaction.byMoleculeAngle : 0);
+            const mainArrowByMoleculeAngle = rawMainArrow && rawMainArrow.byMoleculeAngle !== undefined 
+              ? rawMainArrow.byMoleculeAngle 
+              : (reaction.byMoleculeAngle !== undefined ? reaction.byMoleculeAngle : 0);
+            
+            // Check if this arrow is flipped
+            const arrowIsFlipped = rawArrow.flipped === true;
+            const mainArrowIsFlipped = rawMainArrow && rawMainArrow.flipped === true;
+            
+            // If the arrow has a different byMoleculeAngle or different flipped state, re-apply rotation
+            if (arrowByMoleculeAngle !== mainArrowByMoleculeAngle || arrowIsFlipped !== mainArrowIsFlipped) {
+              const rotatePoint = (x, y, centerX, centerY, angle) => {
+                const dx = x - centerX;
+                const dy = y - centerY;
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+                return {
+                  x: centerX + dx * cos - dy * sin,
+                  y: centerY + dx * sin + dy * cos
+                };
+              };
+              
+              // Calculate the original rotation angle that was applied (accounting for flipped state)
+              let originalRotationAngle = mainArrowByMoleculeAngle * Math.PI / 180;
+              if (mainArrowIsFlipped) {
+                originalRotationAngle = -originalRotationAngle;
+              }
+              
+              // Calculate the new rotation angle (accounting for flipped state)
+              let newRotationAngle = arrowByMoleculeAngle * Math.PI / 180;
+              if (arrowIsFlipped) {
+                newRotationAngle = -newRotationAngle;
+              }
+              
+              // Calculate the rotation difference needed
+              const rotationDifference = newRotationAngle - originalRotationAngle;
+              
+              // Re-apply rotation with the difference
+              if (rotationDifference !== 0) {
+                // Rotate byreactant arrow points
+                if (currentDrawByreactant) {
+                  const rotatedByreactantControl = rotatePoint(currentByreactantControlX, currentByreactantControlY, currentMidX, currentMidY, rotationDifference);
+                  const rotatedByreactantEnd = rotatePoint(currentByreactantEndX, currentByreactantEndY, currentMidX, currentMidY, rotationDifference);
+                  currentByreactantControlX = rotatedByreactantControl.x;
+                  currentByreactantControlY = rotatedByreactantControl.y;
+                  currentByreactantEndX = rotatedByreactantEnd.x;
+                  currentByreactantEndY = rotatedByreactantEnd.y;
+                }
+                
+                // Rotate byproduct arrow points
+                if (currentDrawByproduct) {
+                  const rotatedByproductControl = rotatePoint(currentByproductControlX, currentByproductControlY, currentMidX, currentMidY, rotationDifference);
+                  const rotatedByproductEnd = rotatePoint(currentByproductEndX, currentByproductEndY, currentMidX, currentMidY, rotationDifference);
+                  currentByproductControlX = rotatedByproductControl.x;
+                  currentByproductControlY = rotatedByproductControl.y;
+                  currentByproductEndX = rotatedByproductEnd.x;
+                  currentByproductEndY = rotatedByproductEnd.y;
+                }
+              }
+            }
           } else {
             // For additional curved arrows, only draw if there's data (same as main arrow)
             currentDrawByreactant = drawByreactant; // Only draw if hasByreactant
@@ -4142,10 +4215,10 @@ export class MetabolismViewer {
             currentByproductEndY = currentMidY + byproductX * Math.sin(currentArrowAngle) + byproductY * perpDirY;
             
             // Apply rotation to additional arrow points if byMoleculeRotationAngle is set
-            // This ensures all arrows with the same reaction_id use the same byMoleculeAngle
-            const byMoleculeRotationAngle = reaction.byMoleculeAngle !== undefined 
-              ? reaction.byMoleculeAngle * Math.PI / 180 
-              : 0;
+            // Priority: arrow data > reaction data > default to 0
+            const byMoleculeRotationAngle = (rawArrow.byMoleculeAngle !== undefined 
+              ? rawArrow.byMoleculeAngle 
+              : (reaction.byMoleculeAngle !== undefined ? reaction.byMoleculeAngle : 0)) * Math.PI / 180;
             
             if (byMoleculeRotationAngle !== 0) {
               // Helper function to rotate a point around a center
@@ -4241,7 +4314,62 @@ export class MetabolismViewer {
               
               // If flipped: true, flip the whole by-arrow vertically (mirror across horizontal line through midpoint)
               // Note: For additional arrows, flipping is already applied above, so only apply for main arrow
+              // For main arrow, also need to account for flipped state in rotation
               if (isFlipped && isMainArrow) {
+                // When isMainArrow is true, the rotation was already applied earlier using byMoleculeRotationAngle
+                // But if this specific arrow has flipped: true, we need to re-apply the rotation with negated angle
+                // Get the byMoleculeAngle for this arrow
+                const arrowByMoleculeAngle = rawArrow.byMoleculeAngle !== undefined 
+                  ? rawArrow.byMoleculeAngle 
+                  : (reaction.byMoleculeAngle !== undefined ? reaction.byMoleculeAngle : 0);
+                let arrowRotationAngle = arrowByMoleculeAngle * Math.PI / 180;
+                
+                // When flipped: true, negate the rotation angle
+                arrowRotationAngle = -arrowRotationAngle;
+                
+                // Re-apply rotation with correct flipped state (undo previous rotation, apply negated one)
+                // We need to rotate by the difference: newAngle - oldAngle = -oldAngle - oldAngle = -2*oldAngle
+                // But actually, we should just apply the negated rotation from the original unrotated state
+                // For simplicity, we'll rotate by -2*originalAngle to undo and then apply the negated angle
+                // Actually simpler: just apply the negated rotation directly (it will effectively flip the rotation)
+                if (arrowRotationAngle !== 0) {
+                  const rotatePoint = (x, y, centerX, centerY, angle) => {
+                    const dx = x - centerX;
+                    const dy = y - centerY;
+                    const cos = Math.cos(angle);
+                    const sin = Math.sin(angle);
+                    return {
+                      x: centerX + dx * cos - dy * sin,
+                      y: centerY + dx * sin + dy * cos
+                    };
+                  };
+                  
+                  // Get the original rotation angle that was applied
+                  const originalRotationAngle = (arrowByMoleculeAngle * Math.PI / 180);
+                  // Rotate by -2*originalAngle to undo the previous rotation and apply the negated one
+                  const rotationDifference = -2 * originalRotationAngle;
+                  
+                  // Rotate byreactant arrow points
+                  if (currentDrawByreactant) {
+                    const rotatedByreactantControl = rotatePoint(currentByreactantControlX, currentByreactantControlY, currentMidX, currentMidY, rotationDifference);
+                    const rotatedByreactantEnd = rotatePoint(currentByreactantEndX, currentByreactantEndY, currentMidX, currentMidY, rotationDifference);
+                    currentByreactantControlX = rotatedByreactantControl.x;
+                    currentByreactantControlY = rotatedByreactantControl.y;
+                    currentByreactantEndX = rotatedByreactantEnd.x;
+                    currentByreactantEndY = rotatedByreactantEnd.y;
+                  }
+                  
+                  // Rotate byproduct arrow points
+                  if (currentDrawByproduct) {
+                    const rotatedByproductControl = rotatePoint(currentByproductControlX, currentByproductControlY, currentMidX, currentMidY, rotationDifference);
+                    const rotatedByproductEnd = rotatePoint(currentByproductEndX, currentByproductEndY, currentMidX, currentMidY, rotationDifference);
+                    currentByproductControlX = rotatedByproductControl.x;
+                    currentByproductControlY = rotatedByproductControl.y;
+                    currentByproductEndX = rotatedByproductEnd.x;
+                    currentByproductEndY = rotatedByproductEnd.y;
+                  }
+                }
+                
                 // Flip byreactant arrow points vertically
                 currentByreactantControlY = 2 * currentMidY - currentByreactantControlY;
                 currentByreactantEndY = 2 * currentMidY - currentByreactantEndY;
@@ -4263,20 +4391,23 @@ export class MetabolismViewer {
                   currentByproductArrow.attr('d', currentByproductPath);
                 }
               }
-              
+
               // Calculate offset direction based on byMoleculeAngle
               // Use consistent logic for both from_id and to_id cases
-              let offsetAngle = -Math.PI / 2; // Default: bottom (0 degrees = -90 degrees)
-              if (reaction.byMoleculeAngle !== undefined) {
-                // Normalize angle to 0-360 range
-                let normalizedAngle = reaction.byMoleculeAngle % 360;
-                if (normalizedAngle < 0) normalizedAngle += 360;
-                
-                if (isFlipped) {
-                  offsetAngle = (270 - normalizedAngle) * Math.PI / 180;
-                } else {
-                  offsetAngle = (90 + normalizedAngle) * Math.PI / 180;
-                }
+              // Priority: arrow data > reaction data > default to 0
+              const byMoleculeAngle = rawArrow.byMoleculeAngle !== undefined 
+                ? rawArrow.byMoleculeAngle 
+                : (reaction.byMoleculeAngle !== undefined ? reaction.byMoleculeAngle : 0);
+              
+              // Normalize angle to 0-360 range
+              let normalizedAngle = byMoleculeAngle % 360;
+              if (normalizedAngle < 0) normalizedAngle += 360;
+              
+              let offsetAngle;
+              if (isFlipped) {
+                offsetAngle = (270 - normalizedAngle) * Math.PI / 180;
+              } else {
+                offsetAngle = (90 + normalizedAngle) * Math.PI / 180;
               }
               
               // For to_id case, we need to attach on the opposite side (180 degrees rotated)
@@ -4388,8 +4519,10 @@ export class MetabolismViewer {
                 let baseRightX = baseCenterX + baseWidth * Math.cos(arrowheadPerpAngle);
                 let baseRightY = baseCenterY + baseWidth * Math.sin(arrowheadPerpAngle);
                 
-                const byMoleculeRotationAngle = reaction.byMoleculeAngle !== undefined ? 
-                  (reaction.byMoleculeAngle * Math.PI / 180) : 0;
+                // Priority: arrow data > reaction data > default to 0
+                const byMoleculeRotationAngle = (rawArrow.byMoleculeAngle !== undefined 
+                  ? rawArrow.byMoleculeAngle 
+                  : (reaction.byMoleculeAngle !== undefined ? reaction.byMoleculeAngle : 0)) * Math.PI / 180;
                 if (byMoleculeRotationAngle !== 0) {
                   [baseLeftX, baseRightX] = [baseRightX, baseLeftX];
                   [baseLeftY, baseRightY] = [baseRightY, baseLeftY];
@@ -6164,6 +6297,12 @@ export class MetabolismViewer {
     }
     
     if (!moleculeName) return null;
+    
+    // Exception: NADP+ and NADPH contain "ADP" but should not be shortened to "ADP"
+    // Check if the molecule name contains "NADP" (case-insensitive)
+    if (/NADP/i.test(moleculeName)) {
+      return null;
+    }
     
     // First, try to extract short name from parentheses (e.g., "Adenosine triphosphate (ATP)" -> "ATP")
     const parenthesesMatch = moleculeName.match(/\(([^)]+)\)/);

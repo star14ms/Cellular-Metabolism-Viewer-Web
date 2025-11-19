@@ -17,7 +17,7 @@ export const glycolysisNodes = [
     formula: 'C₆H₁₂O₆',
     smiles: 'C([C@@H]1[C@H]([C@@H]([C@H](C(O1)O)O)O)O)O',
     description: 'A hexose sugar that serves as the primary energy source',
-    position: { x: base_x, y: base_y }
+    position: { x: base_x, y: base_y + unit_space * -1 }
   },
   {
     id: 'glucose_6_phosphate',
@@ -26,7 +26,7 @@ export const glycolysisNodes = [
     formula: 'C₆H₁₁O₉P',
     smiles: 'C([C@@H]1[C@H]([C@@H]([C@H](C(O1)OP(=O)(O)O)O)O)O)O',
     description: 'Phosphorylated glucose',
-    position: { x: base_x, y: base_y + unit_space * 1 }
+    position: { x: base_x, y: base_y }
   },
   {
     id: 'fructose_6_phosphate',
@@ -35,7 +35,7 @@ export const glycolysisNodes = [
     formula: 'C₆H₁₁O₉P',
     smiles: 'C([C@H](C([C@H](C(=O)CO)O)O)OP(=O)(O)O)O',
     description: 'Isomerized form of glucose-6-phosphate',
-    position: { x: base_x, y: base_y + unit_space * 2 }
+    position: { x: base_x, y: base_y + unit_space * 1.5 }
   },
   {
     id: 'fructose_1_6_bisphosphate',
@@ -53,7 +53,7 @@ export const glycolysisNodes = [
     formula: 'C₃H₇O₆P',
     smiles: 'CC(=O)C(OP(=O)(O)O)O',
     description: 'Triose phosphate',
-    position: { x: base_x + unit_space * 1, y: base_y + unit_space * 3 }
+    position: { x: base_x + unit_space * -1, y: base_y + unit_space * 3 }
   },
   {
     id: 'glyceraldehyde_3_phosphate',

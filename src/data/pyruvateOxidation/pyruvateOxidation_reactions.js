@@ -15,7 +15,6 @@ export const pyruvateOxidationReactions = [
     name: 'Pyruvate Decarboxylation & Activation of TPP',
     byproduct: ['CO₂'],
     displayByproduct: ['Hydroxyethyl-TPP'],
-    byMoleculeAngle: 180,
     enzyme: {
       name: 'Pyruvate Dehydrogenase (E1)',
       ecNumber: '1.2.4.1',

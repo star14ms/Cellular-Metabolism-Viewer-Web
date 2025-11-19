@@ -22,6 +22,7 @@ import { singleCarbonMetabolismNodes, singleCarbonMetabolismReactions, singleCar
 import { ammoniumCaptureReleaseNodes, ammoniumCaptureReleaseReactions, ammoniumCaptureReleaseArrows, ammoniumCaptureReleaseData } from './ammoniumCaptureRelease/ammoniumCaptureRelease_index.js';
 import { branchedChainAminoAcidBreakdownNodes, branchedChainAminoAcidBreakdownReactions, branchedChainAminoAcidBreakdownArrows, branchedChainAminoAcidBreakdownData } from './branchedChainAminoAcidBreakdown/branchedChainAminoAcidBreakdown_index.js';
 import { ureaCycleNodes, ureaCycleReactions, ureaCycleArrows, ureaCycleData } from './ureaCycle/ureaCycle_index.js';
+import { pentosePhosphatePathwayNodes, pentosePhosphatePathwayReactions, pentosePhosphatePathwayArrows, pentosePhosphatePathwayData } from './pentosePhosphatePathway/pentosePhosphatePathway_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -40,7 +41,8 @@ export const allNodes = [
   ...singleCarbonMetabolismNodes,
   ...ammoniumCaptureReleaseNodes,
   ...branchedChainAminoAcidBreakdownNodes,
-  ...ureaCycleNodes
+  ...ureaCycleNodes,
+  ...pentosePhosphatePathwayNodes
 ];
 
 // Combine all reactions
@@ -60,7 +62,8 @@ export const allReactions = [
   ...singleCarbonMetabolismReactions,
   ...ammoniumCaptureReleaseReactions,
   ...branchedChainAminoAcidBreakdownReactions,
-  ...ureaCycleReactions
+  ...ureaCycleReactions,
+  ...pentosePhosphatePathwayReactions
 ];
 
 // Combine all arrows
@@ -80,7 +83,8 @@ export const allArrows = [
   ...singleCarbonMetabolismArrows,
   ...ammoniumCaptureReleaseArrows,
   ...branchedChainAminoAcidBreakdownArrows,
-  ...ureaCycleArrows
+  ...ureaCycleArrows,
+  ...pentosePhosphatePathwayArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -104,7 +108,8 @@ export const PATHWAY_CONFIG = {
     'single-carbon-metabolism': 'Single-Carbon Metabolism and Sulfur-Containing Amino Acids',
     'ammonium-capture-release': 'Ammonium Capture and Release',
     'branched-chain-amino-acid-breakdown': 'Branched Chain Amino Acid Breakdown',
-    'urea-cycle': 'Urea Cycle'
+    'urea-cycle': 'Urea Cycle',
+    'pentose-phosphate-pathway': 'Pentose Phosphate Pathway'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -186,6 +191,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'urea-cycle': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'pentose-phosphate-pathway': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -323,6 +333,14 @@ const pathwayDefinitions = [
     reactions: ureaCycleReactions,
     arrows: ureaCycleArrows,
     data: ureaCycleData
+  },
+  {
+    id: 'pentose-phosphate-pathway',
+    name: 'Pentose Phosphate Pathway',
+    nodes: pentosePhosphatePathwayNodes,
+    reactions: pentosePhosphatePathwayReactions,
+    arrows: pentosePhosphatePathwayArrows,
+    data: pentosePhosphatePathwayData
   }
 ];
 

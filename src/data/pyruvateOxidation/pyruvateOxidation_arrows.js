@@ -16,6 +16,8 @@
  * - flipped: Boolean - If true, the by-molecule arrow starting position is flipped.
  *   When flipped: true, 0 degrees starts from top instead of bottom.
  *   The endpoint remains the same (right). If byMoleculeAngle rotates the arrow, the flipped value flips the rotation.
+ * - byMoleculeAngle: Number - Custom angle (in degrees) for by-molecule arrows. Allows individual arrows
+ *   to have different angles rather than sharing the same angle from the reaction.
  */
 
 export const pyruvateOxidationArrows = [
@@ -51,6 +53,7 @@ export const pyruvateOxidationArrows = [
     byproduct: ['CO₂'],
     x_scale: 1.5,
     y_scale: 0.66,
+    byMoleculeAngle: 180, // Custom angle for this arrow
   },
   {
     id: 'arrow_pyruvate_1-2',
@@ -59,6 +62,7 @@ export const pyruvateOxidationArrows = [
     curved: true,
     x_scale: 1.5,
     y_scale: 0.66,
+    byMoleculeAngle: 180, // Custom angle for this arrow
   }
   
   // Cycle connection: Lipoamide regeneration feeds back into step 2
