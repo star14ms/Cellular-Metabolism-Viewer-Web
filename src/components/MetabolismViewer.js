@@ -6977,7 +6977,10 @@ export class MetabolismViewer {
     
     // Exception: NADP+ and NADPH contain "ADP" but should not be shortened to "ADP"
     // Check if the molecule name contains "NADP" (case-insensitive)
-    if (/NADP/i.test(moleculeName)) {
+    // Exception: NADP+ and NADPH contain "ADP" but should not be shortened to "ADP"
+    // Also, UDP-glucose, UDP-galactose, and any UDP-molecule should not be shortened to "UDP"
+    // Check if the molecule name contains "NADP" (case-insensitive) or "UDP-" or starts with "UDP"
+    if (/NADP/i.test(moleculeName) || /^UDP(-|\s|$)/i.test(moleculeName)) {
       return null;
     }
     

@@ -17,7 +17,7 @@ export const glycolysisNodes = [
     formula: 'C₆H₁₂O₆',
     smiles: 'C([C@@H]1[C@H]([C@@H]([C@H](C(O1)O)O)O)O)O',
     description: 'A hexose sugar that serves as the primary energy source',
-    position: { x: base_x, y: base_y + unit_space * -2.5 }
+    position: { x: base_x, y: base_y + unit_space * -3 }
   },
   {
     id: 'sorbitol',

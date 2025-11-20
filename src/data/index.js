@@ -22,6 +22,7 @@ import { ammoniumCaptureReleaseNodes, ammoniumCaptureReleaseReactions, ammoniumC
 import { branchedChainAminoAcidBreakdownNodes, branchedChainAminoAcidBreakdownReactions, branchedChainAminoAcidBreakdownArrows, branchedChainAminoAcidBreakdownData } from './branchedChainAminoAcidBreakdown/branchedChainAminoAcidBreakdown_index.js';
 import { ureaCycleNodes, ureaCycleReactions, ureaCycleArrows, ureaCycleData } from './ureaCycle/ureaCycle_index.js';
 import { pentosePhosphatePathwayNodes, pentosePhosphatePathwayReactions, pentosePhosphatePathwayArrows, pentosePhosphatePathwayData } from './pentosePhosphatePathway/pentosePhosphatePathway_index.js';
+import { glycogenAndGalactoseMetabolismNodes, glycogenAndGalactoseMetabolismReactions, glycogenAndGalactoseMetabolismArrows, glycogenAndGalactoseMetabolismData } from './glycogenAndGalactoseMetabolism/glycogenAndGalactoseMetabolism_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -40,7 +41,8 @@ export const allNodes = [
   ...ammoniumCaptureReleaseNodes,
   ...branchedChainAminoAcidBreakdownNodes,
   ...ureaCycleNodes,
-  ...pentosePhosphatePathwayNodes
+  ...pentosePhosphatePathwayNodes,
+  ...glycogenAndGalactoseMetabolismNodes
 ];
 
 // Combine all reactions
@@ -60,7 +62,8 @@ export const allReactions = [
   ...ammoniumCaptureReleaseReactions,
   ...branchedChainAminoAcidBreakdownReactions,
   ...ureaCycleReactions,
-  ...pentosePhosphatePathwayReactions
+  ...pentosePhosphatePathwayReactions,
+  ...glycogenAndGalactoseMetabolismReactions
 ];
 
 // Combine all arrows
@@ -80,7 +83,8 @@ export const allArrows = [
   ...ammoniumCaptureReleaseArrows,
   ...branchedChainAminoAcidBreakdownArrows,
   ...ureaCycleArrows,
-  ...pentosePhosphatePathwayArrows
+  ...pentosePhosphatePathwayArrows,
+  ...glycogenAndGalactoseMetabolismArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -104,7 +108,8 @@ export const PATHWAY_CONFIG = {
     'ammonium-capture-release': 'Ammonium Capture and Release',
     'branched-chain-amino-acid-breakdown': 'Branched Chain Amino Acid Breakdown',
     'urea-cycle': 'Urea Cycle',
-    'pentose-phosphate-pathway': 'Pentose Phosphate Pathway'
+    'pentose-phosphate-pathway': 'Pentose Phosphate Pathway',
+    'glycogen-and-galactose-metabolism': 'Glycogen and Galactose Metabolism'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -186,6 +191,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'pentose-phosphate-pathway': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'glycogen-and-galactose-metabolism': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -334,6 +344,15 @@ const pathwayDefinitions = [
     reactions: pentosePhosphatePathwayReactions,
     arrows: pentosePhosphatePathwayArrows,
     data: pentosePhosphatePathwayData
+  },
+  {
+    id: 'glycogen-and-galactose-metabolism',
+    name: 'Glycogen and Galactose Metabolism',
+    nodes: glycogenAndGalactoseMetabolismNodes,
+    reactions: glycogenAndGalactoseMetabolismReactions,
+    arrows: glycogenAndGalactoseMetabolismArrows,
+    data: glycogenAndGalactoseMetabolismData,
+    subPathways: glycogenAndGalactoseMetabolismData.subPathways
   }
 ];
 
@@ -362,4 +381,3 @@ export function generatePathwaysArray() {
 }
 
 export { pathwayDefinitions };
-
