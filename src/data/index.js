@@ -24,6 +24,7 @@ import { ureaCycleNodes, ureaCycleReactions, ureaCycleArrows, ureaCycleData } fr
 import { pentosePhosphatePathwayNodes, pentosePhosphatePathwayReactions, pentosePhosphatePathwayArrows, pentosePhosphatePathwayData } from './pentosePhosphatePathway/pentosePhosphatePathway_index.js';
 import { glycogenAndGalactoseMetabolismNodes, glycogenAndGalactoseMetabolismReactions, glycogenAndGalactoseMetabolismArrows, glycogenAndGalactoseMetabolismData } from './glycogenAndGalactoseMetabolism/glycogenAndGalactoseMetabolism_index.js';
 import { cholesterolSynthesisNodes, cholesterolSynthesisReactions, cholesterolSynthesisArrows, cholesterolSynthesisData } from './cholesterolSynthesis/cholesterolSynthesis_index.js';
+import { steroidHormoneSynthesisNodes, steroidHormoneSynthesisReactions, steroidHormoneSynthesisArrows, steroidHormoneSynthesisData } from './steroidHormoneSynthesis/steroidHormoneSynthesis_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -44,7 +45,8 @@ export const allNodes = [
   ...ureaCycleNodes,
   ...pentosePhosphatePathwayNodes,
   ...glycogenAndGalactoseMetabolismNodes,
-  ...cholesterolSynthesisNodes
+  ...cholesterolSynthesisNodes,
+  ...steroidHormoneSynthesisNodes
 ];
 
 // Combine all reactions
@@ -66,7 +68,8 @@ export const allReactions = [
   ...ureaCycleReactions,
   ...pentosePhosphatePathwayReactions,
   ...glycogenAndGalactoseMetabolismReactions,
-  ...cholesterolSynthesisReactions
+  ...cholesterolSynthesisReactions,
+  ...steroidHormoneSynthesisReactions
 ];
 
 // Combine all arrows
@@ -88,7 +91,8 @@ export const allArrows = [
   ...ureaCycleArrows,
   ...pentosePhosphatePathwayArrows,
   ...glycogenAndGalactoseMetabolismArrows,
-  ...cholesterolSynthesisArrows
+  ...cholesterolSynthesisArrows,
+  ...steroidHormoneSynthesisArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -114,7 +118,8 @@ export const PATHWAY_CONFIG = {
     'urea-cycle': 'Urea Cycle',
     'pentose-phosphate-pathway': 'Pentose Phosphate Pathway',
     'glycogen-and-galactose-metabolism': 'Glycogen and Galactose Metabolism',
-    'cholesterol-synthesis': 'Cholesterol Synthesis'
+    'cholesterol-synthesis': 'Cholesterol Synthesis',
+    'steroid-hormone-synthesis': 'Steroid Hormone Synthesis'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -206,6 +211,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'cholesterol-synthesis': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'steroid-hormone-synthesis': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -372,6 +382,15 @@ const pathwayDefinitions = [
     arrows: cholesterolSynthesisArrows,
     data: cholesterolSynthesisData,
     subPathways: cholesterolSynthesisData.subPathways
+  },
+  {
+    id: 'steroid-hormone-synthesis',
+    name: 'Steroid Hormone Synthesis',
+    nodes: steroidHormoneSynthesisNodes,
+    reactions: steroidHormoneSynthesisReactions,
+    arrows: steroidHormoneSynthesisArrows,
+    data: steroidHormoneSynthesisData,
+    subPathways: steroidHormoneSynthesisData.subPathways
   }
 ];
 

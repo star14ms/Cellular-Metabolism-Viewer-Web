@@ -32,7 +32,7 @@ export const cholesterolSynthesisData = {
       id: 'isoprenoid-synthesis',
       name: 'Isoprenoid Synthesis',
       description: 'Conversion of acetyl-CoA through HMG-CoA and mevalonate to isoprenoid units (IPP, FPP).',
-      reactionIndices: [0, 1, 2, 3, 4],
+      reactionIndices: [0, 1, 2, 3, 4, 5],
       nodeIds: ['acetyl_coa_chol', 'acetoacetyl_coa_chol', 'hmg_coa_chol', 'mevalonate_chol', 'ipp_chol', 'fpp_chol']
     },
     {

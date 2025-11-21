@@ -9,7 +9,7 @@
 
 const unit_space = 150;
 const base_x = -1500; // Leftmost position on the map
-const base_y = 0; // Starting y position
+const base_y = -600; // Starting y position
 
 export const cholesterolSynthesisNodes = [
   // Main pathway nodes (sequential flow)
@@ -138,7 +138,7 @@ export const cholesterolSynthesisNodes = [
     formula: 'Variable',
     smiles: '',
     description: 'Cholesterol incorporated into cell membranes to maintain fluidity and structure',
-    position: { x: base_x + unit_space * 1.5, y: base_y + unit_space * 9 }
+    position: { x: base_x + unit_space * 0, y: base_y + unit_space * 10 }
   },
   {
     id: 'lipoproteins_chol',
@@ -147,7 +147,7 @@ export const cholesterolSynthesisNodes = [
     formula: 'Variable',
     smiles: '',
     description: 'Cholesterol transported in the body as part of lipoproteins (LDL, HDL, etc.)',
-    position: { x: base_x + unit_space * 1.5, y: base_y + unit_space * 10 }
+    position: { x: base_x + unit_space * 1.5, y: base_y + unit_space * 8 }
   }
 ];
 
