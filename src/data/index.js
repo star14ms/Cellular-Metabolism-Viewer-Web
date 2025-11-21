@@ -23,6 +23,7 @@ import { branchedChainAminoAcidBreakdownNodes, branchedChainAminoAcidBreakdownRe
 import { ureaCycleNodes, ureaCycleReactions, ureaCycleArrows, ureaCycleData } from './ureaCycle/ureaCycle_index.js';
 import { pentosePhosphatePathwayNodes, pentosePhosphatePathwayReactions, pentosePhosphatePathwayArrows, pentosePhosphatePathwayData } from './pentosePhosphatePathway/pentosePhosphatePathway_index.js';
 import { glycogenAndGalactoseMetabolismNodes, glycogenAndGalactoseMetabolismReactions, glycogenAndGalactoseMetabolismArrows, glycogenAndGalactoseMetabolismData } from './glycogenAndGalactoseMetabolism/glycogenAndGalactoseMetabolism_index.js';
+import { cholesterolSynthesisNodes, cholesterolSynthesisReactions, cholesterolSynthesisArrows, cholesterolSynthesisData } from './cholesterolSynthesis/cholesterolSynthesis_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -42,7 +43,8 @@ export const allNodes = [
   ...branchedChainAminoAcidBreakdownNodes,
   ...ureaCycleNodes,
   ...pentosePhosphatePathwayNodes,
-  ...glycogenAndGalactoseMetabolismNodes
+  ...glycogenAndGalactoseMetabolismNodes,
+  ...cholesterolSynthesisNodes
 ];
 
 // Combine all reactions
@@ -63,7 +65,8 @@ export const allReactions = [
   ...branchedChainAminoAcidBreakdownReactions,
   ...ureaCycleReactions,
   ...pentosePhosphatePathwayReactions,
-  ...glycogenAndGalactoseMetabolismReactions
+  ...glycogenAndGalactoseMetabolismReactions,
+  ...cholesterolSynthesisReactions
 ];
 
 // Combine all arrows
@@ -84,7 +87,8 @@ export const allArrows = [
   ...branchedChainAminoAcidBreakdownArrows,
   ...ureaCycleArrows,
   ...pentosePhosphatePathwayArrows,
-  ...glycogenAndGalactoseMetabolismArrows
+  ...glycogenAndGalactoseMetabolismArrows,
+  ...cholesterolSynthesisArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -109,7 +113,8 @@ export const PATHWAY_CONFIG = {
     'branched-chain-amino-acid-breakdown': 'Branched Chain Amino Acid Breakdown',
     'urea-cycle': 'Urea Cycle',
     'pentose-phosphate-pathway': 'Pentose Phosphate Pathway',
-    'glycogen-and-galactose-metabolism': 'Glycogen and Galactose Metabolism'
+    'glycogen-and-galactose-metabolism': 'Glycogen and Galactose Metabolism',
+    'cholesterol-synthesis': 'Cholesterol Synthesis'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -196,6 +201,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'glycogen-and-galactose-metabolism': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'cholesterol-synthesis': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -353,6 +363,15 @@ const pathwayDefinitions = [
     arrows: glycogenAndGalactoseMetabolismArrows,
     data: glycogenAndGalactoseMetabolismData,
     subPathways: glycogenAndGalactoseMetabolismData.subPathways
+  },
+  {
+    id: 'cholesterol-synthesis',
+    name: 'Cholesterol Synthesis',
+    nodes: cholesterolSynthesisNodes,
+    reactions: cholesterolSynthesisReactions,
+    arrows: cholesterolSynthesisArrows,
+    data: cholesterolSynthesisData,
+    subPathways: cholesterolSynthesisData.subPathways
   }
 ];
 
