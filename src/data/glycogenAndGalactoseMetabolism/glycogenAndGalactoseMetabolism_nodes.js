@@ -99,6 +99,7 @@ export const glycogenAndGalactoseMetabolismNodes = [
     smiles: '',
     description: 'Glycogenin with a short glucose primer chain',
     pubchemSid: '405234289',
+    pubchemImageVersion: 2,
     position: { x: base_x + unit_space * -4, y: base_y + unit_space * 1 }
   },
   {
@@ -109,6 +110,7 @@ export const glycogenAndGalactoseMetabolismNodes = [
     smiles: '',
     description: 'Enzyme that acts as a primer for glycogen synthesis',
     pubchemSid: '4842',
+    pubchemImageVersion: 8,
     position: { x: base_x + unit_space * -3, y: base_y + unit_space * 1 }
   },
   {

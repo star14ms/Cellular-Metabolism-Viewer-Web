@@ -3,7 +3,7 @@
  * Used across NodeDetail, ArrowDetail, and other components
  */
 
-import { fetchCompoundWithFallback } from '../services/pubchemService.js';
+import { fetchCompoundWithFallback, createSidBasedPubChemData, generateSidImageUrl, PUBCHEM_IMAGE_VERSION } from '../services/pubchemService.js';
 import { getAlternativeNames } from './moleculeAlternatives.js';
 import { loadCacheFromStorage, saveToStorage, getFromStorage } from './pubchemCache.js';
 
@@ -43,20 +43,64 @@ export function normalizeMoleculeName(moleculeName) {
 }
 
 /**
+ * Regenerate image URLs with the specified version
+ * @param {Object} cachedData - Cached PubChem data
+ * @param {number} imageVersion - Desired image version
+ * @param {Object} molecule - Optional molecule object with pubchemSid
+ * @returns {Object} Updated PubChem data with regenerated URLs
+ */
+function regenerateImageUrls(cachedData, imageVersion, molecule = null) {
+  if (!cachedData) return cachedData;
+  
+  const updatedData = { ...cachedData };
+  
+  // If we have a SID, regenerate SID-based URLs
+  const sid = molecule?.pubchemSid || cachedData.sid;
+  if (sid) {
+    updatedData.image2DUrl = generateSidImageUrl(sid, 'l', imageVersion);
+    updatedData.image2DUrlSmall = generateSidImageUrl(sid, 's', imageVersion);
+  } else if (cachedData.cid) {
+    // Regenerate CID-based URLs with the new version
+    updatedData.image2DUrl = `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=${cachedData.cid}&t=l&version=${imageVersion}`;
+    updatedData.image2DUrlSmall = `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=${cachedData.cid}&t=s&version=${imageVersion}`;
+  }
+  
+  return updatedData;
+}
+
+/**
  * Fetch PubChem data for a molecule with caching (localStorage + in-memory)
  * @param {string} moleculeName - Name of the molecule
  * @param {Map} cache - Optional in-memory cache map (for backward compatibility)
+ * @param {Object} molecule - Optional molecule object that may contain pubchemSid
  * @returns {Promise<Object>} PubChem data
  */
-export async function fetchPubChemData(moleculeName, cache) {
+export async function fetchPubChemData(moleculeName, cache, molecule = null) {
+  // Get image version from molecule object if available
+  const imageVersion = molecule?.pubchemImageVersion ?? null;
+  
   // Check in-memory cache first (if provided)
   if (cache && cache.has(moleculeName)) {
-    return cache.get(moleculeName);
+    const cachedData = cache.get(moleculeName);
+    // If imageVersion is specified, regenerate URLs with the correct version
+    if (imageVersion !== null && cachedData) {
+      return regenerateImageUrls(cachedData, imageVersion, molecule);
+    }
+    return cachedData;
   }
   
   // Check localStorage cache
   const cachedData = getFromStorage(moleculeName);
   if (cachedData) {
+    // If imageVersion is specified, regenerate URLs with the correct version
+    if (imageVersion !== null) {
+      const updatedData = regenerateImageUrls(cachedData, imageVersion, molecule);
+      // Also update in-memory cache if provided
+      if (cache) {
+        cache.set(moleculeName, updatedData);
+      }
+      return updatedData;
+    }
     // Also update in-memory cache if provided
     if (cache) {
       cache.set(moleculeName, cachedData);
@@ -83,17 +127,39 @@ export async function fetchPubChemData(moleculeName, cache) {
     }
   }
   
-  const pubchemData = await fetchCompoundWithFallback(searchName, alternativeNames);
-  
-  // Save to localStorage
-  saveToStorage(moleculeName, pubchemData);
-  
-  // Also update in-memory cache if provided
-  if (cache) {
-    cache.set(moleculeName, pubchemData);
+  try {
+    const pubchemData = await fetchCompoundWithFallback(searchName, alternativeNames, imageVersion);
+    
+    // Save to localStorage
+    saveToStorage(moleculeName, pubchemData);
+    
+    // Also update in-memory cache if provided
+    if (cache) {
+      cache.set(moleculeName, pubchemData);
+    }
+    
+    return pubchemData;
+  } catch (error) {
+    // If fetching fails and we have a pubchemSid, use SID-based image URLs
+    const sid = molecule?.pubchemSid;
+    if (sid) {
+      console.log(`Using SID-based image URLs for ${moleculeName} (SID: ${sid})`);
+      const sidData = createSidBasedPubChemData(moleculeName, sid, imageVersion);
+      
+      // Save to localStorage
+      saveToStorage(moleculeName, sidData);
+      
+      // Also update in-memory cache if provided
+      if (cache) {
+        cache.set(moleculeName, sidData);
+      }
+      
+      return sidData;
+    }
+    
+    // Re-throw if no SID fallback available
+    throw error;
   }
-  
-  return pubchemData;
 }
 
 /**
@@ -246,10 +312,19 @@ export async function fetchAndDisplayPubChem(moleculeName, containerId, cache, m
   if (!loadingElement) return;
   
   try {
-    const pubchemData = await fetchPubChemData(moleculeName, cache);
+    const pubchemData = await fetchPubChemData(moleculeName, cache, molecule);
     displayPubChemData(container, pubchemData, loadingElement);
   } catch (error) {
     console.error(`Error fetching PubChem data for ${moleculeName}:`, error);
+    
+    // If we have a pubchemSid, try to use SID-based image URLs
+    const sid = molecule?.pubchemSid;
+    const imageVersion = molecule?.pubchemImageVersion ?? null;
+    if (sid) {
+      const sidData = createSidBasedPubChemData(moleculeName, sid, imageVersion);
+      displayPubChemData(container, sidData, loadingElement);
+      return;
+    }
     
     // If we have a SMILES string, try to generate a structure image
     const smiles = molecule?.smiles;

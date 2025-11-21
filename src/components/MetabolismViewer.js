@@ -6229,7 +6229,15 @@ export class MetabolismViewer {
         let molecule;
         if (d.node) {
           // Use node data directly (most reliable - comes from data files)
-          molecule = { id: d.node.id, name: d.node.name, formula: d.node.formula, description: d.node.description, smiles: d.node.smiles };
+        molecule = { 
+          id: d.node.id, 
+          name: d.node.name, 
+          formula: d.node.formula, 
+          description: d.node.description, 
+          smiles: d.node.smiles,
+          pubchemSid: d.node.pubchemSid, // Include pubchemSid if available
+          pubchemImageVersion: d.node.pubchemImageVersion // Include pubchemImageVersion if available
+        };
         } else if (isEnzymeOrCarrier) {
           // For enzyme/carrier nodes, always use the substrate from that specific reaction
           // This ensures we get the correct molecule object from the reaction, not from another pathway
@@ -8242,7 +8250,9 @@ export class MetabolismViewer {
           formula: reaction.node.formula, 
           description: reaction.node.description, 
           smiles: reaction.node.smiles,
-          imageUrl: reaction.node.imageUrl // Include imageUrl from node data
+          imageUrl: reaction.node.imageUrl, // Include imageUrl from node data
+          pubchemSid: reaction.node.pubchemSid, // Include pubchemSid if available
+          pubchemImageVersion: reaction.node.pubchemImageVersion // Include pubchemImageVersion if available
         };
       } else if (reaction.product) {
         // Fallback to product if node not available
@@ -8270,10 +8280,17 @@ export class MetabolismViewer {
           imageUrl = molecule.imageUrl;
         } else {
           // Use shared utility that handles normalization and alternatives
-          const pubchemData = await fetchPubChemData(molecule.name, this.pubchemDataCache);
+          // Pass molecule object so it can use pubchemSid if available
+          const pubchemData = await fetchPubChemData(molecule.name, this.pubchemDataCache, molecule);
           
-          if (pubchemData && pubchemData.image2DUrlSmall) {
-            imageUrl = pubchemData.image2DUrlSmall;
+          // Prioritize SID-based image URLs if available
+          if (pubchemData) {
+            if (pubchemData.image2DUrlSmall) {
+              imageUrl = pubchemData.image2DUrlSmall;
+            } else if (molecule.pubchemSid && pubchemData.image2DUrl) {
+              // Fallback to large image if small not available
+              imageUrl = pubchemData.image2DUrl;
+            }
           }
         }
         

@@ -8,6 +8,13 @@
 import { convertGreekToEnglish } from '../utils/greekConverter.js';
 
 /**
+ * PubChem image API version
+ * Can be adjusted if PubChem updates their image service version
+ * @type {number}
+ */
+export const PUBCHEM_IMAGE_VERSION = 8;
+
+/**
  * Convert superscripts to regular numbers
  * @param {string} text - Text that may contain superscripts
  * @returns {string} Text with superscripts converted to regular numbers
@@ -73,9 +80,10 @@ function generateNameVariations(name) {
 /**
  * Fetch compound information from PubChem by name
  * @param {string} compoundName - Name of the compound (e.g., "Fructose-6-phosphate")
+ * @param {number} [imageVersion] - Optional PubChem image API version (defaults to PUBCHEM_IMAGE_VERSION)
  * @returns {Promise<Object>} Compound data from PubChem
  */
-export async function fetchCompoundByName(compoundName) {
+export async function fetchCompoundByName(compoundName, imageVersion = null) {
   try {
     // Normalize the name first (convert Greek letters and superscripts)
     const normalizedName = normalizeCompoundName(compoundName);
@@ -202,9 +210,10 @@ export async function fetchCompoundByName(compoundName) {
       }
     }
     
-    // Generate image URLs
-    const image2DUrl = `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=${cid}&t=l`; // Large 2D structure
-    const image2DUrlSmall = `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=${cid}&t=s`; // Small 2D structure
+    // Generate image URLs (use provided version or default)
+    const version = imageVersion !== null ? imageVersion : PUBCHEM_IMAGE_VERSION;
+    const image2DUrl = `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=${cid}&t=l&version=${version}`; // Large 2D structure
+    const image2DUrlSmall = `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=${cid}&t=s&version=${version}`; // Small 2D structure
     const image3DUrl = `https://pubchem.ncbi.nlm.nih.gov/image/img3d.cgi?&cid=${cid}&t=l`; // Large 3D structure
     const image3DUrlSmall = `https://pubchem.ncbi.nlm.nih.gov/image/img3d.cgi?&cid=${cid}&t=s`; // Small 3D structure
     
@@ -236,9 +245,10 @@ export async function fetchCompoundByName(compoundName) {
  * Fetch compound information with fallback options
  * @param {string} compoundName - Primary name to search
  * @param {string[]} alternativeNames - Alternative names to try if primary fails
+ * @param {number} [imageVersion] - Optional PubChem image API version (defaults to PUBCHEM_IMAGE_VERSION)
  * @returns {Promise<Object>} Compound data from PubChem
  */
-export async function fetchCompoundWithFallback(compoundName, alternativeNames = []) {
+export async function fetchCompoundWithFallback(compoundName, alternativeNames = [], imageVersion = null) {
   const namesToTry = [compoundName, ...alternativeNames];
   
   // Add Greek-to-English converted versions to the list
@@ -255,7 +265,7 @@ export async function fetchCompoundWithFallback(compoundName, alternativeNames =
   
   for (const name of namesToTry) {
     try {
-      const result = await fetchCompoundByName(name);
+      const result = await fetchCompoundByName(name, imageVersion);
       return result;
     } catch (error) {
       console.warn(`Failed to fetch ${name}, trying next...`);
@@ -265,6 +275,46 @@ export async function fetchCompoundWithFallback(compoundName, alternativeNames =
   }
   
   throw new Error(`Could not fetch compound data for any of: ${namesToTry.join(', ')}`);
+}
+
+/**
+ * Generate SID-based image URLs using the format from PubChem substance pages
+ * @param {string} sid - PubChem Substance ID
+ * @param {string} size - Image size: 'l' for large, 's' for small
+ * @returns {string} Image URL
+ */
+export function generateSidImageUrl(sid, size = 'l') {
+  if (!sid) return null;
+  // Format: https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?sid={sid}&deposited=t&version={version}&t={size}
+  return `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?sid=${sid}&deposited=t&version=${PUBCHEM_IMAGE_VERSION}&t=${size}`;
+}
+
+/**
+ * Create a minimal PubChem data object with SID-based image URLs when fetching fails
+ * @param {string} moleculeName - Name of the molecule
+ * @param {string} sid - PubChem Substance ID
+ * @returns {Object} Minimal PubChem data object with image URLs
+ */
+export function createSidBasedPubChemData(moleculeName, sid) {
+  if (!sid) return null;
+  
+  return {
+    cid: null,
+    name: moleculeName,
+    description: null,
+    molecularFormula: null,
+    molecularWeight: null,
+    canonicalSmiles: null,
+    isomericSmiles: null,
+    inchi: null,
+    inchiKey: null,
+    iupacName: null,
+    pubchemUrl: `https://pubchem.ncbi.nlm.nih.gov/substance/${sid}`,
+    image2DUrl: generateSidImageUrl(sid, 'l'),
+    image2DUrlSmall: generateSidImageUrl(sid, 's'),
+    image3DUrl: null,
+    image3DUrlSmall: null
+  };
 }
 
 
