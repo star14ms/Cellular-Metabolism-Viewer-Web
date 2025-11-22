@@ -239,15 +239,7 @@ export const fattyAcidAndLipidSynthesisArrows = [
     reaction_id: 'rxn_fas_transport_6'
   },
 
-  // Step 26: Carnitine -> Carnitine Transporter
-  {
-    id: 'arrow_fas_transport_7',
-    from_id: 'carnitine',
-    to_id: 'carnitine_transporter',
-    reaction_id: 'rxn_fas_transport_7'
-  },
-
-  // Step 27: Ethanol -> Acetaldehyde
+  // Step 26: Ethanol -> Acetaldehyde
   {
     id: 'arrow_ethanol_acetaldehyde',
     from_id: 'ethanol_fas',

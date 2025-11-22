@@ -487,7 +487,7 @@ export const fattyAcidAndLipidSynthesisReactions = [
     }
   },
 
-  // Step 24: Carnitine Uptake/Synthesis
+  // Step 25: Carnitine Uptake/Synthesis
   {
     id: 'rxn_fas_transport_6',
     name: 'Carnitine Absorption',
@@ -504,24 +504,7 @@ export const fattyAcidAndLipidSynthesisReactions = [
     }
   },
 
-  // Step 25: Carnitine Transport
-  {
-    id: 'rxn_fas_transport_7',
-    name: 'Carnitine Transport',
-    enzyme: {
-      name: 'Carnitine Transporter',
-      ecNumber: 'N/A',
-      description: 'Transports carnitine to sites of fatty acid oxidation'
-    },
-    conditions: {
-      location: 'Mitochondrial membrane',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      isReversible: true
-    }
-  },
-
-  // Step 27: Ethanol to Acetaldehyde
+  // Step 26: Ethanol to Acetaldehyde
   {
     id: 'rxn_alcohol_dehydrogenase',
     name: 'Ethanol Oxidation',

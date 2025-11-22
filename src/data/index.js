@@ -26,6 +26,7 @@ import { glycogenAndGalactoseMetabolismNodes, glycogenAndGalactoseMetabolismReac
 import { cholesterolSynthesisNodes, cholesterolSynthesisReactions, cholesterolSynthesisArrows, cholesterolSynthesisData } from './cholesterolSynthesis/cholesterolSynthesis_index.js';
 import { steroidHormoneSynthesisNodes, steroidHormoneSynthesisReactions, steroidHormoneSynthesisArrows, steroidHormoneSynthesisData } from './steroidHormoneSynthesis/steroidHormoneSynthesis_index.js';
 import { fattyAcidAndLipidSynthesisNodes, fattyAcidAndLipidSynthesisReactions, fattyAcidAndLipidSynthesisArrows, fattyAcidAndLipidSynthesisData } from './fattyAcidAndLipidSynthesis/fattyAcidAndLipidSynthesis_index.js';
+import { fattyAcidOxidationNodes, fattyAcidOxidationReactions, fattyAcidOxidationArrows, fattyAcidOxidationData } from './fattyAcidOxidation/fattyAcidOxidation_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -48,7 +49,8 @@ export const allNodes = [
   ...glycogenAndGalactoseMetabolismNodes,
   ...cholesterolSynthesisNodes,
   ...steroidHormoneSynthesisNodes,
-  ...fattyAcidAndLipidSynthesisNodes
+  ...fattyAcidAndLipidSynthesisNodes,
+  ...fattyAcidOxidationNodes
 ];
 
 // Combine all reactions
@@ -72,7 +74,8 @@ export const allReactions = [
   ...glycogenAndGalactoseMetabolismReactions,
   ...cholesterolSynthesisReactions,
   ...steroidHormoneSynthesisReactions,
-  ...fattyAcidAndLipidSynthesisReactions
+  ...fattyAcidAndLipidSynthesisReactions,
+  ...fattyAcidOxidationReactions
 ];
 
 // Combine all arrows
@@ -96,7 +99,8 @@ export const allArrows = [
   ...glycogenAndGalactoseMetabolismArrows,
   ...cholesterolSynthesisArrows,
   ...steroidHormoneSynthesisArrows,
-  ...fattyAcidAndLipidSynthesisArrows
+  ...fattyAcidAndLipidSynthesisArrows,
+  ...fattyAcidOxidationArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -124,7 +128,8 @@ export const PATHWAY_CONFIG = {
     'glycogen-and-galactose-metabolism': 'Glycogen and Galactose Metabolism',
     'cholesterol-synthesis': 'Cholesterol Synthesis',
     'steroid-hormone-synthesis': 'Steroid Hormone Synthesis',
-    'fatty-acid-and-lipid-synthesis': 'Fatty Acid and Lipid Synthesis'
+    'fatty-acid-and-lipid-synthesis': 'Fatty Acid and Lipid Synthesis',
+    'fatty-acid-oxidation': 'Fatty Acid Oxidation'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -226,6 +231,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'fatty-acid-and-lipid-synthesis': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'fatty-acid-oxidation': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -410,6 +420,15 @@ const pathwayDefinitions = [
     arrows: fattyAcidAndLipidSynthesisArrows,
     data: fattyAcidAndLipidSynthesisData,
     subPathways: fattyAcidAndLipidSynthesisData.subPathways || null
+  },
+  {
+    id: 'fatty-acid-oxidation',
+    name: 'Fatty Acid Oxidation',
+    nodes: fattyAcidOxidationNodes,
+    reactions: fattyAcidOxidationReactions,
+    arrows: fattyAcidOxidationArrows,
+    data: fattyAcidOxidationData,
+    subPathways: fattyAcidOxidationData.subPathways || null
   }
 ];
 

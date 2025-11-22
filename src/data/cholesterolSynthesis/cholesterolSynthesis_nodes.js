@@ -110,6 +110,7 @@ export const cholesterolSynthesisNodes = [
     name: 'Protein Modification',
     formula: 'Variable',
     smiles: '',
+    imageUrl: 'https://www.protpi.ch/blog/wp-content/uploads/2020/06/Farnesylation.png',
     description: 'Farnesylated proteins - FPP is used to modify proteins via farnesylation, important for membrane localization',
     position: { x: base_x - unit_space * 1.5, y: base_y + unit_space * 5 }
   },

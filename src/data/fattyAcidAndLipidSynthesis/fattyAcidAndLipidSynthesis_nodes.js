@@ -219,7 +219,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Lipoproteins (extrahepatic metabolism)',
     imageUrl: 'https://c8.alamy.com/comp/CXRRJ8/lipoproteins-of-the-blood-ldl-and-hdl-structure-CXRRJ8.jpg',
     description: 'Lipoproteins transporting lipids in the blood',
-    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 3.5 }
+    position: { x: base_x + unit_space * -11, y: base_y + unit_space * 3.5 }
   },
   {
     id: 'free_fatty_acids_intercellular',
@@ -227,7 +227,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Free fatty acids (intercellular space)',
     pubchemCid: 985, // Palmitic Acid as representative
     description: 'Free fatty acids in the intercellular space',
-    position: { x: base_x + unit_space * -8, y: base_y + unit_space * 3.5 }
+    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 3.5 }
   },
   {
     id: 'free_fatty_acids_plasma',
@@ -267,7 +267,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Fatty acids ≤ C12 to mitochondria',
     pubchemCid: 379,
     description: 'Short and medium chain fatty acids (≤C12) that can diffuse into mitochondria',
-    position: { x: base_x + unit_space * -4, y: base_y + unit_space * 6.5 }
+    position: { x: base_x + unit_space * -4, y: base_y + unit_space * 7.5 }
   },
   {
     id: 'diet_fas',
@@ -275,7 +275,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Diet',
     pubchemCid: null, // No specific CID for "Diet"
     description: 'Dietary source of carnitine',
-    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 5 }
+    position: { x: base_x + unit_space * -11, y: base_y + unit_space * 6 }
   },
   {
     id: 'carnitine',
@@ -284,7 +284,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₇H₁₅NO₃',
     smiles: 'C[N+](C)(C)CC(CC(=O)[O-])O',
     description: 'Carnitine, essential for transport of long-chain fatty acids into mitochondria',
-    position: { x: base_x + unit_space * -9, y: base_y + unit_space * 5 }
+    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 6 }
   },
   {
     id: 'carnitine_transporter',
@@ -292,7 +292,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Carnitine Transporter',
     description: 'Protein complex transporting carnitine across the cell membrane',
     complexSize: { width: 80, height: 60 },
-    position: { x: base_x + unit_space * -8, y: base_y + unit_space * 5 }
+    position: { x: base_x + unit_space * -8, y: base_y + unit_space * 6 }
   },
   // Ethanol Metabolism
   {
@@ -302,7 +302,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₂H₅OH',
     smiles: 'CCO',
     description: 'Alcohol that can be metabolized to acetaldehyde',
-    position: { x: base_x + unit_space * -6, y: base_y + unit_space * 4.5 }
+    position: { x: base_x + unit_space * -7, y: base_y + unit_space * 4.5 }
   },
   {
     id: 'acetaldehyde_fas',
@@ -311,7 +311,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₂H₄O',
     smiles: 'CC=O',
     description: 'Toxic intermediate in alcohol metabolism',
-    position: { x: base_x + unit_space * -6, y: base_y + unit_space * 5.5 }
+    position: { x: base_x + unit_space * -7, y: base_y + unit_space * 5.5 }
   }
 ];
 
