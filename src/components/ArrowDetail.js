@@ -599,39 +599,61 @@ export class ArrowDetail {
           }
         } else if (reaction.displayByreactant) {
           // Handle displayByreactant (display-only)
-          let displayByreactantName = null;
-          if (typeof reaction.displayByreactant === 'string') {
-            displayByreactantName = reaction.displayByreactant;
-          } else if (Array.isArray(reaction.displayByreactant)) {
-            displayByreactantName = reaction.displayByreactant.includes(moleculeName) ? moleculeName : null;
+          // Check if moleculeName or moleculeId matches
+          const checkMatch = (val) => {
+            if (typeof val === 'string') {
+              return val === moleculeName || (moleculeId && val === moleculeId);
+            }
+            return false;
+          };
+          
+          let isMatch = false;
+          if (Array.isArray(reaction.displayByreactant)) {
+            isMatch = reaction.displayByreactant.some(checkMatch);
+          } else if (typeof reaction.displayByreactant === 'string') {
+            isMatch = checkMatch(reaction.displayByreactant);
           } else if (reaction.displayByreactant.name) {
-            displayByreactantName = reaction.displayByreactant.name;
+            isMatch = checkMatch(reaction.displayByreactant.name);
           } else if (reaction.displayByreactant.molecules && Array.isArray(reaction.displayByreactant.molecules)) {
-            displayByreactantName = reaction.displayByreactant.molecules.includes(moleculeName) ? moleculeName : null;
+            isMatch = reaction.displayByreactant.molecules.some(checkMatch);
           }
-          if (displayByreactantName === moleculeName) {
+          
+          if (isMatch) {
             isByreactant = true;
           }
         } else if (mergedByproduct) {
           // Check merged byproduct (from reaction and arrow data)
           if (Array.isArray(mergedByproduct)) {
-            if (mergedByproduct.includes(moleculeName)) {
+            // Also check for ID match if mergedByproduct contains IDs
+            const checkMatch = (val) => {
+              return val === moleculeName || (moleculeId && val === moleculeId);
+            };
+            if (mergedByproduct.some(checkMatch)) {
               isByreactant = false;
             }
           }
         } else if (reaction.displayByproduct) {
           // Handle displayByproduct (display-only)
-          let displayByproductName = null;
-          if (typeof reaction.displayByproduct === 'string') {
-            displayByproductName = reaction.displayByproduct;
-          } else if (Array.isArray(reaction.displayByproduct)) {
-            displayByproductName = reaction.displayByproduct.includes(moleculeName) ? moleculeName : null;
+          // Check if moleculeName or moleculeId matches
+          const checkMatch = (val) => {
+            if (typeof val === 'string') {
+              return val === moleculeName || (moleculeId && val === moleculeId);
+            }
+            return false;
+          };
+
+          let isMatch = false;
+          if (Array.isArray(reaction.displayByproduct)) {
+            isMatch = reaction.displayByproduct.some(checkMatch);
+          } else if (typeof reaction.displayByproduct === 'string') {
+            isMatch = checkMatch(reaction.displayByproduct);
           } else if (reaction.displayByproduct.name) {
-            displayByproductName = reaction.displayByproduct.name;
+            isMatch = checkMatch(reaction.displayByproduct.name);
           } else if (reaction.displayByproduct.molecules && Array.isArray(reaction.displayByproduct.molecules)) {
-            displayByproductName = reaction.displayByproduct.molecules.includes(moleculeName) ? moleculeName : null;
+            isMatch = reaction.displayByproduct.molecules.some(checkMatch);
           }
-          if (displayByproductName === moleculeName) {
+
+          if (isMatch) {
             isByreactant = false;
           }
         } else if (element.classList.contains('co-reactant')) {
@@ -656,37 +678,10 @@ export class ArrowDetail {
             byproductName = mergedByproduct.includes(moleculeName) ? moleculeName : null;
           }
         }
-        // Check if molecule is in displayByreactant or displayByproduct
-        let displayByreactantName = null;
-        if (reaction.displayByreactant) {
-          if (typeof reaction.displayByreactant === 'string') {
-            displayByreactantName = reaction.displayByreactant;
-          } else if (Array.isArray(reaction.displayByreactant)) {
-            displayByreactantName = reaction.displayByreactant.includes(moleculeName) ? moleculeName : null;
-          } else if (reaction.displayByreactant.name) {
-            displayByreactantName = reaction.displayByreactant.name;
-          } else if (reaction.displayByreactant.molecules && Array.isArray(reaction.displayByreactant.molecules)) {
-            displayByreactantName = reaction.displayByreactant.molecules.includes(moleculeName) ? moleculeName : null;
-          }
-        }
-        let displayByproductName = null;
-        if (reaction.displayByproduct) {
-          if (typeof reaction.displayByproduct === 'string') {
-            displayByproductName = reaction.displayByproduct;
-          } else if (Array.isArray(reaction.displayByproduct)) {
-            displayByproductName = reaction.displayByproduct.includes(moleculeName) ? moleculeName : null;
-          } else if (reaction.displayByproduct.name) {
-            displayByproductName = reaction.displayByproduct.name;
-          } else if (reaction.displayByproduct.molecules && Array.isArray(reaction.displayByproduct.molecules)) {
-            displayByproductName = reaction.displayByproduct.molecules.includes(moleculeName) ? moleculeName : null;
-          }
-        }
         
         const isByMolecule = isByreactant !== null || 
                             (reaction.coSubstrate && reaction.coSubstrate.name === moleculeName) ||
                             (byproductName === moleculeName) ||
-                            (displayByreactantName === moleculeName) ||
-                            (displayByproductName === moleculeName) ||
                             element.classList.contains('co-reactant') ||
                             element.classList.contains('co-product');
         

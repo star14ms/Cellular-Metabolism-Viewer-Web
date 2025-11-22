@@ -7154,34 +7154,48 @@ export class MetabolismViewer {
       });
     }
     
-    // Check displayByreactant from reaction data - find nodes by molecule name
-    // Only search by name if not using node_id only
-    if (reaction.displayByreactant && !useNodeIdOnly) {
+    // Check displayByreactant from reaction data - support both node ID and name search
+    if (reaction.displayByreactant) {
       const displayByreactantArray = Array.isArray(reaction.displayByreactant) ? reaction.displayByreactant : [reaction.displayByreactant];
       displayByreactantArray.forEach(displayByreactant => {
         if (typeof displayByreactant === 'string') {
-          // Search for node with matching name
-          for (const [nodeId, node] of this.nodeMap.entries()) {
-            if (node.name === displayByreactant) {
-              reactantNodeIds.add(nodeId);
-              break; // Found the node, no need to continue searching
+          // First check if it's a node ID (exists in nodeMap)
+          if (this.nodeMap.has(displayByreactant)) {
+            reactantNodeIds.add(displayByreactant);
+            return;
+          }
+          
+          // If not found by ID, search by name (unless disabled)
+          if (!useNodeIdOnly) {
+            for (const [nodeId, node] of this.nodeMap.entries()) {
+              if (node.name === displayByreactant) {
+                reactantNodeIds.add(nodeId);
+                break; // Found the node
+              }
             }
           }
         }
       });
     }
     
-    // Check displayByproduct from reaction data - find nodes by molecule name
-    // Only search by name if not using node_id only
-    if (reaction.displayByproduct && !useNodeIdOnly) {
+    // Check displayByproduct from reaction data - support both node ID and name search
+    if (reaction.displayByproduct) {
       const displayByproductArray = Array.isArray(reaction.displayByproduct) ? reaction.displayByproduct : [reaction.displayByproduct];
       displayByproductArray.forEach(displayByproduct => {
         if (typeof displayByproduct === 'string') {
-          // Search for node with matching name
-          for (const [nodeId, node] of this.nodeMap.entries()) {
-            if (node.name === displayByproduct) {
-              productNodeIds.add(nodeId);
-              break; // Found the node, no need to continue searching
+          // First check if it's a node ID (exists in nodeMap)
+          if (this.nodeMap.has(displayByproduct)) {
+            productNodeIds.add(displayByproduct);
+            return;
+          }
+
+          // If not found by ID, search by name (unless disabled)
+          if (!useNodeIdOnly) {
+            for (const [nodeId, node] of this.nodeMap.entries()) {
+              if (node.name === displayByproduct) {
+                productNodeIds.add(nodeId);
+                break; // Found the node
+              }
             }
           }
         }

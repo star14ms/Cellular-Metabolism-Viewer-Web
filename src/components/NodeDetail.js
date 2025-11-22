@@ -92,38 +92,81 @@ export class NodeDetail {
           }
         }
         
+        // Helper function to check if a molecule matches (handles name and ID)
+        const checkMatch = (val) => {
+          if (typeof val === 'string') {
+            const resolved = this.resolveByMolecule(val);
+            return removeCoefficients(resolved.name) === moleculeNameWithoutCoeff || (molecule.id && resolved.id === molecule.id);
+          }
+          return false;
+        };
+
         // Check byreactant
         if (!isByMolecule && reactionNode.byreactant) {
           const checkByreactant = (byreactant) => {
             if (typeof byreactant === 'string') {
-              return removeCoefficients(byreactant) === moleculeNameWithoutCoeff;
+              return checkMatch(byreactant);
             } else if (Array.isArray(byreactant)) {
-              return byreactant.some(mol => removeCoefficients(mol) === moleculeNameWithoutCoeff);
+              return byreactant.some(checkMatch);
             } else if (byreactant.molecules && Array.isArray(byreactant.molecules)) {
-              return byreactant.molecules.some(mol => removeCoefficients(mol) === moleculeNameWithoutCoeff);
+              return byreactant.molecules.some(checkMatch);
             } else if (byreactant.name) {
-              return removeCoefficients(byreactant.name) === moleculeNameWithoutCoeff;
+              return checkMatch(byreactant.name);
             }
             return false;
           };
           isByMolecule = checkByreactant(reactionNode.byreactant);
         }
         
+        // Check displayByreactant
+        if (!isByMolecule && reactionNode.displayByreactant) {
+          const checkDisplayByreactant = (displayByreactant) => {
+            if (typeof displayByreactant === 'string') {
+              return checkMatch(displayByreactant);
+            } else if (Array.isArray(displayByreactant)) {
+              return displayByreactant.some(checkMatch);
+            } else if (displayByreactant.molecules && Array.isArray(displayByreactant.molecules)) {
+              return displayByreactant.molecules.some(checkMatch);
+            } else if (displayByreactant.name) {
+              return checkMatch(displayByreactant.name);
+            }
+            return false;
+          };
+          isByMolecule = checkDisplayByreactant(reactionNode.displayByreactant);
+        }
+        
         // Check byproduct
         if (!isByMolecule && reactionNode.byproduct) {
           const checkByproduct = (byproduct) => {
             if (typeof byproduct === 'string') {
-              return removeCoefficients(byproduct) === moleculeNameWithoutCoeff;
+              return checkMatch(byproduct);
             } else if (Array.isArray(byproduct)) {
-              return byproduct.some(mol => removeCoefficients(mol) === moleculeNameWithoutCoeff);
+              return byproduct.some(checkMatch);
             } else if (byproduct.molecules && Array.isArray(byproduct.molecules)) {
-              return byproduct.molecules.some(mol => removeCoefficients(mol) === moleculeNameWithoutCoeff);
+              return byproduct.molecules.some(checkMatch);
             } else if (byproduct.name) {
-              return removeCoefficients(byproduct.name) === moleculeNameWithoutCoeff;
+              return checkMatch(byproduct.name);
             }
             return false;
           };
           isByMolecule = checkByproduct(reactionNode.byproduct);
+        }
+        
+        // Check displayByproduct
+        if (!isByMolecule && reactionNode.displayByproduct) {
+          const checkDisplayByproduct = (displayByproduct) => {
+            if (typeof displayByproduct === 'string') {
+              return checkMatch(displayByproduct);
+            } else if (Array.isArray(displayByproduct)) {
+              return displayByproduct.some(checkMatch);
+            } else if (displayByproduct.molecules && Array.isArray(displayByproduct.molecules)) {
+              return displayByproduct.molecules.some(checkMatch);
+            } else if (displayByproduct.name) {
+              return checkMatch(displayByproduct.name);
+            }
+            return false;
+          };
+          isByMolecule = checkDisplayByproduct(reactionNode.displayByproduct);
         }
       }
     }
