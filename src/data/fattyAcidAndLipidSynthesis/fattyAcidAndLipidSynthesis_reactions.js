@@ -396,5 +396,147 @@ export const fattyAcidAndLipidSynthesisReactions = [
       regulation: 'Final step in triacylglycerol synthesis',
       isReversible: false
     }
+  },
+
+  // Fatty Acid Oxidation Entry & Transport Reactions
+
+  // Step 20: Triacylglycerol transport to Lipoproteins
+  {
+    id: 'rxn_fas_transport_1',
+    name: 'Triacylglycerol Packaging into Lipoproteins',
+    enzyme: {
+      name: 'Microsomal triglyceride transfer protein (MTP)',
+      ecNumber: 'N/A',
+      description: 'Packages triacylglycerols into VLDL (liver) or chylomicrons (intestine) for secretion'
+    },
+    conditions: {
+      location: 'Endoplasmic reticulum / Golgi',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      isReversible: false
+    }
+  },
+
+  // Step 21: Lipoprotein hydrolysis to Free Fatty Acids
+  {
+    id: 'rxn_fas_transport_2',
+    name: 'Lipoprotein Lipase Hydrolysis',
+    byproduct: ['Glycerol'],
+    enzyme: {
+      name: 'Lipoprotein Lipase (LPL)',
+      ecNumber: 'EC 3.1.1.34',
+      description: 'Hydrolyzes triacylglycerols in lipoproteins to free fatty acids and glycerol'
+    },
+    conditions: {
+      location: 'Capillary endothelium',
+      ph: '7.4',
+      temperature: '37°C',
+      isReversible: false
+    }
+  },
+
+  // Step 22: Free Fatty Acid Uptake
+  {
+    id: 'rxn_fas_transport_3',
+    name: 'Free Fatty Acid Uptake',
+    enzyme: {
+      name: 'Fatty Acid Transporters (CD36/FAT, FATP)',
+      ecNumber: 'N/A',
+      description: 'Transports free fatty acids across the plasma membrane'
+    },
+    conditions: {
+      location: 'Plasma membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      isReversible: true
+    }
+  },
+
+  // Step 23: Fatty Acid Sorting/Distribution
+  {
+    id: 'rxn_fas_transport_4',
+    name: 'Intracellular Fatty Acid Distribution',
+    enzyme: {
+      name: 'Fatty Acid Binding Proteins (FABP)',
+      ecNumber: 'N/A',
+      description: 'Distributes fatty acids to different organelles based on chain length and needs'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      isReversible: true
+    }
+  },
+
+  // Step 24: Fatty acids ≤ C12 to mitochondria
+  {
+    id: 'rxn_fas_transport_5',
+    name: 'Fatty acids ≤ C12 to mitochondria',
+    enzyme: {
+      name: 'Fatty Acid Binding Proteins (FABP)',
+      ecNumber: 'N/A',
+      description: 'Distributes fatty acids to mitochondria'
+    },
+    conditions: {
+      location: 'Mitochondrial membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      isReversible: true
+    }
+  },
+
+  // Step 24: Carnitine Uptake/Synthesis
+  {
+    id: 'rxn_fas_transport_6',
+    name: 'Carnitine Absorption',
+    enzyme: {
+      name: 'Carnitine Transporter (OCTN2)',
+      ecNumber: 'N/A',
+      description: 'Absorbs carnitine from diet or synthesis'
+    },
+    conditions: {
+      location: 'Plasma membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      isReversible: false
+    }
+  },
+
+  // Step 25: Carnitine Transport
+  {
+    id: 'rxn_fas_transport_7',
+    name: 'Carnitine Transport',
+    enzyme: {
+      name: 'Carnitine Transporter',
+      ecNumber: 'N/A',
+      description: 'Transports carnitine to sites of fatty acid oxidation'
+    },
+    conditions: {
+      location: 'Mitochondrial membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      isReversible: true
+    }
+  },
+
+  // Step 27: Ethanol to Acetaldehyde
+  {
+    id: 'rxn_alcohol_dehydrogenase',
+    name: 'Ethanol Oxidation',
+    byreactant: ['NAD⁺'],
+    byproduct: ['NADH'],
+    enzyme: {
+      name: 'Alcohol Dehydrogenase (ADH)',
+      ecNumber: 'EC 1.1.1.1',
+      cofactors: ['Zinc'],
+      description: 'Oxidizes ethanol to acetaldehyde, reducing NAD⁺ to NADH'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      isReversible: true
+    }
   }
 ];

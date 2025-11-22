@@ -188,14 +188,108 @@ export const fattyAcidAndLipidSynthesisNodes = [
     description: 'Acetyl coenzyme A, starting molecule for fatty acid synthesis',
     position: { x: base_x + unit_space * 0, y: base_y + unit_space * 0 }
   },
-//   {
-//     id: 'citrate_fas',
-//     type: 'molecule',
-//     name: 'Citrate',
-//     formula: 'C₆H₈O₇',
-//     smiles: 'C(C(=O)O)C(CC(=O)O)(C(=O)O)O',
-//     description: 'Citrate, key precursor for fatty acid synthesis via tricarboxylate transporter',
-//     position: { x: base_x + unit_space * 7, y: base_y + unit_space * 4 }
-//   }
+  {
+    id: 'citrate_fas',
+    type: 'molecule',
+    name: 'Citrate',
+    formula: 'C₆H₈O₇',
+    smiles: 'C(C(=O)O)C(CC(=O)O)(C(=O)O)O',
+    description: 'Citrate, key precursor for fatty acid synthesis via tricarboxylate transporter',
+    position: { x: base_x + unit_space * 1, y: base_y + unit_space * 0 }
+  },
+
+  // Fatty Acid Oxidation Entry & Transport
+  {
+    id: 'lipoproteins',
+    type: 'molecule',
+    name: 'Lipoproteins (extrahepatic metabolism)',
+    description: 'Lipoproteins transporting lipids in the blood',
+    position: { x: base_x + unit_space * -8, y: base_y + unit_space * 3.5 }
+  },
+  {
+    id: 'free_fatty_acids_intercellular',
+    type: 'molecule',
+    name: 'Free fatty acids (intercellular space)',
+    description: 'Free fatty acids in the intercellular space',
+    position: { x: base_x + unit_space * -7, y: base_y + unit_space * 3.5 }
+  },
+  {
+    id: 'free_fatty_acids_plasma',
+    type: 'molecule',
+    name: 'Free fatty acids (in plasma membrane)',
+    description: 'Free fatty acids crossing the plasma membrane',
+    position: { x: base_x + unit_space * -4, y: base_y + unit_space * 3.5 }
+  },
+  {
+    id: 'fatty_acids_peroxisomes',
+    type: 'molecule',
+    name: 'Fatty acids > C24 to peroxisomes',
+    description: 'Very long chain fatty acids (>C24) destined for peroxisomes',
+    position: { x: base_x + unit_space * -5, y: base_y + unit_space * 4.5 }
+  },
+  {
+    id: 'fatty_acids_short',
+    type: 'molecule',
+    name: 'Fatty acids ≤ C12',
+    description: 'Short and medium chain fatty acids (≤C12) that can diffuse into mitochondria',
+    position: { x: base_x + unit_space * -4, y: base_y + unit_space * 4.5 }
+  },
+  {
+    id: 'fatty_acids_medium_long',
+    type: 'molecule',
+    name: 'Fatty acids > C14 and < C22',
+    description: 'Long chain fatty acids (>C14 and <C22) requiring carnitine shuttle',
+    position: { x: base_x + unit_space * -3, y: base_y + unit_space * 4.5 }
+  },
+  {
+    id: 'fatty_acids_short_mitochondria',
+    type: 'molecule',
+    name: 'Fatty acids ≤ C12 to mitochondria',
+    description: 'Short and medium chain fatty acids (≤C12) that can diffuse into mitochondria',
+    position: { x: base_x + unit_space * -4, y: base_y + unit_space * 6.5 }
+  },
+  {
+    id: 'diet_fas',
+    type: 'molecule',
+    name: 'Diet',
+    description: 'Dietary source of carnitine',
+    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 4 }
+  },
+  {
+    id: 'carnitine',
+    type: 'molecule',
+    name: 'Carnitine',
+    formula: 'C₇H₁₅NO₃',
+    smiles: 'C[N+](C)(C)CC(CC(=O)[O-])O',
+    description: 'Carnitine, essential for transport of long-chain fatty acids into mitochondria',
+    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 5 }
+  },
+  {
+    id: 'carnitine_transporter',
+    type: 'complex',
+    name: 'Carnitine Transporter',
+    description: 'Protein complex transporting carnitine across the cell membrane',
+    complexSize: { width: 80, height: 60 },
+    position: { x: base_x + unit_space * -9, y: base_y + unit_space * 5 }
+  },
+  // Ethanol Metabolism
+  {
+    id: 'ethanol_fas',
+    type: 'molecule',
+    name: 'Ethanol',
+    formula: 'C₂H₅OH',
+    smiles: 'CCO',
+    description: 'Alcohol that can be metabolized to acetaldehyde',
+    position: { x: base_x + unit_space * -6, y: base_y + unit_space * 4.5 }
+  },
+  {
+    id: 'acetaldehyde_fas',
+    type: 'molecule',
+    name: 'Acetaldehyde',
+    formula: 'C₂H₄O',
+    smiles: 'CC=O',
+    description: 'Toxic intermediate in alcohol metabolism',
+    position: { x: base_x + unit_space * -6, y: base_y + unit_space * 5.5 }
+  }
 ];
 

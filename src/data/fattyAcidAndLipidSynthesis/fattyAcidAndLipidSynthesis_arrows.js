@@ -9,7 +9,7 @@ export const fattyAcidAndLipidSynthesisArrows = [
   // Step 1: Citrate -> acetyl-CoA
   {
     id: 'arrow_fas_1',
-    from_id: 'citrate',
+    from_id: 'citrate_fas',
     to_id: 'acetyl_coa_fas',
     reaction_id: 'rxn_fas_1'
   },
@@ -166,5 +166,89 @@ export const fattyAcidAndLipidSynthesisArrows = [
     from_id: 'diacylglycerol',
     to_id: 'triacylglycerol',
     reaction_id: 'rxn_fas_19'
+  },
+
+  // Fatty Acid Oxidation Entry & Transport Arrows
+
+  // Step 20: Triacylglycerol -> Lipoproteins
+  {
+    id: 'arrow_fas_transport_1',
+    from_id: 'triacylglycerol',
+    to_id: 'lipoproteins',
+    reaction_id: 'rxn_fas_transport_1',
+    dashStyle: 'dashed' // Representing transport/packaging
+  },
+
+  // Step 21: Lipoproteins -> Free Fatty Acids (intercellular)
+  {
+    id: 'arrow_fas_transport_2',
+    from_id: 'lipoproteins',
+    to_id: 'free_fatty_acids_intercellular',
+    reaction_id: 'rxn_fas_transport_2',
+    dashStyle: 'dashed' // Hydrolysis and release
+  },
+
+  // Step 22: Free Fatty Acids (intercellular) -> Free Fatty Acids (plasma)
+  {
+    id: 'arrow_fas_transport_3',
+    from_id: 'free_fatty_acids_intercellular',
+    to_id: 'free_fatty_acids_plasma',
+    reaction_id: 'rxn_fas_transport_3'
+  },
+
+  // Step 23a: Free Fatty Acids (plasma) -> Fatty acids > C24
+  {
+    id: 'arrow_fas_transport_4a',
+    from_id: 'free_fatty_acids_plasma',
+    to_id: 'fatty_acids_peroxisomes',
+    reaction_id: 'rxn_fas_transport_4'
+  },
+
+  // Step 23b: Free Fatty Acids (plasma) -> Fatty acids <= C12
+  {
+    id: 'arrow_fas_transport_4b',
+    from_id: 'free_fatty_acids_plasma',
+    to_id: 'fatty_acids_short',
+    reaction_id: 'rxn_fas_transport_4'
+  },
+
+  // Step 23c: Free Fatty Acids (plasma) -> Fatty acids > C14 < C22
+  {
+    id: 'arrow_fas_transport_4c',
+    from_id: 'free_fatty_acids_plasma',
+    to_id: 'fatty_acids_medium_long',
+    reaction_id: 'rxn_fas_transport_4'
+  },
+
+  // Step 24: Fatty acids > C14 and < C22 to mitochondria
+  {
+    id: 'arrow_fas_transport_5',
+    from_id: 'fatty_acids_short',
+    to_id: 'fatty_acids_short_mitochondria',
+    reaction_id: 'rxn_fas_transport_5'
+  },
+
+  // Step 25: Diet -> Carnitine
+  {
+    id: 'arrow_fas_transport_6',
+    from_id: 'diet_fas',
+    to_id: 'carnitine',
+    reaction_id: 'rxn_fas_transport_6'
+  },
+
+  // Step 26: Carnitine -> Carnitine Transporter
+  {
+    id: 'arrow_fas_transport_7',
+    from_id: 'carnitine',
+    to_id: 'carnitine_transporter',
+    reaction_id: 'rxn_fas_transport_7'
+  },
+
+  // Step 27: Ethanol -> Acetaldehyde
+  {
+    id: 'arrow_ethanol_acetaldehyde',
+    from_id: 'ethanol_fas',
+    to_id: 'acetaldehyde_fas',
+    reaction_id: 'rxn_alcohol_dehydrogenase'
   }
 ];
