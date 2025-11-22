@@ -281,25 +281,29 @@ export async function fetchCompoundWithFallback(compoundName, alternativeNames =
  * Generate SID-based image URLs using the format from PubChem substance pages
  * @param {string} sid - PubChem Substance ID
  * @param {string} size - Image size: 'l' for large, 's' for small
+ * @param {number} version - Optional image version (defaults to PUBCHEM_IMAGE_VERSION)
  * @returns {string} Image URL
  */
-export function generateSidImageUrl(sid, size = 'l') {
+export function generateSidImageUrl(sid, size = 'l', version = null) {
   if (!sid) return null;
+  const imageVersion = version !== null ? version : PUBCHEM_IMAGE_VERSION;
   // Format: https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?sid={sid}&deposited=t&version={version}&t={size}
-  return `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?sid=${sid}&deposited=t&version=${PUBCHEM_IMAGE_VERSION}&t=${size}`;
+  return `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?sid=${sid}&deposited=t&version=${imageVersion}&t=${size}`;
 }
 
 /**
  * Create a minimal PubChem data object with SID-based image URLs when fetching fails
  * @param {string} moleculeName - Name of the molecule
  * @param {string} sid - PubChem Substance ID
+ * @param {number} imageVersion - Optional image version (defaults to PUBCHEM_IMAGE_VERSION)
  * @returns {Object} Minimal PubChem data object with image URLs
  */
-export function createSidBasedPubChemData(moleculeName, sid) {
+export function createSidBasedPubChemData(moleculeName, sid, imageVersion = null) {
   if (!sid) return null;
   
   return {
     cid: null,
+    sid: sid,
     name: moleculeName,
     description: null,
     molecularFormula: null,
@@ -310,10 +314,11 @@ export function createSidBasedPubChemData(moleculeName, sid) {
     inchiKey: null,
     iupacName: null,
     pubchemUrl: `https://pubchem.ncbi.nlm.nih.gov/substance/${sid}`,
-    image2DUrl: generateSidImageUrl(sid, 'l'),
-    image2DUrlSmall: generateSidImageUrl(sid, 's'),
+    image2DUrl: generateSidImageUrl(sid, 'l', imageVersion),
+    image2DUrlSmall: generateSidImageUrl(sid, 's', imageVersion),
     image3DUrl: null,
-    image3DUrlSmall: null
+    image3DUrlSmall: null,
+    imageVersion: imageVersion
   };
 }
 

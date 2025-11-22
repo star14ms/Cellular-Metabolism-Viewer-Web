@@ -112,6 +112,66 @@ export function clearCache() {
 }
 
 /**
+ * Remove a specific molecule from cache
+ * @param {string} moleculeName - Name of the molecule to remove
+ */
+export function removeFromStorage(moleculeName) {
+  try {
+    const cache = loadCacheFromStorage();
+    if (cache.has(moleculeName)) {
+      cache.delete(moleculeName);
+      
+      // Convert Map to array of [key, value] pairs for JSON serialization
+      const dataToStore = {
+        version: CACHE_VERSION,
+        data: Array.from(cache.entries()),
+        lastUpdated: new Date().toISOString()
+      };
+      
+      localStorage.setItem(CACHE_KEY, JSON.stringify(dataToStore));
+      console.log(`Removed ${moleculeName} from PubChem cache`);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.warn(`Error removing ${moleculeName} from cache:`, error);
+    return false;
+  }
+}
+
+/**
+ * Check if cached data needs to be invalidated based on molecule node data
+ * @param {Object} cachedData - Cached PubChem data
+ * @param {Object} molecule - Molecule node object with pubchemSid and pubchemImageVersion
+ * @returns {boolean} True if cache should be invalidated
+ */
+export function shouldInvalidateCache(cachedData, molecule) {
+  if (!cachedData || !molecule) return false;
+  
+  const cachedSid = cachedData.sid?.toString();
+  const nodeSid = molecule.pubchemSid?.toString();
+  const cachedVersion = cachedData.imageVersion;
+  const nodeVersion = molecule.pubchemImageVersion;
+  
+  // Invalidate if SID changed
+  if (nodeSid && cachedSid !== nodeSid) {
+    return true;
+  }
+  
+  // Invalidate if version changed
+  if (nodeVersion !== null && nodeVersion !== undefined && cachedVersion !== nodeVersion) {
+    return true;
+  }
+  
+  // Invalidate if cached has SID but node doesn't (or vice versa)
+  if ((cachedSid && !nodeSid) || (!cachedSid && nodeSid)) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * Get cache statistics
  * @returns {Object} Cache statistics
  */
