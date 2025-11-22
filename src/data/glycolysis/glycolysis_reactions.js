@@ -503,6 +503,63 @@ export const glycolysisReactions = [
       regulation: 'Alternative pathway for phosphoglycerate mutase',
       isReversible: false
     }
+  },
+  {
+    id: 'rxn_malate_dehydrogenase',
+    name: 'Malate Dehydrogenase',
+    byreactant: ['NADH'],
+    byproduct: ['NAD⁺'],
+    enzyme: {
+      name: 'Malate Dehydrogenase (Cytosolic)',
+      ecNumber: 'EC 1.1.1.37',
+      cofactors: ['NAD⁺/NADH'],
+      description: 'Interconverts oxaloacetate and malate'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Part of malate-aspartate shuttle',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_pep_carboxykinase',
+    name: 'Phosphoenolpyruvate Carboxykinase',
+    byreactant: ['GTP'],
+    byproduct: ['GDP', 'CO₂'],
+    enzyme: {
+      name: 'Phosphoenolpyruvate Carboxykinase (PEPCK)',
+      ecNumber: 'EC 4.1.1.32',
+      cofactors: ['Mn²⁺', 'Mg²⁺'],
+      description: 'Converts oxaloacetate to phosphoenolpyruvate, a rate-limiting step in gluconeogenesis'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Regulated by gene expression',
+      isReversible: false
+    }
+  },
+  {
+    id: 'rxn_malic_enzyme',
+    name: 'Malic Enzyme',
+    byreactant: ['NADP⁺'],
+    byproduct: ['NADPH', 'CO₂'],
+    enzyme: {
+      name: 'Malic Enzyme',
+      ecNumber: 'EC 1.1.1.40',
+      cofactors: ['Mn²⁺', 'Mg²⁺'],
+      description: 'Decarboxylates malate to pyruvate, generating NADPH'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Source of cytosolic NADPH',
+      isReversible: false
+    }
   }
 ];
 

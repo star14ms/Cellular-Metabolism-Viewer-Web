@@ -9,6 +9,7 @@ export const fattyAcidAndLipidSynthesisReactions = [
     name: 'Citrate to Acetyl-CoA',
     byreactant: ['ATP', 'CoA'],
     byproduct: ['ADP', 'Pi'],
+    displayByproduct: ['oxaloacetate_glycolysis'],
     enzyme: {
       name: 'Citrate lyase',
       ecNumber: 'EC 4.1.3.6',

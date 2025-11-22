@@ -5,9 +5,9 @@
  * unit_space = 200 (standard spacing between nodes)
  */
 
-const unit_space = 200;
+const unit_space = 150;
 const base_x = -400;
-const base_y = 1909;
+const base_y = 1200;
 
 export const fattyAcidAndLipidSynthesisNodes = [
   // Left Side - Glycerol-3-phosphate Pathway
@@ -18,7 +18,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₃H₉O₆P',
     smiles: 'C(C(CO)OP(=O)(O)O)O',
     description: 'Phosphorylated glycerol, starting point for triacylglycerol and phospholipid synthesis',
-    position: { x: base_x + unit_space * -6, y: base_y + unit_space * -1.75 }
+    position: { x: base_x + unit_space * -6, y: base_y + unit_space * -1.5 }
   },
   {
     id: 'phosphatidic_acid',
@@ -68,7 +68,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₃H₇NO₃',
     smiles: 'C([C@@H](C(=O)O)O)N',
     description: 'L-Serine, amino acid precursor for sphingolipid synthesis',
-    position: { x: base_x + unit_space * -4.75, y: base_y + unit_space * -1.66 }
+    position: { x: base_x + unit_space * -4.8, y: base_y + unit_space * -1.75 }
   },
   {
     id: 'palmitoyl_coa',
@@ -103,6 +103,8 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Sphingolipids',
     formula: 'Variable',
     smiles: '',
+    pubchemSid: 223447526,
+    pubchemImageVersion: 2,
     description: 'Sphingolipids, complex lipids containing sphingosine backbone',
     position: { x: base_x + unit_space * -4, y: base_y + unit_space * -2 }
   },
@@ -170,7 +172,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     smiles: '',
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Malonyl-ACP.svg/2560px-Malonyl-ACP.svg.png',
     description: 'Malonyl-ACP, transferred from malonyl-CoA for fatty acid synthesis',
-    position: { x: base_x + unit_space * -1.75, y: base_y + unit_space * -1.25}
+    position: { x: base_x + unit_space * -1.66, y: base_y + unit_space * -1.35 }
   },
   {
     id: 'acetyl_acp',
@@ -189,7 +191,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₂₄H₃₈N₇O₁₉P₃S',
     smiles: 'CC(=O)CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
     description: 'Malonyl coenzyme A, two-carbon donor for fatty acid elongation',
-    position: { x: base_x + unit_space * 0, y: base_y + unit_space * -1.25 }
+    position: { x: base_x + unit_space * 0, y: base_y + unit_space * -1.35 }
   },
   {
     id: 'acetyl_coa_fas',
@@ -207,7 +209,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₆H₈O₇',
     smiles: 'C(C(=O)O)C(CC(=O)O)(C(=O)O)O',
     description: 'Citrate, key precursor for fatty acid synthesis via tricarboxylate transporter',
-    position: { x: base_x + unit_space * 1, y: base_y + unit_space * 0 }
+    position: { x: base_x + unit_space * 0, y: base_y + unit_space * 1 }
   },
 
   // Fatty Acid Oxidation Entry & Transport
@@ -217,7 +219,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Lipoproteins (extrahepatic metabolism)',
     imageUrl: 'https://c8.alamy.com/comp/CXRRJ8/lipoproteins-of-the-blood-ldl-and-hdl-structure-CXRRJ8.jpg',
     description: 'Lipoproteins transporting lipids in the blood',
-    position: { x: base_x + unit_space * -8, y: base_y + unit_space * 3.5 }
+    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 3.5 }
   },
   {
     id: 'free_fatty_acids_intercellular',
@@ -225,7 +227,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Free fatty acids (intercellular space)',
     pubchemCid: 985, // Palmitic Acid as representative
     description: 'Free fatty acids in the intercellular space',
-    position: { x: base_x + unit_space * -7, y: base_y + unit_space * 3.5 }
+    position: { x: base_x + unit_space * -8, y: base_y + unit_space * 3.5 }
   },
   {
     id: 'free_fatty_acids_plasma',
@@ -273,7 +275,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Diet',
     pubchemCid: null, // No specific CID for "Diet"
     description: 'Dietary source of carnitine',
-    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 4 }
+    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 5 }
   },
   {
     id: 'carnitine',
@@ -282,7 +284,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₇H₁₅NO₃',
     smiles: 'C[N+](C)(C)CC(CC(=O)[O-])O',
     description: 'Carnitine, essential for transport of long-chain fatty acids into mitochondria',
-    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 5 }
+    position: { x: base_x + unit_space * -9, y: base_y + unit_space * 5 }
   },
   {
     id: 'carnitine_transporter',
@@ -290,7 +292,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Carnitine Transporter',
     description: 'Protein complex transporting carnitine across the cell membrane',
     complexSize: { width: 80, height: 60 },
-    position: { x: base_x + unit_space * -9, y: base_y + unit_space * 5 }
+    position: { x: base_x + unit_space * -8, y: base_y + unit_space * 5 }
   },
   // Ethanol Metabolism
   {

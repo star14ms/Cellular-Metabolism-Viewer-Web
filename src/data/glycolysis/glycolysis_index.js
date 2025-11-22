@@ -23,7 +23,7 @@ export const glycolysisData = {
     keyRegulatorySteps: [
       { id: 'glucose_6_phosphate', text: 'Step 1: Hexokinase (inhibited by glucose-6-phosphate)' },
       { id: 'fructose_1_6_bisphosphate', text: 'Step 3: Phosphofructokinase-1 (key regulatory step)' },
-      { id: 'pyruvate', text: 'Step 10: Pyruvate kinase (allosteric regulation)' }
+      { id: 'pyruvate_glycolysis', text: 'Step 10: Pyruvate kinase (allosteric regulation)' }
     ]
   },
   // Sub-pathways definition
@@ -33,7 +33,7 @@ export const glycolysisData = {
       name: 'Main Glycolysis Pathway',
       description: 'The core ten-step pathway that converts glucose to pyruvate, producing ATP and NADH. Steps 1-10: Glucose → Glucose-6-phosphate → Fructose-6-phosphate → Fructose-1,6-bisphosphate → Glyceraldehyde-3-phosphate → 1,3-Bisphosphoglycerate → 3-Phosphoglycerate → 2-Phosphoglycerate → Phosphoenolpyruvate → Pyruvate.',
       reactionIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], // Steps 1-10
-      nodeIds: ['glucose', 'glucose_6_phosphate', 'fructose_6_phosphate', 'fructose_1_6_bisphosphate', 'dihydroxyacetone_phosphate', 'glyceraldehyde_3_phosphate', '1_3_bisphosphoglycerate', '3_phosphoglycerate', '2_phosphoglycerate', 'phosphoenolpyruvate', 'pyruvate']
+      nodeIds: ['glucose', 'glucose_6_phosphate', 'fructose_6_phosphate', 'fructose_1_6_bisphosphate', 'dihydroxyacetone_phosphate', 'glyceraldehyde_3_phosphate', '1_3_bisphosphoglycerate', '3_phosphoglycerate', '2_phosphoglycerate', 'phosphoenolpyruvate', 'pyruvate_glycolysis']
     },
     {
       id: 'polyol-pathway',
@@ -62,6 +62,13 @@ export const glycolysisData = {
       description: 'Alternative pathway for phosphoglycerate mutase. Steps 26-27: 1,3-Bisphosphoglycerate → 2,3-Bisphosphoglycerate → 2-Phosphoglycerate. This shunt is important in red blood cells for regulating oxygen affinity of hemoglobin.',
       reactionIndices: [25, 26], // Steps 26-27
       nodeIds: ['1_3_bisphosphoglycerate', '2_3_bisphosphoglycerate', '2_phosphoglycerate']
+    },
+    {
+      id: 'gluconeogenesis-anaplerotic',
+      name: 'Gluconeogenesis and Anaplerotic Extensions',
+      description: 'Reactions connecting Glycolysis to the Citric Acid Cycle and Gluconeogenesis. Includes the conversion between Oxaloacetate and Malate, and the bypass of Pyruvate Kinase via Oxaloacetate and Malate.',
+      reactionIndices: [27, 28, 29],
+      nodeIds: ['pyruvate_glycolysis', 'oxaloacetate', 'malate', 'phosphoenolpyruvate']
     }
   ]
 };

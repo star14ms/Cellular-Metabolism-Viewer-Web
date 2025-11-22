@@ -11,7 +11,8 @@ export const fattyAcidAndLipidSynthesisArrows = [
     id: 'arrow_fas_1',
     from_id: 'citrate_fas',
     to_id: 'acetyl_coa_fas',
-    reaction_id: 'rxn_fas_1'
+    reaction_id: 'rxn_fas_1',
+    flipped: true
   },
 
   // Step 2: acetyl-CoA -> malonyl-CoA
@@ -55,7 +56,7 @@ export const fattyAcidAndLipidSynthesisArrows = [
     to_id: 'beta_ketoacyl_acp',
     reaction_id: 'rxn_fas_6',
     flipped: true,
-    y_scale: 3,
+    y_scale: 2.25,
   },
 
   // Step 7: fatty acyl-ACP -> β-ketoacyl-ACP (subsequent cycles)
@@ -64,7 +65,7 @@ export const fattyAcidAndLipidSynthesisArrows = [
     from_id: 'fatty_acyl_acp',
     to_id: 'beta_ketoacyl_acp',
     reaction_id: 'rxn_fas_7',
-    y_scale: 3,
+    y_scale: 2.25,
   },
 
   // Step 8: β-ketoacyl-ACP -> β-hydroxyacyl-ACP (vertical)
@@ -98,7 +99,7 @@ export const fattyAcidAndLipidSynthesisArrows = [
     reaction_id: 'rxn_fas_11',
     curved: true,
     flipped: true,
-    x_scale: 6,
+    x_scale: 4.5,
     y_scale: 1.5,
     byMoleculeAngle: 90,
   },
@@ -116,7 +117,8 @@ export const fattyAcidAndLipidSynthesisArrows = [
     id: 'arrow_fas_13',
     from_id: 'palmitate',
     to_id: 'palmitoyl_coa',
-    reaction_id: 'rxn_fas_13'
+    reaction_id: 'rxn_fas_13',
+    flipped: true
   },
 
   // Step 14: palmitoyl-CoA -> sphingosine
@@ -141,7 +143,7 @@ export const fattyAcidAndLipidSynthesisArrows = [
     from_id: 'glycerol_3_phosphate_fas',
     to_id: 'phosphatidic_acid',
     reaction_id: 'rxn_fas_16',
-    y_scale: 2.25,
+    y_scale: 1.5,
   },
 
   // Step 17: phosphatidic acid -> phospholipids
@@ -185,7 +187,8 @@ export const fattyAcidAndLipidSynthesisArrows = [
     from_id: 'lipoproteins',
     to_id: 'free_fatty_acids_intercellular',
     reaction_id: 'rxn_fas_transport_2',
-    dashStyle: 'dashed' // Hydrolysis and release
+    dashStyle: 'dashed', // Hydrolysis and release
+    flipped: true
   },
 
   // Step 22: Free Fatty Acids (intercellular) -> Free Fatty Acids (plasma)

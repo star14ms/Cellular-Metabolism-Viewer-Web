@@ -31,14 +31,14 @@ export const fermentationData = {
       name: 'Lactate Fermentation',
       description: 'Anaerobic pathway that converts pyruvate to lactate, regenerating NAD⁺ for continued glycolysis. Catalyzed by lactate dehydrogenase.',
       reactionIndices: [0], // rxn_fermentation_1
-      nodeIds: ['pyruvate', 'lactate']
+      nodeIds: ['pyruvate_glycolysis', 'lactate']
     },
     {
       id: 'ethanol-fermentation',
       name: 'Ethanol Fermentation',
       description: 'Anaerobic pathway that converts pyruvate to ethanol via acetaldehyde, regenerating NAD⁺ for continued glycolysis. Includes pyruvate decarboxylation to acetaldehyde and acetaldehyde reduction to ethanol.',
       reactionIndices: [1, 2], // rxn_fermentation_2, rxn_fermentation_3
-      nodeIds: ['pyruvate', 'acetaldehyde', 'ethanol']
+      nodeIds: ['pyruvate_glycolysis', 'acetaldehyde', 'ethanol']
     }
   ]
 };

@@ -14,7 +14,7 @@ const unit_space = 200;
 // = (200 + 150 * 1.06, 1975 + 150 * 2.56) = (359, 2359)
 
 const base_x = 1000; // α-ketoglutarate x position
-const base_y = 2134; // α-ketoglutarate y position
+const base_y = 2434; // α-ketoglutarate y position
 
 export const ammoniumCaptureReleaseNodes = [
   // Core pathway nodes
@@ -63,7 +63,7 @@ export const ammoniumCaptureReleaseNodes = [
     formula: 'C₄H₉NO₂',
     description: 'Neurotransmitter synthesized from glutamate',
     smiles: 'C(CC(=O)O)CN',
-    position: { x: base_x + unit_space * 1.5, y: 2359 }
+    position: { x: base_x + unit_space * 1.5, y: base_y + 225 }
   },
   {
     id: 'succinic_semialdehyde',
@@ -72,7 +72,7 @@ export const ammoniumCaptureReleaseNodes = [
     formula: 'C₄H₆O₃',
     description: 'Intermediate in the GABA shunt pathway',
     smiles: 'C(CC(=O)O)C=O',
-    position: { x: base_x, y: 2359 }
+    position: { x: base_x, y: base_y + 225 }
   },
   
   // Transamination nodes (placeholder nodes for "many amino acids" and "many α-ketoacids")

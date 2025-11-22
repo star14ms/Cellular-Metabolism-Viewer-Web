@@ -11,6 +11,20 @@
 
 export const pyruvateOxidationReactions = [
   {
+    id: 'rxn_pyruvate_0',
+    name: 'Pyruvate Transport into Mitochondrial Matrix',
+    enzyme: {
+      name: 'Pyruvate Translocator (Mitochondrial Pyruvate Carrier, MPC)',
+      description: 'Transports pyruvate from the cytosol into the mitochondrial matrix across the inner mitochondrial membrane',
+      notes: 'Transport occurs via facilitated diffusion using the mitochondrial pyruvate carrier (MPC) complex.'
+    },
+    conditions: {
+      location: 'Mitochondrial inner membrane',
+      requirement: 'Presence of mitochondrial pyruvate carrier (MPC)',
+      notes: 'Electrogenic transport, coupled to proton gradient or symport with H⁺'
+    }
+  },
+  {
     id: 'rxn_pyruvate_1',
     name: 'Pyruvate Decarboxylation & Activation of TPP',
     byproduct: ['CO₂'],

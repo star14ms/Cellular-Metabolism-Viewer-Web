@@ -167,7 +167,7 @@ export const glycolysisArrows = [
   {
     id: 'arrow_glycolysis_10',
     from_id: 'phosphoenolpyruvate',
-    to_id: 'pyruvate',
+    to_id: 'pyruvate_glycolysis',
     reaction_id: 'rxn_glycolysis_10'
   },
   
@@ -212,6 +212,26 @@ export const glycolysisArrows = [
     x_scale: 1.5,
     y_scale: -0.66,
     byMoleculeAngle: 180,
+  },
+  
+  // Additional reactions (Gluconeogenesis/Anaplerotic)
+  {
+    id: 'arrow_glycolysis_oaa_malate',
+    from_id: 'oxaloacetate_glycolysis',
+    to_id: 'malate_glycolysis',
+    reaction_id: 'rxn_malate_dehydrogenase'
+  },
+  {
+    id: 'arrow_glycolysis_oaa_pep',
+    from_id: 'oxaloacetate_glycolysis',
+    to_id: 'phosphoenolpyruvate',
+    reaction_id: 'rxn_pep_carboxykinase'
+  },
+  {
+    id: 'arrow_glycolysis_malate_pyruvate',
+    from_id: 'malate_glycolysis',
+    to_id: 'pyruvate_glycolysis',
+    reaction_id: 'rxn_malic_enzyme'
   }
 ];
 

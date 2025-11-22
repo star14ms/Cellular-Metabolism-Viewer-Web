@@ -27,7 +27,7 @@ export const fattyAcidAndLipidSynthesisData = {
       name: 'Fatty Acid Synthesis Initiation',
       description: 'Steps 1-6: Citrate transport, activation to Acetyl-CoA and Malonyl-CoA, and transfer to ACP.',
       reactionIndices: [0, 1, 2, 3, 4, 5],
-      nodeIds: ['citrate', 'acetyl_coa_fas', 'malonyl_coa_fas', 'acetyl_acp', 'malonyl_acp', 'beta_ketoacyl_acp']
+      nodeIds: ['citrate_fas', 'acetyl_coa_fas', 'malonyl_coa_fas', 'acetyl_acp', 'malonyl_acp', 'beta_ketoacyl_acp']
     },
     {
       id: 'fas-elongation',

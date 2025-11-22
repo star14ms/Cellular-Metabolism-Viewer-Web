@@ -255,13 +255,31 @@ export const glycolysisNodes = [
     position: { x: base_x, y: base_y + unit_space * 8 }
   },
   {
-    id: 'pyruvate',
+    id: 'pyruvate_glycolysis',
     type: 'molecule',
-    name: 'Pyruvate',
-    formula: 'C₃H₄O₃',
+    name: 'Pyruvate (cytosol)',
+    formula: 'C₃H₄O₃⁻',
     smiles: 'CC(=O)C(=O)[O-]',
     description: 'A three-carbon compound produced by glycolysis',
     position: { x: base_x, y: base_y + unit_space * 9 }
+  },
+  {
+    id: 'oxaloacetate_glycolysis',
+    type: 'molecule',
+    name: 'Oxaloacetate',
+    formula: 'C₄H₄O₅',
+    smiles: 'OC(=O)CC(=O)C(=O)O',
+    description: 'Intermediate in the citric acid cycle and gluconeogenesis',
+    position: { x: base_x + unit_space * -2, y: base_y + unit_space * 8 }
+  },
+  {
+    id: 'malate_glycolysis',
+    type: 'molecule',
+    name: 'L-Malate',
+    formula: 'C₄H₆O₅',
+    smiles: 'OC(=O)C[C@H](O)C(=O)O',
+    description: 'Intermediate in the citric acid cycle',
+    position: { x: base_x + unit_space * -2, y: base_y + unit_space * 9 }
   }
 ];
 

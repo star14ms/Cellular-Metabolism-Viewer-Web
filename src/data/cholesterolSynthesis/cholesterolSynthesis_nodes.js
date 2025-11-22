@@ -8,8 +8,8 @@
  */
 
 const unit_space = 150;
-const base_x = -1500; // Leftmost position on the map
-const base_y = -600; // Starting y position
+const base_x = -2100; // Leftmost position on the map
+const base_y = -750; // Starting y position
 
 export const cholesterolSynthesisNodes = [
   // Main pathway nodes (sequential flow)
@@ -120,7 +120,7 @@ export const cholesterolSynthesisNodes = [
     formula: 'C₂₇H₄₄O',
     smiles: 'CC(C)CCCC(C)C1CCC2C1(CCC3C2CC=C4C3(CCC(C4)O)C)C',
     description: 'Vitamin D synthesized from 7-dehydrocholesterol in the skin upon UV exposure',
-    position: { x: base_x - unit_space * 1.5, y: base_y + unit_space * 9 }
+    position: { x: base_x - unit_space * 1.5, y: base_y + unit_space * 8 }
   },
   {
     id: 'bile_salts_chol',
@@ -129,7 +129,7 @@ export const cholesterolSynthesisNodes = [
     formula: 'Variable',
     smiles: '',
     description: 'Bile salts synthesized from cholesterol in the liver for fat digestion',
-    position: { x: base_x - unit_space * 1.5, y: base_y + unit_space * 10 }
+    position: { x: base_x - unit_space * 1.5, y: base_y + unit_space * 9 }
   },
   {
     id: 'cell_membranes_chol',
@@ -138,7 +138,7 @@ export const cholesterolSynthesisNodes = [
     formula: 'Variable',
     smiles: '',
     description: 'Cholesterol incorporated into cell membranes to maintain fluidity and structure',
-    position: { x: base_x + unit_space * 0, y: base_y + unit_space * 10 }
+    position: { x: base_x + unit_space * 1.5, y: base_y + unit_space * 9 }
   },
   {
     id: 'lipoproteins_chol',

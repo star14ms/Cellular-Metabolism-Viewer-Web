@@ -23,6 +23,12 @@
 export const pyruvateOxidationArrows = [
   // Main pathway arrows
   {
+    id: 'arrow_pyruvate_0',
+    from_id: 'pyruvate_glycolysis',
+    to_id: 'pyruvate',
+    reaction_id: 'rxn_pyruvate_0',
+  },
+  {
     id: 'arrow_pyruvate_2',
     from_id: 'lipoamide',
     to_id: 'acetyl-lipoamide',

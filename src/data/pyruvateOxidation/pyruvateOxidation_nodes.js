@@ -16,14 +16,14 @@
 const unit_space = 150;
 const height_arrow = 74;
 const base_x = 100;
-const base_y = 1350; // Continuation from glycolysis pyruvate
+const base_y = 1650; // Continuation from glycolysis pyruvate
 
 export const pyruvateOxidationNodes = [
   // Molecules
   {
     id: 'pyruvate',
     type: 'molecule',
-    name: 'Pyruvate',
+    name: 'Pyruvate (mitochondrial matrix)',
     formula: 'C₃H₃O₃⁻',
     description: 'A three-carbon compound produced by glycolysis',
     smiles: 'CC(=O)C(=O)[O-]',

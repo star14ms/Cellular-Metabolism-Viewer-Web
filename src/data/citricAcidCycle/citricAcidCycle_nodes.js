@@ -8,7 +8,7 @@
 
 const unit_space = 150;
 const base_x = 200;
-const base_y = 1975; // Continuation from pyruvate oxidation acetyl-coa
+const base_y = 2275; // Continuation from pyruvate oxidation acetyl-coa
 
 export const citricAcidCycleNodes = [
   // Main cycle nodes in clockwise order (matching arrow flow: oxaloacetate → citrate → ... → malate → oxaloacetate)

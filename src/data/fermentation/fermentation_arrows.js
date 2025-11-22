@@ -22,14 +22,14 @@ export const fermentationArrows = [
   // Lactate fermentation pathway
   {
     id: 'arrow_fermentation_1',
-    from_id: 'pyruvate',
+    from_id: 'pyruvate_glycolysis',
     to_id: 'lactate',
     reaction_id: 'rxn_fermentation_1',
   },
   // Ethanol fermentation pathway
   {
     id: 'arrow_fermentation_2',
-    from_id: 'pyruvate',
+    from_id: 'pyruvate_glycolysis',
     to_id: 'acetaldehyde',
     reaction_id: 'rxn_fermentation_2',
     flipped: true,

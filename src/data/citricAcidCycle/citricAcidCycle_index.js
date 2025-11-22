@@ -21,7 +21,7 @@ export const citricAcidCycleData = {
       // Center: (359, 2134) - calculated from all 8 node positions
       center: { 
         x: 359, // Calculated center from node positions
-        y: 2134 // Calculated center from node positions
+        y: 2434 // Calculated center from node positions
       },
       // Default angle for by-arrows (in radians, pointing outward from cycle center)
       defaultByArrowAngle: 0,
