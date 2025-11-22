@@ -25,6 +25,7 @@ import { pentosePhosphatePathwayNodes, pentosePhosphatePathwayReactions, pentose
 import { glycogenAndGalactoseMetabolismNodes, glycogenAndGalactoseMetabolismReactions, glycogenAndGalactoseMetabolismArrows, glycogenAndGalactoseMetabolismData } from './glycogenAndGalactoseMetabolism/glycogenAndGalactoseMetabolism_index.js';
 import { cholesterolSynthesisNodes, cholesterolSynthesisReactions, cholesterolSynthesisArrows, cholesterolSynthesisData } from './cholesterolSynthesis/cholesterolSynthesis_index.js';
 import { steroidHormoneSynthesisNodes, steroidHormoneSynthesisReactions, steroidHormoneSynthesisArrows, steroidHormoneSynthesisData } from './steroidHormoneSynthesis/steroidHormoneSynthesis_index.js';
+import { fattyAcidAndLipidSynthesisNodes, fattyAcidAndLipidSynthesisReactions, fattyAcidAndLipidSynthesisArrows, fattyAcidAndLipidSynthesisData } from './fattyAcidAndLipidSynthesis/fattyAcidAndLipidSynthesis_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -46,7 +47,8 @@ export const allNodes = [
   ...pentosePhosphatePathwayNodes,
   ...glycogenAndGalactoseMetabolismNodes,
   ...cholesterolSynthesisNodes,
-  ...steroidHormoneSynthesisNodes
+  ...steroidHormoneSynthesisNodes,
+  ...fattyAcidAndLipidSynthesisNodes
 ];
 
 // Combine all reactions
@@ -69,7 +71,8 @@ export const allReactions = [
   ...pentosePhosphatePathwayReactions,
   ...glycogenAndGalactoseMetabolismReactions,
   ...cholesterolSynthesisReactions,
-  ...steroidHormoneSynthesisReactions
+  ...steroidHormoneSynthesisReactions,
+  ...fattyAcidAndLipidSynthesisReactions
 ];
 
 // Combine all arrows
@@ -92,7 +95,8 @@ export const allArrows = [
   ...pentosePhosphatePathwayArrows,
   ...glycogenAndGalactoseMetabolismArrows,
   ...cholesterolSynthesisArrows,
-  ...steroidHormoneSynthesisArrows
+  ...steroidHormoneSynthesisArrows,
+  ...fattyAcidAndLipidSynthesisArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -119,7 +123,8 @@ export const PATHWAY_CONFIG = {
     'pentose-phosphate-pathway': 'Pentose Phosphate Pathway',
     'glycogen-and-galactose-metabolism': 'Glycogen and Galactose Metabolism',
     'cholesterol-synthesis': 'Cholesterol Synthesis',
-    'steroid-hormone-synthesis': 'Steroid Hormone Synthesis'
+    'steroid-hormone-synthesis': 'Steroid Hormone Synthesis',
+    'fatty-acid-and-lipid-synthesis': 'Fatty Acid and Lipid Synthesis'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -216,6 +221,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'steroid-hormone-synthesis': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'fatty-acid-and-lipid-synthesis': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -391,6 +401,15 @@ const pathwayDefinitions = [
     arrows: steroidHormoneSynthesisArrows,
     data: steroidHormoneSynthesisData,
     subPathways: steroidHormoneSynthesisData.subPathways
+  },
+  {
+    id: 'fatty-acid-and-lipid-synthesis',
+    name: 'Fatty Acid and Lipid Synthesis',
+    nodes: fattyAcidAndLipidSynthesisNodes,
+    reactions: fattyAcidAndLipidSynthesisReactions,
+    arrows: fattyAcidAndLipidSynthesisArrows,
+    data: fattyAcidAndLipidSynthesisData,
+    subPathways: fattyAcidAndLipidSynthesisData.subPathways || null
   }
 ];
 
