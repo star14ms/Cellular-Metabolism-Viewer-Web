@@ -35,6 +35,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: '1,2-Diacylglycerol',
     formula: 'C₃H₈O₅',
     smiles: 'C(COC(=O)CCCCCCCCCCCCCCCC(=O)O)OC(=O)CCCCCCCCCCCCCCCC(=O)O',
+    pubchemCid: 6026790,
     description: '1,2-Diacylglycerol, intermediate in triacylglycerol and phospholipid synthesis',
     position: { x: base_x + unit_space * -6, y: base_y + unit_space * 1.25 }
   },
@@ -53,6 +54,8 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Phospholipids',
     formula: 'Variable',
     smiles: '',
+    pubchemSid: 85392791,
+    pubchemImageVersion: 3,
     description: 'Phospholipids, major components of cell membranes',
     position: { x: base_x + unit_space * -7, y: base_y + unit_space * 0.25 }
   },
@@ -111,6 +114,8 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Fatty acyl-ACP',
     formula: 'Variable',
     smiles: '',
+    pubchemSid: 497620218,
+    pubchemImageVersion: 1,
     description: 'Fatty acyl-ACP, intermediate in fatty acid synthase cycle',
     position: { x: base_x + unit_space * -3, y: base_y + unit_space * -2 }
   },
@@ -120,6 +125,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'β-Ketoacyl-ACP',
     formula: 'Variable',
     smiles: '',
+    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTG3yKfDiQxpOHD27pnnKjo2AQFc4ef3ARJ6w&s',
     description: 'β-Ketoacyl-ACP, condensation product in fatty acid synthase cycle',
     position: { x: base_x + unit_space * -3, y: base_y + unit_space * 0 }
   },
@@ -129,6 +135,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'β-Hydroxyacyl-ACP',
     formula: 'Variable',
     smiles: '',
+    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS95AWbUi3N5kUatu_04BEviHSdXhl3sydWig&s',
     description: 'β-Hydroxyacyl-ACP, reduction product in fatty acid synthase cycle',
     position: { x: base_x + unit_space * -3, y: base_y + unit_space * 1 }
   },
@@ -138,6 +145,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'trans-Enoyl-ACP',
     formula: 'Variable',
     smiles: '',
+    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLa3eCExFmd51UJzAmb7a19RCc3DJ_TxiqqA&s',
     description: 'trans-Enoyl-ACP, dehydration product in fatty acid synthase cycle',
     position: { x: base_x + unit_space * -3, y: base_y + unit_space * 2 }
   },
@@ -147,6 +155,8 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: '(n+2) Fatty acyl-ACP',
     formula: 'Variable',
     smiles: '',
+    pubchemSid: 497620218,
+    pubchemImageVersion: 1,
     description: '(n+2) Fatty acyl-ACP, elongated chain that cycles back in fatty acid synthase',
     position: { x: base_x + unit_space * -3, y: base_y + unit_space * 3 }
   },
@@ -158,6 +168,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Malonyl-ACP',
     formula: 'Variable',
     smiles: '',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Malonyl-ACP.svg/2560px-Malonyl-ACP.svg.png',
     description: 'Malonyl-ACP, transferred from malonyl-CoA for fatty acid synthesis',
     position: { x: base_x + unit_space * -1.75, y: base_y + unit_space * -1.25}
   },
@@ -167,6 +178,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Acetyl-ACP',
     formula: 'Variable',
     smiles: '',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Acetyl-ACP.svg',
     description: 'Acetyl-ACP, transferred from acetyl-CoA for fatty acid synthesis initiation',
     position: { x: base_x + unit_space * -1, y: base_y + unit_space * 0 }
   },
@@ -203,6 +215,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'lipoproteins',
     type: 'molecule',
     name: 'Lipoproteins (extrahepatic metabolism)',
+    imageUrl: 'https://c8.alamy.com/comp/CXRRJ8/lipoproteins-of-the-blood-ldl-and-hdl-structure-CXRRJ8.jpg',
     description: 'Lipoproteins transporting lipids in the blood',
     position: { x: base_x + unit_space * -8, y: base_y + unit_space * 3.5 }
   },
@@ -210,6 +223,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'free_fatty_acids_intercellular',
     type: 'molecule',
     name: 'Free fatty acids (intercellular space)',
+    pubchemCid: 985, // Palmitic Acid as representative
     description: 'Free fatty acids in the intercellular space',
     position: { x: base_x + unit_space * -7, y: base_y + unit_space * 3.5 }
   },
@@ -217,6 +231,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'free_fatty_acids_plasma',
     type: 'molecule',
     name: 'Free fatty acids (in plasma membrane)',
+    pubchemCid: 985, // Palmitic Acid as representative
     description: 'Free fatty acids crossing the plasma membrane',
     position: { x: base_x + unit_space * -4, y: base_y + unit_space * 3.5 }
   },
@@ -224,6 +239,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'fatty_acids_peroxisomes',
     type: 'molecule',
     name: 'Fatty acids > C24 to peroxisomes',
+    pubchemCid: 10469,
     description: 'Very long chain fatty acids (>C24) destined for peroxisomes',
     position: { x: base_x + unit_space * -5, y: base_y + unit_space * 4.5 }
   },
@@ -231,6 +247,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'fatty_acids_short',
     type: 'molecule',
     name: 'Fatty acids ≤ C12',
+    pubchemCid: 379,
     description: 'Short and medium chain fatty acids (≤C12) that can diffuse into mitochondria',
     position: { x: base_x + unit_space * -4, y: base_y + unit_space * 4.5 }
   },
@@ -238,6 +255,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'fatty_acids_medium_long',
     type: 'molecule',
     name: 'Fatty acids > C14 and < C22',
+    pubchemCid: 985,
     description: 'Long chain fatty acids (>C14 and <C22) requiring carnitine shuttle',
     position: { x: base_x + unit_space * -3, y: base_y + unit_space * 4.5 }
   },
@@ -245,6 +263,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'fatty_acids_short_mitochondria',
     type: 'molecule',
     name: 'Fatty acids ≤ C12 to mitochondria',
+    pubchemCid: 379,
     description: 'Short and medium chain fatty acids (≤C12) that can diffuse into mitochondria',
     position: { x: base_x + unit_space * -4, y: base_y + unit_space * 6.5 }
   },
@@ -252,6 +271,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'diet_fas',
     type: 'molecule',
     name: 'Diet',
+    pubchemCid: null, // No specific CID for "Diet"
     description: 'Dietary source of carnitine',
     position: { x: base_x + unit_space * -10, y: base_y + unit_space * 4 }
   },

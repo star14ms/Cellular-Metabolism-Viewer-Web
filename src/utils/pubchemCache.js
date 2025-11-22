@@ -158,6 +158,13 @@ export function shouldInvalidateCache(cachedData, molecule) {
     return true;
   }
   
+  // Invalidate if CID changed
+  const cachedCid = cachedData.cid?.toString();
+  const nodeCid = molecule.pubchemCid?.toString();
+  if (nodeCid && cachedCid !== nodeCid) {
+    return true;
+  }
+
   // Invalidate if version changed
   if (nodeVersion !== null && nodeVersion !== undefined && cachedVersion !== nodeVersion) {
     return true;

@@ -8252,6 +8252,7 @@ export class MetabolismViewer {
           smiles: reaction.node.smiles,
           imageUrl: reaction.node.imageUrl, // Include imageUrl from node data
           pubchemSid: reaction.node.pubchemSid, // Include pubchemSid if available
+          pubchemCid: reaction.node.pubchemCid, // Include pubchemCid if available
           pubchemImageVersion: reaction.node.pubchemImageVersion // Include pubchemImageVersion if available
         };
       } else if (reaction.product) {
@@ -8290,6 +8291,8 @@ export class MetabolismViewer {
             } else if (molecule.pubchemSid && pubchemData.image2DUrl) {
               // Fallback to large image if small not available
               imageUrl = pubchemData.image2DUrl;
+            } else if (molecule.pubchemCid && pubchemData.image2DUrl) {
+              imageUrl = pubchemData.image2DUrl;
             }
           }
         }
@@ -8311,7 +8314,8 @@ export class MetabolismViewer {
                 formula: d.node.formula, 
                 description: d.node.description, 
                 smiles: d.node.smiles,
-                imageUrl: d.node.imageUrl // Include imageUrl from node data
+                imageUrl: d.node.imageUrl, // Include imageUrl from node data
+                pubchemCid: d.node.pubchemCid // Pass CID
               };
             } else if (d.product) {
               // Fallback to product if node not available

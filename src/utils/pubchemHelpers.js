@@ -3,7 +3,7 @@
  * Used across NodeDetail, ArrowDetail, and other components
  */
 
-import { fetchCompoundWithFallback, createSidBasedPubChemData, generateSidImageUrl, PUBCHEM_IMAGE_VERSION } from '../services/pubchemService.js';
+import { fetchCompoundWithFallback, createSidBasedPubChemData, generateSidImageUrl, PUBCHEM_IMAGE_VERSION, fetchCompoundByCid } from '../services/pubchemService.js';
 import { getAlternativeNames } from './moleculeAlternatives.js';
 import { loadCacheFromStorage, saveToStorage, getFromStorage, removeFromStorage, shouldInvalidateCache } from './pubchemCache.js';
 import { useLocalImages } from './localImageHelper.js';
@@ -146,6 +146,25 @@ export async function fetchPubChemData(moleculeName, cache, molecule = null) {
   // Normalize name for search
   const searchName = normalizeMoleculeName(moleculeName);
   
+  // If we have a pubchemCid, use it directly
+  if (molecule?.pubchemCid !== undefined && molecule?.pubchemCid !== null) {
+    try {
+      const cidData = await fetchCompoundByCid(molecule.pubchemCid, imageVersion);
+      
+      // Override name with our molecule name if different (usually we prefer our display name)
+      if (cidData) {
+        cidData.name = moleculeName;
+      }
+      
+      saveToStorage(moleculeName, cidData);
+      if (cache) cache.set(moleculeName, cidData);
+      return useLocalImages(cidData);
+    } catch (error) {
+      console.warn(`Failed to fetch by CID ${molecule.pubchemCid}, falling back to name search:`, error);
+      // Fall through to name search
+    }
+  }
+
   // Try alternative names
   let alternativeNames = getAlternativeNames(moleculeName);
   
