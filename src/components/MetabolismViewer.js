@@ -5816,6 +5816,7 @@ export class MetabolismViewer {
       
       // Add short name label for nucleotide nodes (similar to complex numbers)
       const nucleotideShortName = viewer.getNucleotideShortName(d);
+      
       if (nucleotideShortName) {
         g.append('text')
           .attr('text-anchor', 'middle')
@@ -5824,8 +5825,28 @@ export class MetabolismViewer {
           .attr('dy', '0.35em')
           .attr('font-size', '18px')
           .attr('font-weight', 'bold')
-          .attr('fill', '#000')
+          .attr('fill', '#ffffff')
+          .attr('stroke', '#000000')
+          .attr('stroke-width', '8px')
+          .attr('paint-order', 'stroke')
           .text(nucleotideShortName);
+      } else {
+        // Add three-letter abbreviation for amino acid nodes
+        const aminoAcidShortName = viewer.getAminoAcidShortName(d);
+        if (aminoAcidShortName) {
+          g.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('dy', '0.35em')
+            .attr('font-size', '18px')
+            .attr('font-weight', 'bold')
+            .attr('fill', '#ffffff')
+            .attr('stroke', '#000000')
+            .attr('stroke-width', '8px')
+            .attr('paint-order', 'stroke')
+            .text(aminoAcidShortName);
+        }
       }
     });
     
@@ -7149,6 +7170,85 @@ export class MetabolismViewer {
         return deoxyPrefix.toLowerCase() + base + phosphate;
       } else {
         return base + phosphate;
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Get three-letter abbreviation for amino acid nodes (e.g., "Ala", "Gly", "Leu", "Phe")
+   * Returns null if the node is not an amino acid
+   * @param {Object} reactionNode - The reaction node to check
+   * @returns {string|null} - Three-letter abbreviation or null
+   */
+  getAminoAcidShortName(reactionNode) {
+    if (!reactionNode) return null;
+    
+    // Get the molecule name from the node
+    let moleculeName = null;
+    if (reactionNode.node && reactionNode.node.name) {
+      moleculeName = reactionNode.node.name;
+    } else if (reactionNode.product && reactionNode.product.name) {
+      moleculeName = reactionNode.product.name;
+    } else if (reactionNode.substrate && reactionNode.substrate.name) {
+      moleculeName = reactionNode.substrate.name;
+    }
+    
+    if (!moleculeName) return null;
+    
+    // Remove leading coefficients (e.g., "2 Glycine" -> "Glycine")
+    moleculeName = moleculeName.replace(/^\d+\s+/, '').trim();
+    
+    // Mapping of amino acid names to three-letter abbreviations
+    const aminoAcidMap = {
+      'Alanine': 'Ala',
+      'Arginine': 'Arg',
+      'Asparagine': 'Asn',
+      'Aspartic acid': 'Asp',
+      'Aspartate': 'Asp',
+      'Cysteine': 'Cys',
+      'Glutamic acid': 'Glu',
+      'Glutamate': 'Glu',
+      'Glutamine': 'Gln',
+      'Glycine': 'Gly',
+      'Histidine': 'His',
+      'Isoleucine': 'Ile',
+      'Leucine': 'Leu',
+      'Lysine': 'Lys',
+      'Methionine': 'Met',
+      'Phenylalanine': 'Phe',
+      'Proline': 'Pro',
+      'Serine': 'Ser',
+      'Threonine': 'Thr',
+      'Tryptophan': 'Trp',
+      'Tyrosine': 'Tyr',
+      'Valine': 'Val'
+    };
+    
+    // Check for exact match (case-insensitive)
+    const normalizedName = moleculeName.trim();
+    for (const [fullName, abbreviation] of Object.entries(aminoAcidMap)) {
+      if (normalizedName.toLowerCase() === fullName.toLowerCase()) {
+        return abbreviation;
+      }
+    }
+    
+    // Check if name contains amino acid name (e.g., "L-Phenylalanine" -> "Phe")
+    for (const [fullName, abbreviation] of Object.entries(aminoAcidMap)) {
+      const regex = new RegExp(`\\b${fullName}\\b`, 'i');
+      if (regex.test(normalizedName)) {
+        return abbreviation;
+      }
+    }
+    
+    // Check for three-letter abbreviation in parentheses (e.g., "Phenylalanine (Phe)" -> "Phe")
+    const parenthesesMatch = moleculeName.match(/\(([A-Z][a-z]{2})\)/);
+    if (parenthesesMatch) {
+      const abbrev = parenthesesMatch[1];
+      // Verify it's a valid amino acid abbreviation
+      if (Object.values(aminoAcidMap).includes(abbrev)) {
+        return abbrev;
       }
     }
     
