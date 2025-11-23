@@ -1573,6 +1573,9 @@ export class MetabolismViewer {
       });
     }
     
+    // Initialize highlighted node IDs tracking
+    this.highlightedNodeIds = new Set();
+    
     // Highlight all nodes from the sub-pathway (including extended nodes from other pathways)
     subPathwayNodeIds.forEach(nodeId => {
       // Check if the node exists in nodeMap (it might be from another pathway)
@@ -1582,12 +1585,17 @@ export class MetabolismViewer {
           const reactionGroup = this.reactionGroups.filter(d => d && d.nodeId === nodeId);
           if (!reactionGroup.empty()) {
             this.applyNodeHighlightStyle(reactionGroup, 'product');
+            // Track this node as highlighted
+            this.highlightedNodeIds.add(nodeId);
           }
         }
       }
       // Note: If a node doesn't exist in nodeMap or doesn't have a reaction,
       // it means it's not being drawn (e.g., hidden node or doesn't exist), so we skip it
     });
+    
+    // Lower opacity of all non-highlighted nodes
+    this.updateNodeOpacityForHighlight();
     
     this.selectedPathway = virtualPathway.id;
     this.selectedReaction = null;
@@ -1786,6 +1794,9 @@ export class MetabolismViewer {
       });
     }
     
+    // Initialize highlighted node IDs tracking
+    this.highlightedNodeIds = new Set();
+    
     // Highlight all reactions that correspond to nodes from the pathway
     // This includes all nodes from the pathway data file, arrows, and sub-pathways
     // even if they're from other pathways (like alpha_ketoglutarate and succinate from TCA cycle)
@@ -1801,12 +1812,17 @@ export class MetabolismViewer {
           if (!reactionGroup.empty()) {
             // Use 'product' color type for pathway highlighting (red color)
             this.applyNodeHighlightStyle(reactionGroup, 'product');
+            // Track this node as highlighted
+            this.highlightedNodeIds.add(nodeId);
           }
         }
       }
       // Note: If a node doesn't exist in nodeMap or doesn't have a reaction,
       // it means it's not being drawn (e.g., hidden node or doesn't exist), so we skip it
     });
+    
+    // Lower opacity of all non-highlighted nodes
+    this.updateNodeOpacityForHighlight();
     
     this.selectedPathway = pathway.id;
     this.selectedReaction = null;
@@ -6397,71 +6413,8 @@ export class MetabolismViewer {
         this.zoomToReaction(d);
       });
     
-    // Add hover handlers for opacity changes when pathway is selected
-    // Only reduce opacity on hover, not immediately after selection
-    this.reactionGroups
-      .on('mouseenter', function(event, d) {
-        if (!viewer.selectedPathway) return;
-        
-        // Get pathway node IDs for the selected pathway
-        const pathway = viewer.pathways.find(p => p.id === viewer.selectedPathway);
-        if (!pathway) return;
-        
-        const pathwayNodeIds = new Set();
-        if (pathway.nodes) {
-          pathway.nodes.forEach(n => pathwayNodeIds.add(n.id));
-        }
-        if (pathway.arrows) {
-          pathway.arrows.forEach(arrow => {
-            if (arrow.from_id) pathwayNodeIds.add(arrow.from_id);
-            if (arrow.to_id) pathwayNodeIds.add(arrow.to_id);
-          });
-        }
-        if (pathway.subPathways) {
-          pathway.subPathways.forEach(subPathway => {
-            if (subPathway.nodeIds) {
-              subPathway.nodeIds.forEach(nodeId => pathwayNodeIds.add(nodeId));
-            }
-          });
-        }
-        
-        // If this node is not part of the selected pathway, reduce opacity on hover
-        if (d && d.nodeId && !pathwayNodeIds.has(d.nodeId)) {
-          const nodeGroup = d3.select(this);
-          nodeGroup.attr('opacity', 0.3);
-        }
-      })
-      .on('mouseleave', function(event, d) {
-        if (!viewer.selectedPathway) return;
-        
-        // Get pathway node IDs for the selected pathway
-        const pathway = viewer.pathways.find(p => p.id === viewer.selectedPathway);
-        if (!pathway) return;
-        
-        const pathwayNodeIds = new Set();
-        if (pathway.nodes) {
-          pathway.nodes.forEach(n => pathwayNodeIds.add(n.id));
-        }
-        if (pathway.arrows) {
-          pathway.arrows.forEach(arrow => {
-            if (arrow.from_id) pathwayNodeIds.add(arrow.from_id);
-            if (arrow.to_id) pathwayNodeIds.add(arrow.to_id);
-          });
-        }
-        if (pathway.subPathways) {
-          pathway.subPathways.forEach(subPathway => {
-            if (subPathway.nodeIds) {
-              subPathway.nodeIds.forEach(nodeId => pathwayNodeIds.add(nodeId));
-            }
-          });
-        }
-        
-        // If this node is not part of the selected pathway, restore opacity on mouse leave
-        if (d && d.nodeId && !pathwayNodeIds.has(d.nodeId)) {
-          const nodeGroup = d3.select(this);
-          nodeGroup.attr('opacity', 1);
-        }
-      });
+    // Hover handlers for opacity changes when pathway is selected have been removed
+    // Nodes will no longer have their opacity lowered when hovering while a pathway is selected
     
     // Add hover handlers for arrows when pathway is selected
     this.g.selectAll('.connection')
@@ -6986,6 +6939,37 @@ export class MetabolismViewer {
   }
   
   /**
+   * Update opacity of nodes based on highlight state
+   * Lowers opacity of non-highlighted nodes to 0.3, keeps highlighted nodes at 1.0
+   */
+  updateNodeOpacityForHighlight() {
+    if (!this.highlightedNodeIds || this.highlightedNodeIds.size === 0) {
+      // No nodes highlighted, restore all to full opacity
+      this.reactionGroups.attr('opacity', 1);
+      return;
+    }
+    
+    // Capture viewer instance for use in callbacks
+    const viewer = this;
+    
+    // Update opacity for each node group
+    this.reactionGroups.each(function(d) {
+      if (!d || !d.nodeId) return;
+      
+      const nodeGroup = d3.select(this);
+      const nodeId = d.nodeId;
+      
+      // If this node is highlighted, keep full opacity
+      if (viewer.highlightedNodeIds.has(nodeId)) {
+        nodeGroup.attr('opacity', 1);
+      } else {
+        // Otherwise, lower opacity
+        nodeGroup.attr('opacity', 0.3);
+      }
+    });
+  }
+  
+  /**
    * Reset all nodes to their default unhighlighted state
    * Works for all node types: reaction circles, protein complexes, mobile carriers, and image backgrounds
    * Restores pathway-specific colors instead of default colors
@@ -6997,6 +6981,9 @@ export class MetabolismViewer {
     }
     // Capture viewer instance for use in callbacks
     const viewer = this;
+    
+    // Reset opacity of all nodes to full
+    this.reactionGroups.attr('opacity', 1);
     
     // Reset each node to its pathway-specific color
     this.reactionGroups.each(function(d) {
@@ -7345,6 +7332,9 @@ export class MetabolismViewer {
       this.highlightNode(nodeId, 'product');
       this.highlightedNodeIds.add(nodeId);
     });
+    
+    // Lower opacity of all non-highlighted nodes
+    this.updateNodeOpacityForHighlight();
   }
   
   /**
@@ -8135,10 +8125,17 @@ export class MetabolismViewer {
     // Reset all nodes to default state (clears any previous product/reactant highlights)
     this.resetAllNodeHighlights();
     
+    // Initialize highlighted node IDs tracking
+    this.highlightedNodeIds = new Set();
+    
     if (!molecule || !molecule.name) {
       // Fallback: highlight only the selected node if molecule name is not available
       const selectedGroup = this.reactionGroups.filter(d => d === reactionNode);
       this.applyNodeHighlightStyle(selectedGroup, 'default');
+      if (reactionNode && reactionNode.nodeId) {
+        this.highlightedNodeIds.add(reactionNode.nodeId);
+      }
+      this.updateNodeOpacityForHighlight();
       return;
     }
     
@@ -8224,11 +8221,24 @@ export class MetabolismViewer {
     // Highlight all matching nodes
     if (!matchingNodes.empty()) {
       this.applyNodeHighlightStyle(matchingNodes, 'default');
+      // Track all highlighted nodes
+      const viewer = this;
+      matchingNodes.each(function(d) {
+        if (d && d.nodeId) {
+          viewer.highlightedNodeIds.add(d.nodeId);
+        }
+      });
     } else {
       // Fallback: if no matches found, highlight only the selected node
       const selectedGroup = this.reactionGroups.filter(d => d === reactionNode);
       this.applyNodeHighlightStyle(selectedGroup, 'default');
+      if (reactionNode && reactionNode.nodeId) {
+        this.highlightedNodeIds.add(reactionNode.nodeId);
+      }
     }
+    
+    // Lower opacity of all non-highlighted nodes
+    this.updateNodeOpacityForHighlight();
   }
   
   zoomToReaction(reaction) {

@@ -68,7 +68,7 @@ export const glycolysisData = {
       name: 'Gluconeogenesis and Anaplerotic Extensions',
       description: 'Reactions connecting Glycolysis to the Citric Acid Cycle and Gluconeogenesis. Includes the conversion between Oxaloacetate and Malate, and the bypass of Pyruvate Kinase via Oxaloacetate and Malate.',
       reactionIndices: [27, 28, 29],
-      nodeIds: ['pyruvate_glycolysis', 'oxaloacetate', 'malate', 'phosphoenolpyruvate']
+      nodeIds: ['pyruvate_glycolysis', 'oxaloacetate_glycolysis', 'malate_glycolysis', 'phosphoenolpyruvate']
     }
   ]
 };
