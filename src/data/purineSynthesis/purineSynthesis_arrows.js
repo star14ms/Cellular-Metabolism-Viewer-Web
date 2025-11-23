@@ -8,7 +8,8 @@ export const purineSynthesisArrows = [
     id: 'arrow_purine_synthesis_1',
     from_id: 'prpp_purine',
     to_id: 'phosphoribosylamine',
-    reaction_id: 'rxn_purine_synthesis_1'
+    reaction_id: 'rxn_purine_synthesis_1',
+    flipped: true
   },
   {
     id: 'arrow_purine_synthesis_2',
@@ -26,13 +27,15 @@ export const purineSynthesisArrows = [
     id: 'arrow_purine_synthesis_4',
     from_id: 'fgar',
     to_id: 'fgam',
-    reaction_id: 'rxn_purine_synthesis_4'
+    reaction_id: 'rxn_purine_synthesis_4',
+    flipped: true
   },
   {
     id: 'arrow_purine_synthesis_5',
     from_id: 'fgam',
     to_id: 'air',
-    reaction_id: 'rxn_purine_synthesis_5'
+    reaction_id: 'rxn_purine_synthesis_5',
+    x_scale: 0.8
   },
   {
     id: 'arrow_purine_synthesis_6',
@@ -44,13 +47,17 @@ export const purineSynthesisArrows = [
     id: 'arrow_purine_synthesis_7',
     from_id: 'cair',
     to_id: 'saicar',
-    reaction_id: 'rxn_purine_synthesis_7'
+    reaction_id: 'rxn_purine_synthesis_7',
+    x_scale: 0.8,
+    flipped: true
   },
   {
     id: 'arrow_purine_synthesis_8',
     from_id: 'saicar',
     to_id: 'aicar',
-    reaction_id: 'rxn_purine_synthesis_8'
+    reaction_id: 'rxn_purine_synthesis_8',
+    x_scale: 0.8,
+    flipped: true
   },
   {
     id: 'arrow_purine_synthesis_9',
@@ -93,6 +100,33 @@ export const purineSynthesisArrows = [
     to_id: 'atp',
     reaction_id: 'rxn_purine_synthesis_14',
     flipped: true
+  },
+  // Branches from ATP
+  {
+    id: 'arrow_purine_synthesis_27',
+    from_id: 'atp',
+    to_id: 's_adenosyl_methionine',
+    reaction_id: 'rxn_purine_synthesis_27',
+    flipped: true
+  },
+  {
+    id: 'arrow_purine_synthesis_28',
+    from_id: 'atp',
+    to_id: 'coenzyme_a',
+    reaction_id: 'rxn_purine_synthesis_27',
+    flipped: true
+  },
+  {
+    id: 'arrow_purine_synthesis_29',
+    from_id: 'atp',
+    to_id: 'nadh_purine',
+    reaction_id: 'rxn_purine_synthesis_27'
+  },
+  {
+    id: 'arrow_purine_synthesis_30',
+    from_id: 'atp',
+    to_id: 'fadh2_purine',
+    reaction_id: 'rxn_purine_synthesis_27'
   },
   
   // Base salvage pathway arrows
@@ -162,6 +196,13 @@ export const purineSynthesisArrows = [
     to_id: 'gtp',
     reaction_id: 'rxn_purine_synthesis_19'
   },
+  // Branch from GTP
+  {
+    id: 'arrow_purine_synthesis_31',
+    from_id: 'gtp',
+    to_id: 'biopterin',
+    reaction_id: 'rxn_purine_synthesis_31'
+  },
   
   // Reverse arrows: AMP and GMP to IMP
   {
@@ -169,7 +210,6 @@ export const purineSynthesisArrows = [
     from_id: 'amp_purine',
     to_id: 'imp',
     reaction_id: 'rxn_purine_synthesis_25',
-    flipped: true
   },
   {
     id: 'arrow_purine_synthesis_26',
@@ -177,41 +217,5 @@ export const purineSynthesisArrows = [
     to_id: 'imp',
     reaction_id: 'rxn_purine_synthesis_26'
   },
-  
-  // Branches from ATP
-  // {
-  //   id: 'arrow_purine_synthesis_27',
-  //   from_id: 'atp',
-  //   to_id: 's_adenosyl_methionine',
-  //   reaction_id: 'rxn_purine_synthesis_27',
-  //   flipped: true
-  // },
-  // {
-  //   id: 'arrow_purine_synthesis_28',
-  //   from_id: 'atp',
-  //   to_id: 'coenzyme_a',
-  //   reaction_id: 'rxn_purine_synthesis_28',
-  //   flipped: true
-  // },
-  // {
-  //   id: 'arrow_purine_synthesis_29',
-  //   from_id: 'atp',
-  //   to_id: 'nadh',
-  //   reaction_id: 'rxn_purine_synthesis_29'
-  // },
-  // {
-  //   id: 'arrow_purine_synthesis_30',
-  //   from_id: 'atp',
-  //   to_id: 'fadh2',
-  //   reaction_id: 'rxn_purine_synthesis_30'
-  // },
-  
-  // Branch from GTP
-  // {
-  //   id: 'arrow_purine_synthesis_31',
-  //   from_id: 'gtp',
-  //   to_id: 'biopterin',
-  //   reaction_id: 'rxn_purine_synthesis_31'
-  // }
 ];
 

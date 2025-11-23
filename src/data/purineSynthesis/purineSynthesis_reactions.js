@@ -6,8 +6,10 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_1',
     name: '5-Phosphoribosylamine Synthesis',
-    byreactant: ['Glutamine'],
-    byproduct: ['Glutamate', 'PPi'],
+    byreactant: ['glutamine_purine_1'],
+    byproduct: ['PPi'],
+    displayByproduct: ['glutamate_purine_1'],
+    hideByreactantLabels: true,
     enzyme: {
       name: 'Glutamine PRPP amidotransferase (GPAT)',
       ecNumber: 'EC 2.4.2.14',
@@ -25,8 +27,9 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_2',
     name: 'Glycinamide Ribonucleotide (GAR) Synthesis',
-    byreactant: ['Glycine', 'ATP'],
+    byreactant: ['ATP'],
     byproduct: ['ADP', 'Pi'],
+    displayByreactant: ['glycine_purine'],
     enzyme: {
       name: 'GAR synthetase',
       ecNumber: 'EC 6.3.4.13',
@@ -44,8 +47,10 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_3',
     name: 'Formyl-GAR (FGAR) Synthesis',
-    byreactant: ['N¹⁰-formyl-THF'],
-    byproduct: ['THF'],
+    byreactant: ['n10_formyl_thf_purine_1'],
+    byproduct: ['thf_purine_1'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
     enzyme: {
       name: 'GAR transformylase',
       ecNumber: 'EC 2.1.2.2',
@@ -63,8 +68,10 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_4',
     name: 'Formiminoglycinamidine Ribonucleotide (FGAM) Synthesis',
-    byreactant: ['H₂O', 'ATP', 'Glutamine'],
-    byproduct: ['ADP', 'Pi', 'Glutamate'],
+    byreactant: ['H₂O', 'ATP'],
+    byproduct: ['ADP', 'Pi'],
+    displayByreactant: ['glutamine_purine_4'],
+    displayByproduct: ['glutamate_purine_4'],
     enzyme: {
       name: 'FGAM synthetase',
       ecNumber: 'EC 6.3.5.3',
@@ -119,8 +126,9 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_7',
     name: 'Succinylaminoimidazole Carboxamide Ribonucleotide (SAICAR) Synthesis',
-    byreactant: ['ATP', 'Aspartate'],
+    byreactant: ['ATP'],
     byproduct: ['ADP', 'Pi'],
+    displayByreactant: ['aspartate_purine'],
     enzyme: {
       name: 'SAICAR synthetase',
       ecNumber: 'EC 6.3.2.6',
@@ -139,7 +147,8 @@ export const purineSynthesisReactions = [
     id: 'rxn_purine_synthesis_8',
     name: 'Aminoimidazole Carboxamide Ribonucleotide (AICAR) Synthesis',
     byreactant: ['H₂O'],
-    byproduct: ['Fumarate'],
+    byproduct: ['fumarate_purine'],
+    hideByproductLabels: true,
     enzyme: {
       name: 'Adenylosuccinate lyase',
       ecNumber: 'EC 4.3.2.2',
@@ -157,8 +166,10 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_9',
     name: 'Formaminoimidazole Carboxamide Ribonucleotide (FAICAR) Synthesis',
-    byreactant: ['N¹⁰-formyl-THF'],
-    byproduct: ['THF'],
+    byreactant: ['n10_formyl_thf_purine_9'],
+    byproduct: ['thf_purine_9'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
     enzyme: {
       name: 'AICAR transformylase',
       ecNumber: 'EC 2.1.2.3',
@@ -194,8 +205,9 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_15',
     name: 'IMP Synthesis from Hypoxanthine',
-    byreactant: ['PRPP'],
+    byreactant: ['prpp_purine_hypoxanthine'],
     byproduct: ['PPi'],
+    hideByreactantLabels: true,
     enzyme: {
       name: 'Hypoxanthine-guanine phosphoribosyltransferase (HGPRT)',
       ecNumber: 'EC 2.4.2.8',
@@ -215,8 +227,9 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_11',
     name: 'Adenylosuccinate Synthesis',
-    byreactant: ['Aspartate', 'GTP'],
+    byreactant: ['GTP'],
     byproduct: ['GDP', 'Pi'],
+    displayByreactant: ['aspartate_purine_amp'],
     enzyme: {
       name: 'Adenylosuccinate synthetase',
       ecNumber: 'EC 6.3.4.4',
@@ -234,7 +247,8 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_12',
     name: 'AMP Synthesis',
-    byproduct: ['Fumarate'],
+    byproduct: ['fumarate_purine_amp'],
+    hideByproductLabels: true,
     enzyme: {
       name: 'Adenylosuccinate lyase',
       ecNumber: 'EC 4.3.2.2',
@@ -380,6 +394,23 @@ export const purineSynthesisReactions = [
       isReversible: true
     }
   },
+  {
+    id: 'rxn_purine_synthesis_27',
+    name: 'ATP Branching to Cofactors',
+    enzyme: {
+      name: 'Various enzymes',
+      ecNumber: 'N/A',
+      cofactors: ['Various'],
+      description: 'ATP serves as a precursor for various cofactors including S-adenosyl methionine, Coenzyme A, NADH, and FADH2'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Multiple pathways branching from ATP',
+      isReversible: false
+    }
+  },
   
   // Right branch: IMP → GMP pathway
   {
@@ -404,8 +435,10 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_17',
     name: 'GMP Synthesis',
-    byreactant: ['Glutamine', 'ATP'],
-    byproduct: ['Glutamate', 'AMP', 'PPi'],
+    byreactant: ['ATP'],
+    byproduct: ['AMP', 'PPi'],
+    displayByreactant: ['glutamine_purine_gmp'],
+    displayByproduct: ['glutamate_purine_gmp'],
     enzyme: {
       name: 'GMP synthetase',
       ecNumber: 'EC 6.3.5.2',
@@ -442,8 +475,9 @@ export const purineSynthesisReactions = [
   {
     id: 'rxn_purine_synthesis_21',
     name: 'GMP Synthesis from Guanine',
-    byreactant: ['PRPP'],
+    byreactant: ['prpp_purine_guanine'],
     byproduct: ['PPi'],
+    hideByreactantLabels: true,
     enzyme: {
       name: 'Hypoxanthine-guanine phosphoribosyltransferase (HGPRT)',
       ecNumber: 'EC 2.4.2.8',
@@ -494,6 +528,23 @@ export const purineSynthesisReactions = [
       temperature: '37°C',
       regulation: 'Reversible reaction maintaining nucleotide balance',
       isReversible: true
+    }
+  },
+  {
+    id: 'rxn_purine_synthesis_31',
+    name: 'Biopterin Synthesis',
+    enzyme: {
+      name: 'GTP cyclohydrolase I',
+      ecNumber: 'EC 3.5.4.16',
+      cofactors: ['None'],
+      description: 'Catalyzes the synthesis of biopterin from GTP'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Part of biopterin synthesis pathway',
+      isReversible: false
     }
   },
   

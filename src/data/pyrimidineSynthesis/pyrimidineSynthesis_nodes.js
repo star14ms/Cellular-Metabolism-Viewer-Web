@@ -29,7 +29,28 @@ export const pyrimidineSynthesisNodes = [
     formula: 'C₄H₇NO₄⁻',
     smiles: 'C(C(C(=O)O)N)C(=O)[O-]',
     description: 'Amino acid used in the synthesis of N-carbamoyl aspartate',
-    position: { x: base_x - unit_space * 0.5, y: base_y + unit_space * 1.15 }
+    position: { x: base_x + unit_space * 0.5, y: base_y + unit_space * 1.25 }
+  },
+  // Glutamine/Glutamate pair for reaction 1 (Carbamoyl phosphate synthesis)
+  {
+    id: 'glutamine_pyrimidine_cps',
+    type: 'molecule',
+    name: 'Glutamine',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₁₀N₂O₃',
+    smiles: 'N[C@@H](CCC(=O)O)C(=O)N',
+    description: 'Amino acid used as nitrogen source in carbamoyl phosphate synthesis',
+    position: { x: base_x + unit_space * -0.66, y: base_y + unit_space * 0.2 }
+  },
+  {
+    id: 'glutamate_pyrimidine_cps',
+    type: 'molecule',
+    name: 'Glutamate',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₉NO₄',
+    smiles: 'N[C@@H](CCC(=O)O)C(=O)O',
+    description: 'Amino acid produced from glutamine in carbamoyl phosphate synthesis',
+    position: { x: base_x + unit_space * -0.66, y: base_y + unit_space * 0.8 }
   },
   {
     id: 'prpp_pyrimidine',
@@ -39,7 +60,7 @@ export const pyrimidineSynthesisNodes = [
     formula: 'C₅H₁₃O₁₄P₃',
     smiles: 'C1C(C(C(O1)COP(=O)(O)OP(=O)(O)O)O)O',
     description: '5-Phosphoribosyl-1-pyrophosphate, a key intermediate in nucleotide synthesis',
-    position: { x: base_x - unit_space * 0.5, y: base_y + unit_space * 4.15 }
+    position: { x: base_x - unit_space * 0.66, y: base_y + unit_space * 4.25 }
   },
   
   // Pathway intermediates
@@ -123,6 +144,27 @@ export const pyrimidineSynthesisNodes = [
     smiles: 'C1=NC(=O)N(C=C1)C2C(C(C(O2)COP(=O)(O)OP(=O)(O)OP(=O)(O)O)O)O',
     description: 'Cytidine triphosphate, the final product of de novo pyrimidine synthesis',
     position: { x: base_x, y: base_y + unit_space * 9 }
+  },
+  // Glutamine/Glutamate pair for reaction 9 (CTP synthesis)
+  {
+    id: 'glutamine_pyrimidine_ctp',
+    type: 'molecule',
+    name: 'Glutamine',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₁₀N₂O₃',
+    smiles: 'N[C@@H](CCC(=O)O)C(=O)N',
+    description: 'Amino acid used as nitrogen source in CTP synthesis',
+    position: { x: base_x + unit_space * -0.75, y: base_y + unit_space * 8.15 }
+  },
+  {
+    id: 'glutamate_pyrimidine_ctp',
+    type: 'molecule',
+    name: 'Glutamate',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₉NO₄',
+    smiles: 'N[C@@H](CCC(=O)O)C(=O)O',
+    description: 'Amino acid produced from glutamine in CTP synthesis',
+    position: { x: base_x + unit_space * -0.75, y: base_y + unit_space * 8.85 }
   }
 ];
 

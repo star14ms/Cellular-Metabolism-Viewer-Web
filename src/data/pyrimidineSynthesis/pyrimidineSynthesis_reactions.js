@@ -6,8 +6,10 @@ export const pyrimidineSynthesisReactions = [
   {
     id: 'rxn_pyrimidine_synthesis_1',
     name: 'Carbamoyl Phosphate Synthesis',
-    byreactant: ['2 ATP', 'Glutamine'],
-    byproduct: ['2 ADP', 'Pi', 'Glutamate'],
+    byreactant: ['2 ATP'],
+    byproduct: ['2 ADP', 'Pi'],
+    displayByreactant: ['glutamine_pyrimidine_cps'],
+    displayByproduct: ['glutamate_pyrimidine_cps'],
     enzyme: {
       name: 'Carbamoyl phosphate synthetase II (CPSII)',
       ecNumber: 'EC 6.3.5.5',
@@ -158,8 +160,10 @@ export const pyrimidineSynthesisReactions = [
   {
     id: 'rxn_pyrimidine_synthesis_9',
     name: 'Cytidine Triphosphate (CTP) Synthesis',
-    byreactant: ['ATP', 'Glutamine'],
-    byproduct: ['ADP', 'Pi', 'Glutamate'],
+    byreactant: ['ATP'],
+    byproduct: ['ADP', 'Pi'],
+    displayByreactant: ['glutamine_pyrimidine_ctp'],
+    displayByproduct: ['glutamate_pyrimidine_ctp'],
     enzyme: {
       name: 'CTP synthetase',
       ecNumber: 'EC 6.3.4.2',
