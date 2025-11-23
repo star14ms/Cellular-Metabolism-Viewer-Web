@@ -27,6 +27,7 @@ import { cholesterolSynthesisNodes, cholesterolSynthesisReactions, cholesterolSy
 import { steroidHormoneSynthesisNodes, steroidHormoneSynthesisReactions, steroidHormoneSynthesisArrows, steroidHormoneSynthesisData } from './steroidHormoneSynthesis/steroidHormoneSynthesis_index.js';
 import { fattyAcidAndLipidSynthesisNodes, fattyAcidAndLipidSynthesisReactions, fattyAcidAndLipidSynthesisArrows, fattyAcidAndLipidSynthesisData } from './fattyAcidAndLipidSynthesis/fattyAcidAndLipidSynthesis_index.js';
 import { fattyAcidOxidationNodes, fattyAcidOxidationReactions, fattyAcidOxidationArrows, fattyAcidOxidationData } from './fattyAcidOxidation/fattyAcidOxidation_index.js';
+import { ketoneBodyMetabolismNodes, ketoneBodyMetabolismReactions, ketoneBodyMetabolismArrows, ketoneBodyMetabolismData } from './ketoneBodyMetabolism/ketoneBodyMetabolism_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -50,7 +51,8 @@ export const allNodes = [
   ...cholesterolSynthesisNodes,
   ...steroidHormoneSynthesisNodes,
   ...fattyAcidAndLipidSynthesisNodes,
-  ...fattyAcidOxidationNodes
+  ...fattyAcidOxidationNodes,
+  ...ketoneBodyMetabolismNodes
 ];
 
 // Combine all reactions
@@ -75,7 +77,8 @@ export const allReactions = [
   ...cholesterolSynthesisReactions,
   ...steroidHormoneSynthesisReactions,
   ...fattyAcidAndLipidSynthesisReactions,
-  ...fattyAcidOxidationReactions
+  ...fattyAcidOxidationReactions,
+  ...ketoneBodyMetabolismReactions
 ];
 
 // Combine all arrows
@@ -100,7 +103,8 @@ export const allArrows = [
   ...cholesterolSynthesisArrows,
   ...steroidHormoneSynthesisArrows,
   ...fattyAcidAndLipidSynthesisArrows,
-  ...fattyAcidOxidationArrows
+  ...fattyAcidOxidationArrows,
+  ...ketoneBodyMetabolismArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -129,7 +133,8 @@ export const PATHWAY_CONFIG = {
     'cholesterol-synthesis': 'Cholesterol Synthesis',
     'steroid-hormone-synthesis': 'Steroid Hormone Synthesis',
     'fatty-acid-and-lipid-synthesis': 'Fatty Acid and Lipid Synthesis',
-    'fatty-acid-oxidation': 'Fatty Acid Oxidation'
+    'fatty-acid-oxidation': 'Fatty Acid Oxidation',
+    'ketone-body-metabolism': 'Ketone Body Metabolism'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -236,6 +241,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'fatty-acid-oxidation': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'ketone-body-metabolism': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -429,6 +439,15 @@ const pathwayDefinitions = [
     arrows: fattyAcidOxidationArrows,
     data: fattyAcidOxidationData,
     subPathways: fattyAcidOxidationData.subPathways || null
+  },
+  {
+    id: 'ketone-body-metabolism',
+    name: 'Ketone Body Metabolism',
+    nodes: ketoneBodyMetabolismNodes,
+    reactions: ketoneBodyMetabolismReactions,
+    arrows: ketoneBodyMetabolismArrows,
+    data: ketoneBodyMetabolismData,
+    subPathways: ketoneBodyMetabolismData.subPathways || null
   }
 ];
 

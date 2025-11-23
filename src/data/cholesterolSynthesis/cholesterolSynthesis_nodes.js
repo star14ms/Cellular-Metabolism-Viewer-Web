@@ -120,6 +120,7 @@ export const cholesterolSynthesisNodes = [
     name: 'Vitamin D',
     formula: 'C₂₇H₄₄O',
     smiles: 'CC(C)CCCC(C)C1CCC2C1(CCC3C2CC=C4C3(CCC(C4)O)C)C',
+    pubchemSid: 5280795,
     description: 'Vitamin D synthesized from 7-dehydrocholesterol in the skin upon UV exposure',
     position: { x: base_x - unit_space * 1.5, y: base_y + unit_space * 8 }
   },
@@ -138,6 +139,7 @@ export const cholesterolSynthesisNodes = [
     name: 'Cell Membranes',
     formula: 'Variable',
     smiles: '',
+    imageUrl: 'https://t3.ftcdn.net/jpg/07/19/12/24/360_F_719122417_2q5UiSGOIRgIeo3wpagoweYwOg55rXjs.jpg',
     description: 'Cholesterol incorporated into cell membranes to maintain fluidity and structure',
     position: { x: base_x + unit_space * 1.5, y: base_y + unit_space * 9 }
   },
@@ -147,6 +149,7 @@ export const cholesterolSynthesisNodes = [
     name: 'Lipoproteins',
     formula: 'Variable',
     smiles: '',
+    imageUrl: 'https://c8.alamy.com/comp/CXRRJ8/lipoproteins-of-the-blood-ldl-and-hdl-structure-CXRRJ8.jpg',
     description: 'Cholesterol transported in the body as part of lipoproteins (LDL, HDL, etc.)',
     position: { x: base_x + unit_space * 1.5, y: base_y + unit_space * 8 }
   }

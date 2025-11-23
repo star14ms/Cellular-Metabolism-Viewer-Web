@@ -127,7 +127,7 @@ export class PathwayDetail {
                      style="cursor: pointer;">
                   <div class="reaction-step">Step ${relativeStepNumber}</div>
                   <div class="reaction-name">${reaction.name}</div>
-                  <div class="reaction-enzyme">${reaction.enzyme.name}</div>
+                  <div class="reaction-enzyme">${reaction.enzyme?.name || 'N/A'}</div>
                   ${isSelected && selectedType === 'molecule' ? `<div class="reaction-selection-note">Selected molecule: ${selectedMolecule?.name || reaction.substrate.name}</div>` : ''}
                 </div>
               `;

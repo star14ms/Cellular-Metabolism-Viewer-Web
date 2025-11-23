@@ -217,9 +217,9 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'lipoproteins',
     type: 'molecule',
     name: 'Lipoproteins (extrahepatic metabolism)',
-    imageUrl: 'https://c8.alamy.com/comp/CXRRJ8/lipoproteins-of-the-blood-ldl-and-hdl-structure-CXRRJ8.jpg',
+    imageUrl: 'https://www.ncbi.nlm.nih.gov/books/NBK305896/bin/lipid_intro-Image007.jpg',
     description: 'Lipoproteins transporting lipids in the blood',
-    position: { x: base_x + unit_space * -11, y: base_y + unit_space * 3.5 }
+    position: { x: base_x + unit_space * -12, y: base_y + unit_space * 3.5 }
   },
   {
     id: 'free_fatty_acids_intercellular',
@@ -227,7 +227,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Free fatty acids (intercellular space)',
     pubchemCid: 985, // Palmitic Acid as representative
     description: 'Free fatty acids in the intercellular space',
-    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 3.5 }
+    position: { x: base_x + unit_space * -11, y: base_y + unit_space * 3.5 }
   },
   {
     id: 'free_fatty_acids_plasma',
@@ -273,9 +273,9 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'diet_fas',
     type: 'molecule',
     name: 'Diet',
-    pubchemCid: null, // No specific CID for "Diet"
+    imageUrl: 'https://www.shutterstock.com/shutterstock/photos/2219112733/display_1500/stock-vector-l-carnitine-containing-food-groups-of-healthy-products-containing-vitamins-and-minerals-set-of-2219112733.jpg',
     description: 'Dietary source of carnitine',
-    position: { x: base_x + unit_space * -11, y: base_y + unit_space * 6 }
+    position: { x: base_x + unit_space * -12, y: base_y + unit_space * 6 }
   },
   {
     id: 'carnitine',
@@ -284,15 +284,16 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₇H₁₅NO₃',
     smiles: 'C[N+](C)(C)CC(CC(=O)[O-])O',
     description: 'Carnitine, essential for transport of long-chain fatty acids into mitochondria',
-    position: { x: base_x + unit_space * -10, y: base_y + unit_space * 6 }
+    position: { x: base_x + unit_space * -11, y: base_y + unit_space * 6 }
   },
   {
     id: 'carnitine_transporter',
     type: 'complex',
     name: 'Carnitine Transporter',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Acyl-CoA_from_cytosol_to_the_mitochondrial_matrix.svg/800px-Acyl-CoA_from_cytosol_to_the_mitochondrial_matrix.svg.png',
     description: 'Protein complex transporting carnitine across the cell membrane',
     complexSize: { width: 80, height: 60 },
-    position: { x: base_x + unit_space * -8, y: base_y + unit_space * 6 }
+    position: { x: base_x + unit_space * -9, y: base_y + unit_space * 6 }
   },
   // Ethanol Metabolism
   {

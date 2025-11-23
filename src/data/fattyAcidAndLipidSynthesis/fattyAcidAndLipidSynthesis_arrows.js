@@ -12,7 +12,8 @@ export const fattyAcidAndLipidSynthesisArrows = [
     from_id: 'citrate_fas',
     to_id: 'acetyl_coa_fas',
     reaction_id: 'rxn_fas_1',
-    flipped: true
+    flipped: true,
+    y_scale: 1.33
   },
 
   // Step 2: acetyl-CoA -> malonyl-CoA
