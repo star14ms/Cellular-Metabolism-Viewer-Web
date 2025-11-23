@@ -484,9 +484,45 @@ export class MetabolismViewer {
       // Label colors are now handled by CSS variables, no need to update here
     };
     
+    // Update button text colors when theme changes
+    const updateButtonTextColors = () => {
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      
+      // Update all pathway buttons (main and sub-pathway buttons)
+      if (this.pathwayButtonGroup) {
+        this.pathwayButtonGroup.selectAll('.pathway-button').each(function() {
+          const button = d3.select(this);
+          const rect = button.select('rect');
+          const text = button.select('text');
+          
+          if (rect.empty() || text.empty()) return;
+          
+          // Check if button is selected by checking stroke-width (selected = 3, non-selected = 2)
+          // Also check fill to distinguish selected from hovered (selected has filled background)
+          const strokeWidth = parseFloat(rect.attr('stroke-width')) || 2;
+          const fill = rect.attr('fill');
+          const isSelected = strokeWidth === 3 && fill !== 'transparent' && fill !== '';
+          
+          // Update text color based on selection state and theme
+          if (isSelected) {
+            // Selected buttons always have white text
+            text.transition()
+              .duration(200)
+              .attr('fill', 'white');
+          } else {
+            // Non-selected buttons: black in light mode, white in dark mode
+            text.transition()
+              .duration(200)
+              .attr('fill', isDarkMode ? 'white' : 'black');
+          }
+        });
+      }
+    };
+    
     // Listen for theme changes
     const observer = new MutationObserver(() => {
       updateSVGBackground();
+      updateButtonTextColors();
     });
     observer.observe(document.documentElement, {
       attributes: true,
@@ -903,164 +939,177 @@ export class MetabolismViewer {
     .on('mouseleave', function() {
       d3.select(this).select('circle')
         .transition().duration(200)
-        .attr('fill', 'transparent')
+        .attr('fill', PATHWAY_CONFIG.colors.primary)
         .attr('stroke-width', 2);
     });
   }
   
+  /**
+   * Create a styled button with consistent behavior
+   * @param {Object} container - D3 selection of the container group
+   * @param {Object} config - Button configuration
+   * @returns {Object} - D3 selection of the button group
+   */
+  createButton(container, config) {
+    const {
+      x,
+      y,
+      width,
+      height,
+      text,
+      className = '',
+      colors = { hover: PATHWAY_CONFIG.colors.primaryHover },
+      isSelected = false,
+      onClick = () => {},
+      dataAttrs = {}
+    } = config;
+
+    const button = container.append('g')
+      .attr('class', `pathway-button btn ${className}`)
+      .attr('transform', `translate(${x}, ${y})`);
+    
+    // Apply data attributes
+    Object.entries(dataAttrs).forEach(([key, value]) => {
+      button.attr(key, value);
+    });
+
+    // Button background
+    button.append('rect')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('rx', 6)
+      .attr('fill', isSelected ? (colors.selected || colors.hover) : 'transparent')
+      .attr('stroke', colors.hover)
+      .attr('stroke-width', isSelected ? 3 : 2);
+
+    // Determine initial text color
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const initialTextColor = isSelected ? 'white' : (isDarkMode ? 'white' : 'black');
+
+    // Button text
+    button.append('text')
+      .attr('x', width / 2)
+      .attr('y', height / 2 + 3) // Vertically centered
+      .attr('text-anchor', 'middle')
+      .attr('fill', initialTextColor)
+      .attr('font-size', '10px')
+      .attr('font-weight', '600')
+      .text(text);
+
+    // Event handlers
+    button.on('mouseenter', function() {
+      if (!isSelected) {
+        d3.select(this).select('rect')
+          .attr('fill', colors.hover)
+          .attr('stroke-width', 3);
+        
+        d3.select(this).select('text')
+          .attr('fill', 'white');
+      }
+    })
+    .on('mouseleave', function() {
+      if (!isSelected) {
+        d3.select(this).select('rect')
+          .attr('fill', 'transparent')
+          .attr('stroke-width', 2);
+        
+        const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        d3.select(this).select('text')
+          .transition()
+          .duration(200)
+          .attr('fill', currentIsDarkMode ? 'white' : 'black');
+      }
+    })
+    .on('click', (event) => {
+      event.stopPropagation();
+      onClick(event);
+    });
+
+    return button;
+  }
+
   drawPathwayButtons() {
     // Create a group for pathway buttons
-    const buttonGroup = this.svg.append('g')
-      .attr('class', 'pathway-buttons');
+    let buttonGroup = this.svg.select('.pathway-buttons');
+    if (buttonGroup.empty()) {
+      buttonGroup = this.svg.append('g').attr('class', 'pathway-buttons');
+    } else {
+      buttonGroup.selectAll('*').remove();
+    }
     
     // Position buttons at the top-left of the map
-    const buttonY = 20; // Match top margin of theme toggle button
-    const horizontalPadding = 16; // Consistent padding: 8px on each side
-    const verticalPadding = 16; // Consistent padding: 8px on top and bottom
-    const buttonHeight = 28; // Height accounting for vertical padding (8px top + text ~10px + 8px bottom)
+    const buttonY = 20;
+    const horizontalPadding = 16;
+    const buttonHeight = 28;
     
-    // Helper function to calculate button width based on text length
-    // Uses a temporary text element to measure actual text width for accuracy
+    // Helper to calculate width
     const calculateButtonWidth = (text) => {
-      // Create a temporary text element to measure actual width
       const tempText = this.svg.append('text')
         .attr('font-size', '10px')
         .attr('font-weight', '600')
         .text(text)
         .style('visibility', 'hidden');
-      
       const textWidth = tempText.node().getBBox().width;
       tempText.remove();
-      
-      // Add consistent horizontal padding (8px on each side)
       return textWidth + horizontalPadding;
     };
     
-    // Add "Show All" button first (replaces reset zoom)
-    const showAllButton = buttonGroup.append('g')
-      .attr('class', 'pathway-button btn show-all-button')
-      .attr('transform', `translate(${20}, ${buttonY})`);
-    
+    // 1. "Show All" Button
     const showAllText = 'Show All';
     const showAllWidth = calculateButtonWidth(showAllText);
     
-    showAllButton.append('rect')
-      .attr('width', showAllWidth)
-      .attr('height', buttonHeight)
-      .attr('rx', 6)
-      .attr('fill', 'transparent')
-      .attr('stroke', PATHWAY_CONFIG.colors.primaryHover)
-      .attr('stroke-width', 2);
-    
-    showAllButton.append('text')
-      .attr('x', showAllWidth / 2)
-      .attr('y', buttonHeight / 2 + 3) // Vertically centered: half height + small baseline offset
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('font-size', '10px')
-      .attr('font-weight', '600')
-      .text(showAllText);
-    
-    const viewer = this;
-    showAllButton.on('mouseenter', function() {
-      d3.select(this).select('rect')
-        .attr('fill', PATHWAY_CONFIG.colors.primaryHover)
-        .attr('stroke-width', 3);
-    })
-    .on('mouseleave', function() {
-      d3.select(this).select('rect')
-        .attr('fill', 'transparent')
-        .attr('stroke-width', 2);
-    })
-    .on('click', (event) => {
-      event.stopPropagation();
-      viewer.zoomToAllReactions();
+    this.createButton(buttonGroup, {
+      x: 20,
+      y: buttonY,
+      width: showAllWidth,
+      height: buttonHeight,
+      text: showAllText,
+      className: 'show-all-button',
+      colors: { hover: PATHWAY_CONFIG.colors.primaryHover },
+      onClick: () => this.zoomToAllReactions()
     });
     
-    // Add pathway buttons with wrapping support
-    let currentX = 20 + showAllWidth + 15; // Start after "Show All" button with 15px gap
-    let currentY = buttonY; // Start at initial Y position
-    const buttonGap = 15; // Gap between buttons
-    const lineHeight = buttonHeight + 10; // Height of each line (button height + gap)
-    const rightMargin = 150; // Right margin to prevent buttons from overlapping with dark mode button
+    // 2. Pathway Buttons
+    let currentX = 20 + showAllWidth + 15;
+    let currentY = buttonY;
+    const buttonGap = 15;
+    const lineHeight = buttonHeight + 10;
+    const rightMargin = 150;
     
-    // Get available width (accounting for SVG viewport and detail panel)
     const getAvailableWidth = () => {
-      // Use SVG width (which is the actual viewport width)
       const svgWidth = this.svg.attr('width') ? parseFloat(this.svg.attr('width')) : this.options.width;
-      // Account for detail panel if visible
       const detailPanelWidth = this.container.closest('.main-content')?.querySelector('.detail-panel')?.clientWidth || 0;
-      // Available width is SVG width minus detail panel width
       return svgWidth - detailPanelWidth;
     };
     
-    this.pathways.forEach((pathway, index) => {
+    this.pathways.forEach((pathway) => {
       const buttonWidth = calculateButtonWidth(pathway.name);
       const availableWidth = getAvailableWidth();
       
-      // Check if button would overflow the right edge, wrap to new line if needed
-      // Only wrap when the button would actually go beyond the available width
       if (currentX + buttonWidth > availableWidth - rightMargin) {
-        currentX = 20; // Start new line from left margin
-        currentY += lineHeight; // Move to next line
+        currentX = 20;
+        currentY += lineHeight;
       }
       
-      const button = buttonGroup.append('g')
-        .attr('class', 'pathway-button btn')
-        .attr('transform', `translate(${currentX}, ${currentY})`);
-      
-      // Get pathway type and button colors
       const pathwayType = pathway.summary?.pathwayType || null;
-      const buttonColors = viewer.getPathwayButtonColors(pathwayType);
+      const buttonColors = this.getPathwayButtonColors(pathwayType);
       
-      // Button background
-      button.append('rect')
-        .attr('width', buttonWidth)
-        .attr('height', buttonHeight)
-        .attr('rx', 6)
-        .attr('fill', 'transparent')
-        .attr('stroke', buttonColors.hover)
-        .attr('stroke-width', 2);
-      
-      // Button text
-      button.append('text')
-        .attr('x', buttonWidth / 2)
-        .attr('y', buttonHeight / 2 + 3) // Vertically centered: half height + small baseline offset
-        .attr('text-anchor', 'middle')
-        .attr('fill', 'white')
-        .attr('font-size', '10px')
-        .attr('font-weight', '600')
-        .text(pathway.name);
-      
-      // Store button colors for later use
-      pathway.buttonColors = buttonColors;
-      
-      // Update currentX for next button
-      currentX += buttonWidth + buttonGap;
-      
-      // Hover effects
-      button.on('mouseenter', function() {
-        d3.select(this).select('rect')
-          .attr('fill', buttonColors.hover)
-          .attr('stroke-width', 3);
-      })
-      .on('mouseleave', function() {
-        if (viewer.selectedPathway !== pathway.id) {
-          d3.select(this).select('rect')
-            .attr('fill', 'transparent')
-            .attr('stroke-width', 2);
-        }
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
-        viewer.selectPathway(pathway);
+      const button = this.createButton(buttonGroup, {
+        x: currentX,
+        y: currentY,
+        width: buttonWidth,
+        height: buttonHeight,
+        text: pathway.name,
+        colors: buttonColors,
+        onClick: () => this.selectPathway(pathway)
       });
       
-      // Store button reference
       pathway.button = button;
+      pathway.buttonColors = buttonColors;
+      
+      currentX += buttonWidth + buttonGap;
     });
     
-    // Store button group reference for resize handling
     this.pathwayButtonGroup = buttonGroup;
   }
   
@@ -1139,11 +1188,15 @@ export class MetabolismViewer {
       .attr('stroke', backButtonColors.hover)
       .attr('stroke-width', 2);
     
+    // Determine initial text color based on theme
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const initialBackTextColor = isDarkMode ? 'white' : 'black';
+    
     backButton.append('text')
       .attr('x', backWidth / 2)
       .attr('y', buttonHeight / 2 + 3)
       .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
+      .attr('fill', initialBackTextColor)
       .attr('font-size', '10px')
       .attr('font-weight', '600')
       .text(backText);
@@ -1152,11 +1205,20 @@ export class MetabolismViewer {
       d3.select(this).select('rect')
         .attr('fill', backButtonColors.hover)
         .attr('stroke-width', 3);
+      
+      d3.select(this).select('text')
+        .attr('fill', 'white');
     })
     .on('mouseleave', function() {
       d3.select(this).select('rect')
         .attr('fill', 'transparent')
         .attr('stroke-width', 2);
+      
+      const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      d3.select(this).select('text')
+        .transition()
+        .duration(200)
+        .attr('fill', currentIsDarkMode ? 'white' : 'black');
     })
     .on('click', (event) => {
       event.stopPropagation();
@@ -1209,12 +1271,16 @@ export class MetabolismViewer {
         .attr('stroke', buttonColors.hover)
         .attr('stroke-width', isSelected ? 3 : 2);
       
+      // Determine initial text color based on theme and selection state
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      const initialTextColor = isSelected ? 'white' : (isDarkMode ? 'white' : 'black');
+      
       // Button text
       button.append('text')
         .attr('x', buttonWidth / 2)
         .attr('y', buttonHeight / 2 + 3)
         .attr('text-anchor', 'middle')
-        .attr('fill', 'white')
+        .attr('fill', initialTextColor)
         .attr('font-size', '10px')
         .attr('font-weight', '600')
         .text(subPathway.name);
@@ -1225,6 +1291,9 @@ export class MetabolismViewer {
           d3.select(this).select('rect')
             .attr('fill', buttonColors.hover)
             .attr('stroke-width', 3);
+          
+          d3.select(this).select('text')
+            .attr('fill', 'white');
         }
       })
       .on('mouseleave', function() {
@@ -1232,6 +1301,12 @@ export class MetabolismViewer {
           d3.select(this).select('rect')
             .attr('fill', 'transparent')
             .attr('stroke-width', 2);
+          
+          const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+          d3.select(this).select('text')
+            .transition()
+            .duration(200)
+            .attr('fill', currentIsDarkMode ? 'white' : 'black');
         }
       })
       .on('click', (event) => {
@@ -1354,21 +1429,28 @@ export class MetabolismViewer {
       const pathwayType = pathway.summary?.pathwayType || null;
       const buttonColors = viewer.getPathwayButtonColors(pathwayType);
       
+      // Determine if this button is selected
+      const isSelected = viewer.selectedPathway === pathway.id;
+      
       // Button background
       button.append('rect')
         .attr('width', buttonWidth)
         .attr('height', buttonHeight)
         .attr('rx', 6)
-        .attr('fill', 'transparent')
+        .attr('fill', isSelected ? buttonColors.selected : 'transparent')
         .attr('stroke', buttonColors.hover)
-        .attr('stroke-width', 2);
+        .attr('stroke-width', isSelected ? 3 : 2);
+      
+      // Determine initial text color based on theme and selection state
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      const initialTextColor = isSelected ? 'white' : (isDarkMode ? 'white' : 'black');
       
       // Button text
       button.append('text')
         .attr('x', buttonWidth / 2)
         .attr('y', buttonHeight / 2 + 3)
         .attr('text-anchor', 'middle')
-        .attr('fill', 'white')
+        .attr('fill', initialTextColor)
         .attr('font-size', '10px')
         .attr('font-weight', '600')
         .text(pathway.name);
@@ -1381,15 +1463,26 @@ export class MetabolismViewer {
       
       // Hover effects
       button.on('mouseenter', function() {
-        d3.select(this).select('rect')
-          .attr('fill', buttonColors.hover)
-          .attr('stroke-width', 3);
+        if (!isSelected) {
+          d3.select(this).select('rect')
+            .attr('fill', buttonColors.hover)
+            .attr('stroke-width', 3);
+          
+          d3.select(this).select('text')
+            .attr('fill', 'white');
+        }
       })
       .on('mouseleave', function() {
         if (viewer.selectedPathway !== pathway.id) {
           d3.select(this).select('rect')
             .attr('fill', 'transparent')
             .attr('stroke-width', 2);
+          
+          const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+          d3.select(this).select('text')
+            .transition()
+            .duration(200)
+            .attr('fill', currentIsDarkMode ? 'white' : 'black');
         }
       })
       .on('click', (event) => {
@@ -1619,6 +1712,13 @@ export class MetabolismViewer {
         prevPathway.button.select('rect')
           .attr('fill', 'transparent')
           .attr('stroke-width', 2);
+        
+        // Update text color based on theme
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        prevPathway.button.select('text')
+          .transition()
+          .duration(200)
+          .attr('fill', isDarkMode ? 'white' : 'black');
       }
     }
     
@@ -1628,6 +1728,12 @@ export class MetabolismViewer {
       pathway.button.select('rect')
         .attr('fill', buttonColors.selected)
         .attr('stroke-width', 3);
+      
+      // Update text color to white when selected
+      pathway.button.select('text')
+        .transition()
+        .duration(200)
+        .attr('fill', 'white');
     }
     
     // Reset all node highlighting using unified function
@@ -1885,6 +1991,13 @@ export class MetabolismViewer {
         prevPathway.button.select('rect')
           .attr('fill', 'transparent')
           .attr('stroke-width', 2);
+        
+        // Update text color based on theme
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        prevPathway.button.select('text')
+          .transition()
+          .duration(200)
+          .attr('fill', isDarkMode ? 'white' : 'black');
       }
       this.selectedPathway = null;
     }

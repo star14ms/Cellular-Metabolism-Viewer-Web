@@ -313,6 +313,10 @@ body {
   transition: all 0.2s ease;
 }
 
+.pathway-button.btn text {
+  transition: fill 0.1s ease;
+}
+
 .pathway-button.btn:hover rect,
 .help-button.btn:hover circle {
   filter: brightness(0.9);
@@ -1017,6 +1021,20 @@ svg.metabolism-viewer:active {
 
 [data-theme="dark"] .molecule-structure-image {
   filter: invert(1) hue-rotate(180deg);
+}
+
+/* Class to disable filter even in dark mode */
+[data-theme="dark"] .molecule-structure-image.no-filter {
+  filter: none !important;
+}
+
+[data-theme="dark"] image.molecule-structure-image {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Class to disable filter even in dark mode for image tag selector */
+[data-theme="dark"] image.molecule-structure-image.no-filter {
+  filter: none !important;
 }
 
 /* Background click area */

@@ -64,6 +64,7 @@ export const hemeDegradationNodes = [
     type: 'molecule',
     name: 'Feces (Stercobilin)',
     imageUrl: 'https://askthescientists.com/wp-content/uploads/2021/04/AdobeStock_240042551-scaled.jpeg',
+    disableDarkModeFilter: true,
     description: 'Excreted via bile and intestine',
     position: { x: base_x + unit_space * 8, y: base_y +unit_space * -1 }
   },
@@ -72,6 +73,7 @@ export const hemeDegradationNodes = [
     type: 'molecule',
     name: 'Urine (Urobilin)',
     imageUrl: 'https://cdn.vectorstock.com/i/1000v/20/43/cute-happy-healthy-smiling-and-sad-unhealthy-urine-vector-26452043.jpg',
+    disableDarkModeFilter: true,
     description: 'Excreted via kidney',
     position: { x: base_x + unit_space * 8, y: base_y }
   },

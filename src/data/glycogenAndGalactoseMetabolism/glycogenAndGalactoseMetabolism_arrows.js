@@ -126,7 +126,8 @@ export const glycogenAndGalactoseMetabolismArrows = [
     id: 'arrow_glycogen_galactose_15',
     from_id: 'galactose_1_phosphate',
     to_id: 'glucose_1_phosphate',
-    reaction_id: 'rxn_glycogen_galactose_15'
+    reaction_id: 'rxn_glycogen_galactose_15',
+    y_scale: 1.5,
   },
   // Step 16: UDP-galactose -> UDP-glucose
   {
