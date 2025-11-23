@@ -29,6 +29,7 @@ import { fattyAcidAndLipidSynthesisNodes, fattyAcidAndLipidSynthesisReactions, f
 import { fattyAcidOxidationNodes, fattyAcidOxidationReactions, fattyAcidOxidationArrows, fattyAcidOxidationData } from './fattyAcidOxidation/fattyAcidOxidation_index.js';
 import { ketoneBodyMetabolismNodes, ketoneBodyMetabolismReactions, ketoneBodyMetabolismArrows, ketoneBodyMetabolismData } from './ketoneBodyMetabolism/ketoneBodyMetabolism_index.js';
 import { hemeSynthesisNodes, hemeSynthesisReactions, hemeSynthesisArrows, hemeSynthesisData } from './hemeSynthesis/hemeSynthesis_index.js';
+import { hemeDegradationNodes, hemeDegradationReactions, hemeDegradationArrows, hemeDegradationData } from './hemeDegradation/hemeDegradation_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -54,7 +55,8 @@ export const allNodes = [
   ...fattyAcidAndLipidSynthesisNodes,
   ...fattyAcidOxidationNodes,
   ...ketoneBodyMetabolismNodes,
-  ...hemeSynthesisNodes
+  ...hemeSynthesisNodes,
+  ...hemeDegradationNodes
 ];
 
 // Combine all reactions
@@ -81,7 +83,8 @@ export const allReactions = [
   ...fattyAcidAndLipidSynthesisReactions,
   ...fattyAcidOxidationReactions,
   ...ketoneBodyMetabolismReactions,
-  ...hemeSynthesisReactions
+  ...hemeSynthesisReactions,
+  ...hemeDegradationReactions
 ];
 
 // Combine all arrows
@@ -108,7 +111,8 @@ export const allArrows = [
   ...fattyAcidAndLipidSynthesisArrows,
   ...fattyAcidOxidationArrows,
   ...ketoneBodyMetabolismArrows,
-  ...hemeSynthesisArrows
+  ...hemeSynthesisArrows,
+  ...hemeDegradationArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -139,7 +143,8 @@ export const PATHWAY_CONFIG = {
     'fatty-acid-and-lipid-synthesis': 'Fatty Acid and Lipid Synthesis',
     'fatty-acid-oxidation': 'Fatty Acid Oxidation',
     'ketone-body-metabolism': 'Ketone Body Metabolism',
-    'heme-metabolism': 'Heme Synthesis'
+    'heme-metabolism': 'Heme Synthesis',
+    'heme-degradation': 'Heme Degradation'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -256,6 +261,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'heme-metabolism': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'heme-degradation': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -467,6 +477,15 @@ const pathwayDefinitions = [
     arrows: hemeSynthesisArrows,
     data: hemeSynthesisData,
     subPathways: hemeSynthesisData.subPathways || null
+  },
+  {
+    id: 'heme-degradation',
+    name: 'Heme Degradation',
+    nodes: hemeDegradationNodes,
+    reactions: hemeDegradationReactions,
+    arrows: hemeDegradationArrows,
+    data: hemeDegradationData,
+    subPathways: hemeDegradationData.subPathways || null
   }
 ];
 
