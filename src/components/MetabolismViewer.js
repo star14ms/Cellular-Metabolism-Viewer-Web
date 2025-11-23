@@ -8079,7 +8079,14 @@ export class MetabolismViewer {
       if (!nodeMoleculeName) return false;
       
       // Check if node name matches any of the names to match
-      return namesToMatch.some(name => nodeMoleculeName === name);
+      // Also check if normalized names (removing leading coefficients) match
+      // This handles cases like "Acetyl-CoA" matching "2 Acetyl-CoA"
+      return namesToMatch.some(name => {
+        if (nodeMoleculeName === name) return true;
+        
+        const normalize = n => n ? n.replace(/^\d+\s+/, '') : n;
+        return normalize(nodeMoleculeName) === normalize(name);
+      });
     });
     
     // Highlight all matching nodes

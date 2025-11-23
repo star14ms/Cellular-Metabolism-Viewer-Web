@@ -55,7 +55,7 @@ export const ketoneBodyMetabolismNodes = [
     name: '2 Acetyl-CoA',
     formula: 'C₂₃H₃₈N₇O₁₇P₃S',
     description: 'Two molecules of Acetyl-CoA condensing',
-    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 1 } // Start higher up
+    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 0 } // Start higher up
   },
   {
     id: 'acetoacetyl_coa_kbm',
@@ -63,7 +63,7 @@ export const ketoneBodyMetabolismNodes = [
     name: 'Acetoacetyl-CoA',
     formula: 'C₂₅H₄₀N₇O₁₈P₃S',
     description: 'Acetoacetyl-CoA, formed from two Acetyl-CoA molecules',
-    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 2 }
+    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 1 }
   },
   {
     id: 'hmg_coa_kbm',
@@ -72,7 +72,7 @@ export const ketoneBodyMetabolismNodes = [
     pubchemCid: 445127,
     formula: 'C₂₇H₄₄N₇O₁₉P₃S',
     description: 'HMG-CoA, intermediate in ketone body synthesis',
-    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 3 }
+    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 2 }
   },
   {
     id: 'acetoacetate_kbm',
@@ -81,7 +81,7 @@ export const ketoneBodyMetabolismNodes = [
     formula: 'C₄H₆O₃',
     smiles: 'CC(=O)CC(=O)O',
     description: 'Acetoacetate, the primary ketone body',
-    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 4 }
+    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 3 }
   },
   // Products of Acetoacetate
   {
@@ -91,7 +91,7 @@ export const ketoneBodyMetabolismNodes = [
     formula: 'C₃H₆O',
     smiles: 'CC(=O)C',
     description: 'Acetone, formed by spontaneous decarboxylation',
-    position: { x: base_x + unit_space * 3.5, y: base_y + unit_space * 3 } // Branch right
+    position: { x: base_x + unit_space * 3.5, y: base_y + unit_space * 2 } // Branch right
   },
   {
     id: 'beta_hydroxybutyrate_kbm',
@@ -100,7 +100,7 @@ export const ketoneBodyMetabolismNodes = [
     formula: 'C₄H₈O₃',
     smiles: 'CC(O)CC(=O)[O-]',
     description: 'β-Hydroxybutyrate, the most abundant circulating ketone body',
-    position: { x: base_x + unit_space * 3.5, y: base_y + unit_space * 4 } // Continue down
+    position: { x: base_x + unit_space * 3.5, y: base_y + unit_space * 3 } // Continue down
   },
 
   // 3. Ketone Breakdown (Extrahepatic)
@@ -122,7 +122,7 @@ export const ketoneBodyMetabolismNodes = [
     name: 'Acetoacetyl-CoA',
     formula: 'C₂₅H₄₀N₇O₁₈P₃S',
     description: 'Acetoacetyl-CoA reformed in extrahepatic tissues',
-    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 5 } // Shift right for breakdown
+    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 4 } // Shift right for breakdown
   },
   {
     id: 'acetyl_coa_x2_breakdown_kbm',
@@ -130,7 +130,7 @@ export const ketoneBodyMetabolismNodes = [
     name: '2 Acetyl-CoA',
     formula: 'C₂₃H₃₈N₇O₁₇P₃S',
     description: 'Two Acetyl-CoA molecules produced from ketone breakdown',
-    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 6 }
+    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 5 }
   },
   {
     id: 'tca_kbm_2',
@@ -138,7 +138,7 @@ export const ketoneBodyMetabolismNodes = [
     name: 'TCA Cycle',
     imageUrl: 'https://praxilabs.com/en/blog/wp-content/uploads/2024/04/istockphoto-1034141326-612x612-1-1.jpg',
     description: 'Entry to Citric Acid Cycle in extrahepatic tissues',
-    position: { x: base_x + unit_space * 4, y: base_y + unit_space * 6 } // Up towards TCA
+    position: { x: base_x + unit_space * 4, y: base_y + unit_space * 5 } // Up towards TCA
   },
   
   // Cofactors for SCOT reaction (Step 12)
@@ -147,14 +147,14 @@ export const ketoneBodyMetabolismNodes = [
     type: 'molecule',
     name: 'Succinyl-CoA',
     description: 'CoA donor for acetoacetate activation',
-    position: { x: base_x + unit_space * 1.25, y: base_y + unit_space * 4.1 }
+    position: { x: base_x + unit_space * 1.25, y: base_y + unit_space * 3.1 }
   },
   {
     id: 'succinate_kbm',
     type: 'molecule',
     name: 'Succinate',
     description: 'Product of succinyl-CoA after CoA transfer',
-    position: { x: base_x + unit_space * 1.25, y: base_y + unit_space * 4.9 }
+    position: { x: base_x + unit_space * 1.25, y: base_y + unit_space * 3.9 }
   }
 ];
 

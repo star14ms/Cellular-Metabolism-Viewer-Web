@@ -28,6 +28,7 @@ import { steroidHormoneSynthesisNodes, steroidHormoneSynthesisReactions, steroid
 import { fattyAcidAndLipidSynthesisNodes, fattyAcidAndLipidSynthesisReactions, fattyAcidAndLipidSynthesisArrows, fattyAcidAndLipidSynthesisData } from './fattyAcidAndLipidSynthesis/fattyAcidAndLipidSynthesis_index.js';
 import { fattyAcidOxidationNodes, fattyAcidOxidationReactions, fattyAcidOxidationArrows, fattyAcidOxidationData } from './fattyAcidOxidation/fattyAcidOxidation_index.js';
 import { ketoneBodyMetabolismNodes, ketoneBodyMetabolismReactions, ketoneBodyMetabolismArrows, ketoneBodyMetabolismData } from './ketoneBodyMetabolism/ketoneBodyMetabolism_index.js';
+import { hemeSynthesisNodes, hemeSynthesisReactions, hemeSynthesisArrows, hemeSynthesisData } from './hemeSynthesis/hemeSynthesis_index.js';
 
 // Combine all nodes
 export const allNodes = [
@@ -52,7 +53,8 @@ export const allNodes = [
   ...steroidHormoneSynthesisNodes,
   ...fattyAcidAndLipidSynthesisNodes,
   ...fattyAcidOxidationNodes,
-  ...ketoneBodyMetabolismNodes
+  ...ketoneBodyMetabolismNodes,
+  ...hemeSynthesisNodes
 ];
 
 // Combine all reactions
@@ -78,7 +80,8 @@ export const allReactions = [
   ...steroidHormoneSynthesisReactions,
   ...fattyAcidAndLipidSynthesisReactions,
   ...fattyAcidOxidationReactions,
-  ...ketoneBodyMetabolismReactions
+  ...ketoneBodyMetabolismReactions,
+  ...hemeSynthesisReactions
 ];
 
 // Combine all arrows
@@ -104,7 +107,8 @@ export const allArrows = [
   ...steroidHormoneSynthesisArrows,
   ...fattyAcidAndLipidSynthesisArrows,
   ...fattyAcidOxidationArrows,
-  ...ketoneBodyMetabolismArrows
+  ...ketoneBodyMetabolismArrows,
+  ...hemeSynthesisArrows
 ];
 
 // Pathway configuration - update this when adding a new pathway
@@ -134,7 +138,8 @@ export const PATHWAY_CONFIG = {
     'steroid-hormone-synthesis': 'Steroid Hormone Synthesis',
     'fatty-acid-and-lipid-synthesis': 'Fatty Acid and Lipid Synthesis',
     'fatty-acid-oxidation': 'Fatty Acid Oxidation',
-    'ketone-body-metabolism': 'Ketone Body Metabolism'
+    'ketone-body-metabolism': 'Ketone Body Metabolism',
+    'heme-metabolism': 'Heme Synthesis'
   },
   
   // Pathway-specific behavior for by-molecule arrows
@@ -246,6 +251,11 @@ export const PATHWAY_CONFIG = {
       useStandardShape: true
     },
     'ketone-body-metabolism': {
+      rotationAngle: Math.PI, // 180 degrees
+      offsetDirection: -1, // Above (like glycolysis)
+      useStandardShape: true
+    },
+    'heme-metabolism': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -448,6 +458,15 @@ const pathwayDefinitions = [
     arrows: ketoneBodyMetabolismArrows,
     data: ketoneBodyMetabolismData,
     subPathways: ketoneBodyMetabolismData.subPathways || null
+  },
+  {
+    id: 'heme-metabolism',
+    name: 'Heme Synthesis',
+    nodes: hemeSynthesisNodes,
+    reactions: hemeSynthesisReactions,
+    arrows: hemeSynthesisArrows,
+    data: hemeSynthesisData,
+    subPathways: hemeSynthesisData.subPathways || null
   }
 ];
 
