@@ -6567,7 +6567,13 @@ export class MetabolismViewer {
     
     for (const pathway of this.pathways) {
       if (pathway.nodes && Array.isArray(pathway.nodes)) {
-        if (pathway.nodes.some(node => node.id === nodeId)) {
+        // Find the node object to check for overrides
+        const node = pathway.nodes.find(node => node.id === nodeId);
+        if (node) {
+          // Allow node to override pathway type (e.g. specific node colors)
+          if (node.pathwayType) {
+            return node.pathwayType;
+          }
           return pathway.summary?.pathwayType || null;
         }
       }
@@ -6592,6 +6598,7 @@ export class MetabolismViewer {
       };
     }
     
+    // Check for predefined pathway colors
     const typeColors = PATHWAY_CONFIG.pathwayTypeColors[pathwayType];
     if (typeColors) {
       return {
@@ -6599,6 +6606,18 @@ export class MetabolismViewer {
         stroke: typeColors.stroke,
         proteinComplexFill: typeColors.fill,
         proteinComplexStroke: typeColors.stroke
+      };
+    }
+
+    // Check if pathwayType is a direct color string (hex, rgb, etc.)
+    // Simple check for string that starts with # or rgb or typical color names
+    // This allows passing a specific color code directly
+    if (typeof pathwayType === 'string' && (pathwayType.startsWith('#') || pathwayType.startsWith('rgb') || /^[a-z]+$/i.test(pathwayType))) {
+      return {
+        fill: pathwayType,
+        stroke: pathwayType, // Use same color for stroke
+        proteinComplexFill: pathwayType,
+        proteinComplexStroke: pathwayType
       };
     }
     
@@ -7101,7 +7120,7 @@ export class MetabolismViewer {
     // Exception: NADP+ and NADPH contain "ADP" but should not be shortened to "ADP"
     // Also, UDP-glucose, UDP-galactose, and any UDP-molecule should not be shortened to "UDP"
     // Check if the molecule name contains "NADP" (case-insensitive) or "UDP-" or starts with "UDP"
-    if (/NADP/i.test(moleculeName) || /^UDP(-|\s|$)/i.test(moleculeName)) {
+    if (/NADP/i.test(moleculeName) || /UDP(-|\s|$)/i.test(moleculeName)) {
       return null;
     }
     

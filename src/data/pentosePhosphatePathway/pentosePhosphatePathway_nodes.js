@@ -96,7 +96,8 @@ export const pentosePhosphatePathwayNodes = [
   {
     id: 'prpp_pentose',
     type: 'molecule',
-    name: '5-Phosphoribosyl pyrophosphate (PRPP)',
+    name: '5-Phosphoribosyl-1-pyrophosphate (PRPP)',
+    pathwayType: 'carbohydrates',
     formula: 'C₅H₁₃O₁₄P₃',
     smiles: 'C1C(C(C(O1)COP(=O)(O)OP(=O)(O)O)O)O',
     description: '5-Phosphoribosyl pyrophosphate, precursor for nucleotide synthesis',
@@ -108,6 +109,7 @@ export const pentosePhosphatePathwayNodes = [
     id: 'nucleotides_pentose',
     type: 'molecule',
     name: 'Nucleotides',
+    pathwayType: 'nucleotides',
     imageUrl: 'https://media.gettyimages.com/id/1393171730/photo/nitrogenous-bases-of-dna.jpg?s=612x612&w=gi&k=20&c=XP6gXowh3NwM5gm_ZlsZ-GGuzPdNLWnukczugUFRQDA=',
     formula: 'N/A',
     smiles: '',

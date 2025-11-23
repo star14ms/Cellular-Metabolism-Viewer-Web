@@ -42,6 +42,7 @@ export const hemeDegradationNodes = [
     id: 'udp_glucuronate_degradation',
     type: 'molecule',
     name: '2 UDP-glucuronate',
+    pathwayType: 'carbohydrates',
     formula: 'C₁₅H₂₂N₂O₁₈P₂',
     description: 'Donor of glucuronic acid for conjugation',
     smiles: 'C1=CN(C(=O)NC1=O)C2C(C(C(O2)COP(=O)(O)OP(=O)(O)OC3C(C(C(C(O3)C(=O)O)O)O)O)O)O',

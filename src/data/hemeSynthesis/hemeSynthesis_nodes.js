@@ -18,6 +18,7 @@ export const hemeSynthesisNodes = [
     id: 'glycine_heme_matrix',
     type: 'molecule',
     name: 'Glycine',
+    pathwayType: 'amino_acids',
     formula: 'C₂H₅NO₂',
     description: 'Amino acid precursor for heme synthesis',
     smiles: 'C(C(=O)O)N',
