@@ -310,10 +310,8 @@ export const deoxyribonucleotidesReactions = [
   {
     id: 'rxn_deoxy_17',
     name: 'dUMP Methylation to dTMP',
-    byreactant: ['n5n10_methylene_thf'],
-    byproduct: ['dihydrofolate'],
-    hideByreactantLabels: true,
-    hideByproductLabels: true,
+    displayByreactant: ['n5n10_methylene_thf'],
+    displayByproduct: ['dihydrofolate'],
     enzyme: {
       name: 'Thymidylate synthase (TS)',
       ecNumber: 'EC 2.1.1.45',
@@ -328,48 +326,9 @@ export const deoxyribonucleotidesReactions = [
       isReversible: false
     }
   },
-  {
-    id: 'rxn_deoxy_18',
-    name: 'dTMP Phosphorylation to dTDP',
-    byreactant: ['ATP'],
-    byproduct: ['ADP'],
-    enzyme: {
-      name: 'Kinase',
-      ecNumber: 'EC 2.7.4.x',
-      cofactors: ['Mg²⁺'],
-      description: 'Catalyzes the phosphorylation of dTMP to dTDP using ATP as the phosphate donor'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'First phosphorylation step in dTTP synthesis',
-      isReversible: true
-    }
-  },
-  {
-    id: 'rxn_deoxy_19',
-    name: 'dTDP Phosphorylation to dTTP',
-    byreactant: ['ATP'],
-    byproduct: ['ADP'],
-    enzyme: {
-      name: 'Kinase',
-      ecNumber: 'EC 2.7.4.x',
-      cofactors: ['Mg²⁺'],
-      description: 'Catalyzes the phosphorylation of dTDP to dTTP using ATP as the phosphate donor'
-    },
-    conditions: {
-      location: 'Cytoplasm',
-      ph: '7.0-7.4',
-      temperature: '37°C',
-      regulation: 'Final step in dTTP synthesis',
-      isReversible: true
-    }
-  },
-
   // Folate cycle reactions
   {
-    id: 'rxn_deoxy_20',
+    id: 'rxn_deoxy_18',
     name: 'Dihydrofolate Reduction to THF',
     byreactant: ['NADPH'],
     byproduct: ['NADP⁺'],
@@ -388,10 +347,12 @@ export const deoxyribonucleotidesReactions = [
     }
   },
   {
-    id: 'rxn_deoxy_21',
+    id: 'rxn_deoxy_19',
     name: 'THF Methylation to N⁵,N¹⁰-methylene-THF',
-    byreactant: ['Serine'],
-    byproduct: ['Glycine'],
+    byreactant: ['serine_deoxy'],
+    byproduct: ['glycine_deoxy'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
     enzyme: {
       name: 'Serine hydroxymethyltransferase (SHMT)',
       ecNumber: 'EC 2.1.2.1',
@@ -403,6 +364,44 @@ export const deoxyribonucleotidesReactions = [
       ph: '7.0-7.4',
       temperature: '37°C',
       regulation: 'Regenerates N⁵,N¹⁰-methylene-THF for thymidine synthesis',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_deoxy_20',
+    name: 'dTMP Phosphorylation to dTDP',
+    byreactant: ['ATP'],
+    byproduct: ['ADP'],
+    enzyme: {
+      name: 'Kinase',
+      ecNumber: 'EC 2.7.4.x',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the phosphorylation of dTMP to dTDP using ATP as the phosphate donor'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'First phosphorylation step in dTTP synthesis',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_deoxy_21',
+    name: 'dTDP Phosphorylation to dTTP',
+    byreactant: ['ATP'],
+    byproduct: ['ADP'],
+    enzyme: {
+      name: 'Kinase',
+      ecNumber: 'EC 2.7.4.x',
+      cofactors: ['Mg²⁺'],
+      description: 'Catalyzes the phosphorylation of dTDP to dTTP using ATP as the phosphate donor'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Final step in dTTP synthesis',
       isReversible: true
     }
   }

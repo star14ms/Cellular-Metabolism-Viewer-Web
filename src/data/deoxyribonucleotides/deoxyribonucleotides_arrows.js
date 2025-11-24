@@ -118,33 +118,43 @@ export const deoxyribonucleotidesArrows = [
     reaction_id: 'rxn_deoxy_17',
     flipped: true,
   },
+  // Folate cycle arrows
+  // Cycle: N⁵,N¹⁰-methylene-THF → Dihydrofolate → THF → N⁵,N¹⁰-methylene-THF
+  {
+    id: 'arrow_deoxy_17_cycle',
+    from_id: 'n5n10_methylene_thf',
+    to_id: 'dihydrofolate',
+    reaction_id: 'rxn_deoxy_17',
+    cycleArrow: true,
+    cyclic_id: 'folate_cycle'
+  },
   {
     id: 'arrow_deoxy_18',
-    from_id: 'dtmp_deoxy',
-    to_id: 'dtdp_deoxy',
-    reaction_id: 'rxn_deoxy_18'
+    from_id: 'dihydrofolate',
+    to_id: 'thf_deoxy',
+    reaction_id: 'rxn_deoxy_18',
+    cycleArrow: true,
+    cyclic_id: 'folate_cycle'
   },
   {
     id: 'arrow_deoxy_19',
-    from_id: 'dtdp_deoxy',
-    to_id: 'dttp_deoxy',
-    reaction_id: 'rxn_deoxy_19'
+    from_id: 'thf_deoxy',
+    to_id: 'n5n10_methylene_thf',
+    reaction_id: 'rxn_deoxy_19',
+    cycleArrow: true,
+    cyclic_id: 'folate_cycle'
   },
-
-  // Folate cycle arrows
-  // Note: N5,N10-methylene-THF → dTMP and dUMP → Dihydrofolate are handled as byreactant/byproduct
-  // in reaction rxn_deoxy_17, so we only need arrows for the folate cycle regeneration
   {
     id: 'arrow_deoxy_20',
-    from_id: 'dihydrofolate',
-    to_id: 'thf_deoxy',
+    from_id: 'dtmp_deoxy',
+    to_id: 'dtdp_deoxy',
     reaction_id: 'rxn_deoxy_20'
   },
   {
     id: 'arrow_deoxy_21',
-    from_id: 'thf_deoxy',
-    to_id: 'n5n10_methylene_thf',
-    reaction_id: 'rxn_deoxy_21',
+    from_id: 'dtdp_deoxy',
+    to_id: 'dttp_deoxy',
+    reaction_id: 'rxn_deoxy_21'
   }
 ];
 

@@ -2,7 +2,7 @@
  * Deoxyribonucleotides Synthesis Pathway - Index
  */
 
-import { deoxyribonucleotidesNodes } from './deoxyribonucleotides_nodes.js';
+import { deoxyribonucleotidesNodes, circle_center_x, circle_center_y } from './deoxyribonucleotides_nodes.js';
 import { deoxyribonucleotidesReactions } from './deoxyribonucleotides_reactions.js';
 import { deoxyribonucleotidesArrows } from './deoxyribonucleotides_arrows.js';
 
@@ -10,6 +10,32 @@ export const deoxyribonucleotidesData = {
   nodes: deoxyribonucleotidesNodes,
   reactions: deoxyribonucleotidesReactions,
   arrows: deoxyribonucleotidesArrows,
+  cycles: [
+    {
+      cyclic_id: 'folate_cycle',
+      name: 'Folate Cycle',
+      description: 'Cyclic pathway for folate regeneration in thymidine synthesis',
+      nodeOrder: ['n5n10_methylene_thf', 'dihydrofolate', 'thf_deoxy'], // Order of nodes in the cycle
+      startNode: 'n5n10_methylene_thf', // Starting node of the cycle
+      // Cycle center position (calculated from node positions)
+      // Perfect circle: center at (base_x + column_spacing * 3.75, base_y + unit_space * 5.0)
+      // n5n10_methylene_thf: (3837.5, 4350) - top, dihydrofolate: (3707.6, 4125) - bottom-left, thf_deoxy: (3967.4, 4125) - bottom-right
+      // Center: (3837.5, 4200)
+      center: { 
+        x: circle_center_x, // base_x + column_spacing * 3.75
+        y: circle_center_y // base_y + unit_space * 5.0
+      },
+      // Default angle for by-arrows (in degrees, pointing outward from cycle center)
+      defaultByArrowAngle: 0,
+      // Arrow curvature settings for the cycle completion arrow
+      arrowCurvature: {
+        // The cycle completion arrow should be curved
+        useCurved: true,
+        // Control point offset for the curve (relative to center)
+        controlPointOffset: { x: 0, y: -100 } // Curve upward
+      }
+    }
+  ],
   summary: {
     name: 'Deoxyribonucleotides Synthesis',
     pathwayType: 'nucleotides',

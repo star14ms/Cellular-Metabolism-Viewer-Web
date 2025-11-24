@@ -10,6 +10,8 @@ const unit_space = 200;
 const base_x = 2900; // Positioned to the right of other pathways
 const base_y = 3200; // Start below top to avoid overlap
 const column_spacing = 250; // Horizontal spacing between columns
+export const circle_center_x = base_x + column_spacing * 4.0;
+export const circle_center_y = base_y + unit_space * 4.75;
 
 export const deoxyribonucleotidesNodes = [
   // Column 1: Adenine pathway (ATP → ADP → dADP → dATP)
@@ -190,7 +192,7 @@ export const deoxyribonucleotidesNodes = [
     formula: 'C₁₀H₁₆N₂O₈P',
     smiles: 'CC1=CN(C(=O)NC1=O)C2C(C(C(O2)COP(=O)(O)O)O)O',
     description: 'Deoxythymidine monophosphate, formed by methylation of dUMP via thymidylate synthase',
-    position: { x: base_x + column_spacing * 4.5, y: base_y + unit_space * 4 }
+    position: { x: base_x + column_spacing * 5, y: base_y + unit_space * 4 }
   },
   {
     id: 'dtdp_deoxy',
@@ -199,7 +201,7 @@ export const deoxyribonucleotidesNodes = [
     formula: 'C₁₀H₁₇N₂O₁₁P₂',
     smiles: 'CC1=CN(C(=O)NC1=O)C2C(C(C(O2)COP(=O)(O)OP(=O)(O)O)O)O',
     description: 'Deoxythymidine diphosphate, formed by phosphorylation of dTMP',
-    position: { x: base_x + column_spacing * 5.5, y: base_y + unit_space * 4 }
+    position: { x: base_x + column_spacing * 6, y: base_y + unit_space * 4 }
   },
   {
     id: 'dttp_deoxy',
@@ -208,10 +210,16 @@ export const deoxyribonucleotidesNodes = [
     formula: 'C₁₀H₁₈N₂O₁₄P₃',
     smiles: 'CC1=CN(C(=O)NC1=O)C2C(C(C(O2)COP(=O)(O)OP(=O)(O)OP(=O)(O)O)O)O',
     description: 'Deoxythymidine triphosphate, the final product of thymidine synthesis',
-    position: { x: base_x + column_spacing * 5.5, y: base_y + unit_space * 5 }
+    position: { x: base_x + column_spacing * 6, y: base_y + unit_space * 5 }
   },
 
   // Folate cycle nodes (involved in thymidine synthesis)
+  // Positioned in a perfect circle: center at (base_x + column_spacing * 3.75, base_y + unit_space * 5.0), radius = 150
+  // Rotated one position clockwise: thf_deoxy (top, 90°), n5n10_methylene_thf (bottom-left, 210°), dihydrofolate (bottom-right, 330°)
+  // Center: (3837.5, 4200), Radius: 150
+  // thf_deoxy: (3837.5, 4350) - top (90°)
+  // n5n10_methylene_thf: (3707.6, 4125) - bottom-left (210°)
+  // dihydrofolate: (3967.4, 4125) - bottom-right (330°)
   {
     id: 'n5n10_methylene_thf',
     type: 'molecule',
@@ -219,7 +227,10 @@ export const deoxyribonucleotidesNodes = [
     formula: 'C₂₀H₂₃N₇O₆',
     smiles: 'C1=CC(=CC=C1C(=O)N[C@@H](CCC(=O)O)C(=O)O)NCC2=CN=C3C(=N2)C(=O)NC(=N3)N',
     description: 'N⁵,N¹⁰-methylene-tetrahydrofolate, a cofactor that donates a methyl group in the conversion of dUMP to dTMP',
-    position: { x: base_x + column_spacing * 3.5, y: base_y + unit_space * 4.5 }
+    position: { 
+      x: circle_center_x - 150 * 0.8660254, 
+      y: circle_center_y - 150 * 0.5 
+    }
   },
   {
     id: 'dihydrofolate',
@@ -228,7 +239,10 @@ export const deoxyribonucleotidesNodes = [
     formula: 'C₁₉H₂₁N₇O₆',
     smiles: 'C1=CC(=CC=C1C(=O)N[C@@H](CCC(=O)O)C(=O)O)NCC2=CN=C3C(=N2)C(=O)NC(=N3)N',
     description: 'Dihydrofolate, produced from N⁵,N¹⁰-methylene-THF during dTMP synthesis and regenerated to THF by dihydrofolate reductase',
-    position: { x: base_x + column_spacing * 4.0, y: base_y + unit_space * 4.5 }
+    position: { 
+      x: circle_center_x + 150 * 0.8660254, 
+      y: circle_center_y - 150 * 0.5 
+    }
   },
   {
     id: 'thf_deoxy',
@@ -237,7 +251,37 @@ export const deoxyribonucleotidesNodes = [
     formula: 'C₁₉H₂₃N₇O₆',
     smiles: 'C1=CC(=CC=C1C(=O)N[C@@H](CCC(=O)O)C(=O)O)NCC2=CN=C3C(=N2)C(=O)NC(=N3)N',
     description: 'Tetrahydrofolate, regenerated from dihydrofolate and converted back to N⁵,N¹⁰-methylene-THF to complete the folate cycle',
-    position: { x: base_x + column_spacing * 3.75, y: base_y + unit_space * 5.5 }
+    position: { 
+      x: circle_center_x, 
+      y: circle_center_y + 150 
+    }
+  },
+  // Byreactant/Byproduct nodes for reaction 19 (THF Methylation to N⁵,N¹⁰-methylene-THF)
+  {
+    id: 'serine_deoxy',
+    type: 'molecule',
+    name: 'Serine',
+    pathwayType: 'amino_acids',
+    formula: 'C₃H₇NO₃',
+    smiles: 'C(C(C(=O)O)N)O',
+    description: 'Amino acid used as methylene group donor in THF methylation',
+    position: { 
+      x: circle_center_x - unit_space * 0.9, 
+      y: circle_center_y + 150 * 1.25
+    }
+  },
+  {
+    id: 'glycine_deoxy',
+    type: 'molecule',
+    name: 'Glycine',
+    pathwayType: 'amino_acids',
+    formula: 'C₂H₅NO₂',
+    smiles: 'C(C(=O)O)N',
+    description: 'Amino acid produced from serine in THF methylation',
+    position: { 
+      x: circle_center_x - unit_space * 1.25, 
+      y: circle_center_y + 150 * 0.45 
+    }
   }
 ];
 
