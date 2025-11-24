@@ -21,22 +21,32 @@ export const ureaCycleArrows = [
   },
 
   // Central Urea Cycle Arrows
-  // Cycle: Ornithine → Citrulline → Argininosuccinate → Arginine → Ornithine
+  // Cycle: Ornithine_mito → Citrulline_mito → Citrulline_cyto → Argininosuccinate → Arginine → Ornithine_cyto → Ornithine_mito
 
-  // Step 1: Ornithine → Citrulline (with carbamoyl phosphate as byreactant)
+  // Step 1: Ornithine (mitochondrial) → Citrulline (mitochondrial) (with carbamoyl phosphate as byreactant)
   {
     id: 'arrow_urea_2',
-    from_id: 'ornithine',
-    to_id: 'citrulline',
+    from_id: 'ornithine_mito',
+    to_id: 'citrulline_mito',
     reaction_id: 'rxn_urea_2',
     cycleArrow: true,
     cyclic_id: 'urea_cycle'
   },
 
-  // Step 2: Citrulline → Argininosuccinate (with aspartate as byreactant)
+  // Step 1a: Citrulline Transport (Mitochondrial → Cytosolic)
+  {
+    id: 'arrow_urea_2a',
+    from_id: 'citrulline_mito',
+    to_id: 'citrulline_cyto',
+    reaction_id: 'rxn_urea_2a',
+    cycleArrow: true,
+    cyclic_id: 'urea_cycle'
+  },
+
+  // Step 2: Citrulline (cytosolic) → Argininosuccinate (with aspartate as byreactant)
   {
     id: 'arrow_urea_4',
-    from_id: 'citrulline',
+    from_id: 'citrulline_cyto',
     to_id: 'argininosuccinate',
     reaction_id: 'rxn_urea_3',
     cycleArrow: true,
@@ -53,12 +63,22 @@ export const ureaCycleArrows = [
     cyclic_id: 'urea_cycle'
   },
 
-  // Step 4: Arginine → Ornithine + Urea (completes the cycle)
+  // Step 4: Arginine → Ornithine (cytosolic) + Urea
   {
     id: 'arrow_urea_8',
     from_id: 'arginine',
-    to_id: 'ornithine', // CYCLIC: connects back to the first node of the cycle
+    to_id: 'ornithine_cyto',
     reaction_id: 'rxn_urea_5',
+    cycleArrow: true,
+    cyclic_id: 'urea_cycle'
+  },
+
+  // Step 4a: Ornithine Transport (Cytosolic → Mitochondrial) (completes the cycle)
+  {
+    id: 'arrow_urea_8a',
+    from_id: 'ornithine_cyto',
+    to_id: 'ornithine_mito', // CYCLIC: connects back to the first node of the cycle
+    reaction_id: 'rxn_urea_5a',
     cycleArrow: true,
     cyclic_id: 'urea_cycle'
   },
@@ -88,24 +108,22 @@ export const ureaCycleArrows = [
     reaction_id: 'rxn_urea_8'
   },
 
-  // Right Branch: Arginine → Citrulline (NO synthesis) → Ornithine
+  // Right Branch: Arginine → Citrulline (cytosolic) (NO synthesis)
   {
     id: 'arrow_urea_13',
     from_id: 'arginine',
-    to_id: 'citrulline',
+    to_id: 'citrulline_cyto',
     reaction_id: 'rxn_urea_9'
   },
-  // Note: The citrulline from NO synthesis can feed back into the cycle, but we don't need a separate arrow
-  // since citrulline is already part of the cycle. The connection from arginine to ornithine via left bottom branch
-  // is handled below.
+  // Note: The citrulline from NO synthesis feeds back into the cycle at citrulline_cyto.
 
-  // Left Bottom Branch: Ornithine → Glutamic semialdehyde → (two sub-branches)
+  // Left Bottom Branch: Ornithine (mitochondrial) → Glutamic semialdehyde → (two sub-branches)
   {
     id: 'arrow_urea_14',
-    from_id: 'ornithine',
+    from_id: 'ornithine_mito',
     to_id: 'glutamic_semialdehyde',
     reaction_id: 'rxn_urea_10',
-    flipped: true
+    y_scale: 1.25
   },
 
   // Left Sub-branch: Glutamic semialdehyde → Glutamate
@@ -117,17 +135,23 @@ export const ureaCycleArrows = [
     flipped: true
   },
 
-  // Bottom Right Sub-branch: Glutamic semialdehyde → Pyrroline-5-carboxylate → Proline
+  // Bottom Right Sub-branch: Glutamic semialdehyde → Pyrroline-5-carboxylate (mitochondrial) → Pyrroline-5-carboxylate (cytosolic) → Proline
   {
     id: 'arrow_urea_16',
     from_id: 'glutamic_semialdehyde',
-    to_id: 'pyrroline_5_carboxylate',
+    to_id: 'pyrroline_5_carboxylate_mito',
     reaction_id: 'rxn_urea_12',
     flipped: true
   },
   {
+    id: 'arrow_urea_16a',
+    from_id: 'pyrroline_5_carboxylate_mito',
+    to_id: 'pyrroline_5_carboxylate_cyto',
+    reaction_id: 'rxn_urea_12a'
+  },
+  {
     id: 'arrow_urea_17',
-    from_id: 'pyrroline_5_carboxylate',
+    from_id: 'pyrroline_5_carboxylate_cyto',
     to_id: 'proline_urea',
     reaction_id: 'rxn_urea_13'
   },

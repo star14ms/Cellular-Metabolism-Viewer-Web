@@ -26,7 +26,7 @@ export const ureaCycleReactions = [
     }
   },
 
-  // Reaction 2: Ornithine → Citrulline (Mitochondrial)
+  // Reaction 2: Ornithine (mitochondrial) → Citrulline (mitochondrial)
   {
     id: 'rxn_urea_2',
     name: 'Ornithine Transcarbamoylation',
@@ -48,7 +48,26 @@ export const ureaCycleReactions = [
     }
   },
 
-  // Reaction 3: Citrulline → Argininosuccinate (Cytosolic)
+  // Reaction 2a: Citrulline Transport (Mitochondrial → Cytosolic)
+  {
+    id: 'rxn_urea_2a',
+    name: 'Citrulline Transport',
+    enzyme: {
+      name: 'Ornithine/citrulline transporter',
+      ecNumber: 'N/A',
+      cofactors: [],
+      description: 'Transports citrulline from the mitochondrial matrix to the cytosol. This is an antiporter that simultaneously transports ornithine from cytosol to mitochondria.'
+    },
+    conditions: {
+      location: 'Mitochondrial inner membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Antiporter mechanism: citrulline out, ornithine in',
+      isReversible: false
+    }
+  },
+
+  // Reaction 3: Citrulline (cytosolic) → Argininosuccinate (Cytosolic)
   {
     id: 'rxn_urea_3',
     name: 'Argininosuccinate Synthesis',
@@ -76,8 +95,10 @@ export const ureaCycleReactions = [
   {
     id: 'rxn_urea_6',
     name: 'Oxaloacetate Transamination',
-    byreactant: ['Glutamate'],
-    byproduct: ['α-Ketoglutarate'],
+    byreactant: ['glutamate_trans'],
+    byproduct: ['alpha_ketoglutarate_trans'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
     enzyme: {
       name: 'Transaminase (Aspartate aminotransferase)',
       ecNumber: 'EC 2.6.1.1',
@@ -99,8 +120,10 @@ export const ureaCycleReactions = [
   {
     id: 'rxn_urea_7',
     name: 'Asparagine Synthesis',
-    byreactant: ['Glutamine', 'ATP'],
-    byproduct: ['Glutamate', 'AMP', 'PPi'],
+    byreactant: ['ATP'],
+    byproduct: ['AMP', 'PPi'],
+    displayByreactant: ['glutamine_asn'],
+    displayByproduct: ['glutamate_asn'],
     enzyme: {
       name: 'Asparagine synthetase',
       ecNumber: 'EC 6.3.5.4',
@@ -160,7 +183,7 @@ export const ureaCycleReactions = [
     }
   },
 
-  // Reaction 8: Arginine → Citrulline (NO Synthesis)
+  // Reaction 8: Arginine → Citrulline (cytosolic) (NO Synthesis)
   {
     id: 'rxn_urea_9',
     name: 'Nitric Oxide Synthesis',
@@ -170,7 +193,7 @@ export const ureaCycleReactions = [
       name: 'Nitric oxide synthase (NOS)',
       ecNumber: 'EC 1.14.13.39',
       cofactors: ['NADPH', 'FAD', 'FMN', 'Heme', 'Tetrahydrobiopterin'],
-      description: 'Catalyzes the oxidation of arginine to citrulline and nitric oxide, consuming O₂ and NADPH, and producing H₂O and NADP⁺. This is a branch from the urea cycle for NO signaling.'
+      description: 'Catalyzes the oxidation of arginine to citrulline and nitric oxide, consuming O₂ and NADPH, and producing H₂O and NADP⁺. This is a branch from the urea cycle for NO signaling. Produces cytosolic citrulline.'
     },
     conditions: {
       location: 'Cytosol, Various tissues',
@@ -181,7 +204,7 @@ export const ureaCycleReactions = [
     }
   },
 
-  // Reaction 9: Arginine → Ornithine + Urea (Cytosolic)
+  // Reaction 9: Arginine → Ornithine (cytosolic) + Urea (Cytosolic)
   {
     id: 'rxn_urea_5',
     name: 'Arginine Hydrolysis',
@@ -192,7 +215,7 @@ export const ureaCycleReactions = [
       name: 'Arginase',
       ecNumber: 'EC 3.5.3.1',
       cofactors: ['Mn²⁺'],
-      description: 'Catalyzes the hydrolysis of arginine to ornithine and urea. This completes the urea cycle and regenerates ornithine.'
+      description: 'Catalyzes the hydrolysis of arginine to ornithine and urea. This completes the urea cycle and regenerates ornithine in the cytosol.'
     },
     conditions: {
       location: 'Cytosol',
@@ -203,16 +226,37 @@ export const ureaCycleReactions = [
     }
   },
 
+  // Reaction 5a: Ornithine Transport (Cytosolic → Mitochondrial)
+  {
+    id: 'rxn_urea_5a',
+    name: 'Ornithine Transport',
+    enzyme: {
+      name: 'Ornithine/citrulline transporter',
+      ecNumber: 'N/A',
+      cofactors: [],
+      description: 'Transports ornithine from the cytosol to the mitochondrial matrix. This is an antiporter that simultaneously transports citrulline from mitochondria to cytosol.'
+    },
+    conditions: {
+      location: 'Mitochondrial inner membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Antiporter mechanism: ornithine in, citrulline out',
+      isReversible: false
+    }
+  },
+
   // Right Branch Reactions
 
   // Left Bottom Branch Reactions
 
-  // Reaction 10: Ornithine → Glutamic Semialdehyde
+  // Reaction 10: Ornithine (mitochondrial) → Glutamic Semialdehyde
   {
     id: 'rxn_urea_10',
     name: 'Ornithine Transamination',
-    byreactant: ['Oxaloacetate'],
-    byproduct: ['Aspartate'],
+    byreactant: ['oxaloacetate_orn'],
+    byproduct: ['aspartate_orn'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
     enzyme: {
       name: 'Ornithine aminotransferase',
       ecNumber: 'EC 2.6.1.13',
@@ -253,7 +297,7 @@ export const ureaCycleReactions = [
 
   // Bottom Right Sub-branch: Glutamic Semialdehyde → Pyrroline-5-carboxylate → Proline
 
-  // Reaction 12: Glutamic Semialdehyde → Pyrroline-5-carboxylate (spontaneous)
+  // Reaction 12: Glutamic Semialdehyde → Pyrroline-5-carboxylate (mitochondrial) (spontaneous)
   {
     id: 'rxn_urea_12',
     name: 'Pyrroline-5-carboxylate Formation',
@@ -274,7 +318,26 @@ export const ureaCycleReactions = [
     }
   },
 
-  // Reaction 13: Pyrroline-5-carboxylate → Proline
+  // Reaction 12a: Pyrroline-5-carboxylate Transport (Mitochondrial → Cytosolic)
+  {
+    id: 'rxn_urea_12a',
+    name: 'Pyrroline-5-carboxylate Transport',
+    enzyme: {
+      name: 'Mitochondrial transporter',
+      ecNumber: 'N/A',
+      cofactors: [],
+      description: 'Transports pyrroline-5-carboxylate from the mitochondrial matrix to the cytosol.'
+    },
+    conditions: {
+      location: 'Mitochondrial inner membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Pyrroline-5-carboxylate is transported to cytosol for proline synthesis',
+      isReversible: false
+    }
+  },
+
+  // Reaction 13: Pyrroline-5-carboxylate (cytosolic) → Proline
   {
     id: 'rxn_urea_13',
     name: 'Proline Synthesis',
