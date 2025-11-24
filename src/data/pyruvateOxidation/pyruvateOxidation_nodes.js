@@ -23,7 +23,7 @@ export const pyruvateOxidationNodes = [
   {
     id: 'pyruvate',
     type: 'molecule',
-    name: 'Pyruvate (mitochondrial matrix)',
+    name: 'Pyruvate (Mitochondrial)',
     formula: 'C₃H₃O₃⁻',
     description: 'A three-carbon compound produced by glycolysis',
     smiles: 'CC(=O)C(=O)[O-]',

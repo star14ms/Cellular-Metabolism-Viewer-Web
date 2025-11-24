@@ -29,22 +29,41 @@ export const branchedChainAminoAcidBreakdownArrows = [
     reaction_id: 'rxn_bcaa_val_trans'
   },
   
+  // Transport steps
+  {
+    id: 'arrow_bcaa_leu_transport',
+    from_id: 'alpha_ketoisocaproate',
+    to_id: 'alpha_ketoisocaproate_mito',
+    reaction_id: 'rxn_bcaa_leu_transport'
+  },
   // BCKAD steps (oxidative decarboxylation)
   {
     id: 'arrow_bcaa_leu_bckad',
-    from_id: 'alpha_ketoisocaproate',
+    from_id: 'alpha_ketoisocaproate_mito',
     to_id: 'isovaleryl_coa',
     reaction_id: 'rxn_bcaa_leu_bckad'
   },
   {
-    id: 'arrow_bcaa_ile_bckad',
+    id: 'arrow_bcaa_ile_transport',
     from_id: 'alpha_keto_beta_methylvalerate',
+    to_id: 'alpha_keto_beta_methylvalerate_mito',
+    reaction_id: 'rxn_bcaa_ile_transport'
+  },
+  {
+    id: 'arrow_bcaa_ile_bckad',
+    from_id: 'alpha_keto_beta_methylvalerate_mito',
     to_id: 'alpha_methylbutyryl_coa',
     reaction_id: 'rxn_bcaa_ile_bckad'
   },
   {
-    id: 'arrow_bcaa_val_bckad',
+    id: 'arrow_bcaa_val_transport',
     from_id: 'alpha_ketoisovalerate',
+    to_id: 'alpha_ketoisovalerate_mito',
+    reaction_id: 'rxn_bcaa_val_transport'
+  },
+  {
+    id: 'arrow_bcaa_val_bckad',
+    from_id: 'alpha_ketoisovalerate_mito',
     to_id: 'isobutyryl_coa',
     reaction_id: 'rxn_bcaa_val_bckad'
   },
@@ -147,8 +166,14 @@ export const branchedChainAminoAcidBreakdownArrows = [
     reaction_id: 'rxn_bcaa_lys_4'
   },
   {
-    id: 'arrow_bcaa_lys_5',
+    id: 'arrow_bcaa_lys_transport',
     from_id: 'alpha_ketoadipate',
+    to_id: 'alpha_ketoadipate_mito',
+    reaction_id: 'rxn_bcaa_lys_transport'
+  },
+  {
+    id: 'arrow_bcaa_lys_5',
+    from_id: 'alpha_ketoadipate_mito',
     to_id: 'glutaryl_coa',
     reaction_id: 'rxn_bcaa_lys_5'
   },

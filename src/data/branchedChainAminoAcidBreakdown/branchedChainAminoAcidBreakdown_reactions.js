@@ -13,8 +13,10 @@ export const branchedChainAminoAcidBreakdownReactions = [
   {
     id: 'rxn_bcaa_leu_trans',
     name: 'Leucine Transamination',
-    byreactant: ['α-Ketoglutarate'],
-    byproduct: ['Glutamate'],
+    byreactant: ['alpha_ketoglutarate_leu'],
+    byproduct: ['glutamate_leu'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
     enzyme: {
       name: 'Branched-Chain Amino Acid Transaminase',
       ecNumber: '2.6.1.42',
@@ -25,6 +27,22 @@ export const branchedChainAminoAcidBreakdownReactions = [
       location: 'Cytoplasm and mitochondria',
       requirement: 'Reversible reaction',
       notes: 'First step in branched-chain amino acid catabolism'
+    }
+  },
+  {
+    id: 'rxn_bcaa_leu_transport',
+    name: 'α-Ketoisocaproate Transport',
+    enzyme: {
+      name: 'Mitochondrial transporter',
+      ecNumber: 'N/A',
+      description: 'Transports α-ketoisocaproate from cytosol to mitochondria',
+      cofactors: []
+    },
+    conditions: {
+      location: 'Mitochondrial inner membrane',
+      requirement: 'Reversible transport',
+      notes: 'Transports α-ketoisocaproate into mitochondria for BCKAD reaction',
+      isReversible: true
     }
   },
   {
@@ -113,8 +131,10 @@ export const branchedChainAminoAcidBreakdownReactions = [
   {
     id: 'rxn_bcaa_ile_trans',
     name: 'Isoleucine Transamination',
-    byreactant: ['α-Ketoglutarate'],
-    byproduct: ['Glutamate'],
+    byreactant: ['alpha_ketoglutarate_ile'],
+    byproduct: ['glutamate_ile'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
     enzyme: {
       name: 'Branched-Chain Amino Acid Transaminase',
       ecNumber: '2.6.1.42',
@@ -125,6 +145,22 @@ export const branchedChainAminoAcidBreakdownReactions = [
       location: 'Cytoplasm and mitochondria',
       requirement: 'Reversible reaction',
       notes: 'First step in branched-chain amino acid catabolism'
+    }
+  },
+  {
+    id: 'rxn_bcaa_ile_transport',
+    name: 'α-Keto-β-methylvalerate Transport',
+    enzyme: {
+      name: 'Mitochondrial transporter',
+      ecNumber: 'N/A',
+      description: 'Transports α-keto-β-methylvalerate from cytosol to mitochondria',
+      cofactors: []
+    },
+    conditions: {
+      location: 'Mitochondrial inner membrane',
+      requirement: 'Reversible transport',
+      notes: 'Transports α-keto-β-methylvalerate into mitochondria for BCKAD reaction',
+      isReversible: true
     }
   },
   {
@@ -196,8 +232,10 @@ export const branchedChainAminoAcidBreakdownReactions = [
   {
     id: 'rxn_bcaa_val_trans',
     name: 'Valine Transamination',
-    byreactant: ['α-Ketoglutarate'],
-    byproduct: ['Glutamate'],
+    byreactant: ['alpha_ketoglutarate_val'],
+    byproduct: ['glutamate_val'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
     enzyme: {
       name: 'Branched-Chain Amino Acid Transaminase',
       ecNumber: '2.6.1.42',
@@ -208,6 +246,22 @@ export const branchedChainAminoAcidBreakdownReactions = [
       location: 'Cytoplasm and mitochondria',
       requirement: 'Reversible reaction',
       notes: 'First step in branched-chain amino acid catabolism'
+    }
+  },
+  {
+    id: 'rxn_bcaa_val_transport',
+    name: 'α-Ketoisovalerate Transport',
+    enzyme: {
+      name: 'Mitochondrial transporter',
+      ecNumber: 'N/A',
+      description: 'Transports α-ketoisovalerate from cytosol to mitochondria',
+      cofactors: []
+    },
+    conditions: {
+      location: 'Mitochondrial inner membrane',
+      requirement: 'Reversible transport',
+      notes: 'Transports α-ketoisovalerate into mitochondria for BCKAD reaction',
+      isReversible: true
     }
   },
   {
@@ -249,6 +303,7 @@ export const branchedChainAminoAcidBreakdownReactions = [
     name: 'Lysine-α-Ketoglutarate Reductase',
     byreactant: ['NADPH'],
     byproduct: ['NADP⁺'],
+    displayByproduct: ['alpha_ketoglutarate_lys_1'],
     enzyme: {
       name: 'Lysine-α-Ketoglutarate Reductase',
       ecNumber: '1.5.1.8',
@@ -265,7 +320,8 @@ export const branchedChainAminoAcidBreakdownReactions = [
     id: 'rxn_bcaa_lys_2',
     name: 'Saccharopine Dehydrogenation',
     byreactant: ['NAD⁺'],
-    byproduct: ['NADH', 'Glutamate'],
+    byproduct: ['NADH'],
+    displayByproduct: ['glutamate_lys_2'],
     enzyme: {
       name: 'Saccharopine Dehydrogenase',
       ecNumber: '1.5.1.9',
@@ -298,8 +354,10 @@ export const branchedChainAminoAcidBreakdownReactions = [
   {
     id: 'rxn_bcaa_lys_4',
     name: 'α-Aminoadipate Transamination',
-    byreactant: ['α-Ketoglutarate'],
-    byproduct: ['Glutamate'],
+    byreactant: ['alpha_ketoglutarate_lys_trans'],
+    byproduct: ['glutamate_lys_trans'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
     enzyme: {
       name: 'Transaminase',
       ecNumber: '2.6.1.39',
@@ -310,6 +368,22 @@ export const branchedChainAminoAcidBreakdownReactions = [
       location: 'Mitochondria',
       requirement: 'Reversible transamination',
       notes: 'Requires pyridoxal phosphate'
+    }
+  },
+  {
+    id: 'rxn_bcaa_lys_transport',
+    name: 'α-Ketoadipate Transport',
+    enzyme: {
+      name: 'Mitochondrial transporter',
+      ecNumber: 'N/A',
+      description: 'Transports α-ketoadipate from cytosol to mitochondria',
+      cofactors: []
+    },
+    conditions: {
+      location: 'Mitochondrial inner membrane',
+      requirement: 'Reversible transport',
+      notes: 'Transports α-ketoadipate into mitochondria for oxidative decarboxylation',
+      isReversible: true
     }
   },
   {

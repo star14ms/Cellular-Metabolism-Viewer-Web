@@ -260,6 +260,7 @@ export const singleCarbonMetabolismNodes = [
     name: 'Bile Salts',
     formula: 'Variable',
     smiles: '',
+    pathwayType: 'lipids',
     description: 'Bile salts, conjugated with taurine or glycine, important for lipid digestion',
     position: { x: upper_base_x + unit_space * 9.5 - unit_space * 0.7, y: upper_y + unit_space * 0.7 - unit_space * 0.3 + unit_space * 4 }
   },

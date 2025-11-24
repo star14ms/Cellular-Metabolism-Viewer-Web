@@ -257,7 +257,7 @@ export const glycolysisNodes = [
   {
     id: 'pyruvate_glycolysis',
     type: 'molecule',
-    name: 'Pyruvate (cytosol)',
+    name: 'Pyruvate (Cytosolic)',
     formula: 'C₃H₄O₃⁻',
     smiles: 'CC(=O)C(=O)[O-]',
     description: 'A three-carbon compound produced by glycolysis',

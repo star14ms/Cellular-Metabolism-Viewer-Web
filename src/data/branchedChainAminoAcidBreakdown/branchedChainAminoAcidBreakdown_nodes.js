@@ -33,11 +33,20 @@ export const branchedChainAminoAcidBreakdownNodes = [
   {
     id: 'alpha_ketoisocaproate',
     type: 'molecule',
-    name: 'α-Ketoisocaproate',
+    name: 'α-Ketoisocaproate (Cytosolic)',
     formula: 'C₆H₁₀O₃',
-    description: 'α-Keto acid derivative of leucine',
+    description: 'α-Keto acid derivative of leucine in cytosol',
     smiles: 'CC(C)CC(=O)C(=O)O',
     position: { x: base_x - column_spacing * 1.5, y: base_y + unit_space }
+  },
+  {
+    id: 'alpha_ketoisocaproate_mito',
+    type: 'molecule',
+    name: 'α-Ketoisocaproate (Mitochondrial)',
+    formula: 'C₆H₁₀O₃',
+    description: 'α-Keto acid derivative of leucine in mitochondria',
+    smiles: 'CC(C)CC(=O)C(=O)O',
+    position: { x: base_x - column_spacing * 1.5, y: base_y + unit_space * 3 }
   },
   {
     id: 'isovaleryl_coa',
@@ -46,7 +55,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₆H₄₄N₇O₁₇P₃S',
     description: 'CoA derivative from leucine catabolism',
     smiles: 'CC(C)CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x - column_spacing * 1.5, y: base_y + unit_space * 2 }
+    position: { x: base_x - column_spacing * 1.5, y: base_y + unit_space * 4 }
   },
   {
     id: 'beta_methylcrotonyl_coa',
@@ -55,7 +64,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₆H₄₂N₇O₁₇P₃S',
     description: 'Intermediate in leucine catabolism',
     smiles: 'CC(=CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1)C',
-    position: { x: base_x - column_spacing * 1.5, y: base_y + unit_space * 3 }
+    position: { x: base_x - column_spacing * 1.5, y: base_y + unit_space * 5 }
   },
   {
     id: 'beta_methylglutaconyl_coa',
@@ -64,7 +73,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₇H₄₂N₇O₁₉P₃S',
     description: 'Intermediate in leucine catabolism',
     smiles: 'CC(=CC(=O)O)C(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x - column_spacing * 1.5, y: base_y + unit_space * 4 }
+    position: { x: base_x - column_spacing * 1.5, y: base_y + unit_space * 6 }
   },
   {
     id: 'hmg_coa',
@@ -73,7 +82,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₇H₄₄N₇O₂₀P₃S',
     description: 'Intermediate in leucine catabolism and cholesterol synthesis',
     smiles: 'CC(C)(CC(=O)O)C(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x - column_spacing * 1.5, y: base_y + unit_space * 5 }
+    position: { x: base_x - column_spacing * 1.5, y: base_y + unit_space * 7 }
   },
   {
     id: 'acetoacetate_bcaa',
@@ -82,7 +91,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₄H₆O₄',
     description: 'Ketone body produced from leucine catabolism',
     smiles: 'CC(=O)CC(=O)O',
-    position: { x: base_x - column_spacing * 2, y: base_y + unit_space * 6 }
+    position: { x: base_x - column_spacing * 2, y: base_y + unit_space * 8 }
   },
   {
     id: 'acetyl_coa_leu',
@@ -91,7 +100,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₃H₃₈N₇O₁₇P₃S',
     description: 'Final product from leucine catabolism, feeds into TCA cycle',
     smiles: 'CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x - column_spacing * 1, y: base_y + unit_space * 6 }
+    position: { x: base_x - column_spacing * 1, y: base_y + unit_space * 8 }
   },
   
   // Column 2: Isoleucine pathway (x: base_x - unit_space * 0.5)
@@ -108,11 +117,20 @@ export const branchedChainAminoAcidBreakdownNodes = [
   {
     id: 'alpha_keto_beta_methylvalerate',
     type: 'molecule',
-    name: 'α-Keto-β-methylvalerate',
+    name: 'α-Keto-β-methylvalerate (Cytosolic)',
     formula: 'C₆H₁₀O₃',
-    description: 'α-Keto acid derivative of isoleucine',
+    description: 'α-Keto acid derivative of isoleucine in cytosol',
     smiles: 'CC[C@H](C)C(=O)C(=O)O',
     position: { x: base_x - column_spacing * 0.5, y: base_y + unit_space }
+  },
+  {
+    id: 'alpha_keto_beta_methylvalerate_mito',
+    type: 'molecule',
+    name: 'α-Keto-β-methylvalerate (Mitochondrial)',
+    formula: 'C₆H₁₀O₃',
+    description: 'α-Keto acid derivative of isoleucine in mitochondria',
+    smiles: 'CC[C@H](C)C(=O)C(=O)O',
+    position: { x: base_x - column_spacing * 0.5, y: base_y + unit_space * 3 }
   },
   {
     id: 'alpha_methylbutyryl_coa',
@@ -121,7 +139,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₆H₄₄N₇O₁₇P₃S',
     description: 'CoA derivative from isoleucine catabolism',
     smiles: 'CC[C@H](C)CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x - column_spacing * 0.5, y: base_y + unit_space * 2 }
+    position: { x: base_x - column_spacing * 0.5, y: base_y + unit_space * 4 }
   },
   {
     id: 'propionyl_coa_ile',
@@ -130,7 +148,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₄H₄₀N₇O₁₇P₃S',
     description: 'CoA derivative from isoleucine catabolism',
     smiles: 'CCC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x - column_spacing * 0.5, y: base_y + unit_space * 3 }
+    position: { x: base_x - column_spacing * 0.5, y: base_y + unit_space * 5 }
   },
   {
     id: 'methylmalonyl_coa',
@@ -139,7 +157,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₅H₄₀N₇O₁₉P₃S',
     description: 'Intermediate from propionyl-CoA carboxylation',
     smiles: 'CC(C(=O)O)C(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x - column_spacing * 0.5, y: base_y + unit_space * 4 }
+    position: { x: base_x - column_spacing * 0.5, y: base_y + unit_space * 6 }
   },
   {
     id: 'succinyl_coa_bcaa',
@@ -148,7 +166,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₅H₄₀N₇O₁₉P₃S',
     description: 'Final product from isoleucine catabolism, feeds into TCA cycle',
     smiles: 'C(CC(=O)O)CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x - column_spacing * 0.5, y: base_y + unit_space * 5 }
+    position: { x: base_x - column_spacing * 0.5, y: base_y + unit_space * 7 }
   },
   
   // Column 3: Valine pathway (x: base_x + unit_space * 0.5)
@@ -165,11 +183,20 @@ export const branchedChainAminoAcidBreakdownNodes = [
   {
     id: 'alpha_ketoisovalerate',
     type: 'molecule',
-    name: 'α-Ketoisovalerate',
+    name: 'α-Ketoisovalerate (Cytosolic)',
     formula: 'C₅H₈O₃',
-    description: 'α-Keto acid derivative of valine',
+    description: 'α-Keto acid derivative of valine in cytosol',
     smiles: 'CC(C)C(=O)C(=O)O',
     position: { x: base_x + column_spacing * 0.5, y: base_y + unit_space }
+  },
+  {
+    id: 'alpha_ketoisovalerate_mito',
+    type: 'molecule',
+    name: 'α-Ketoisovalerate (Mitochondrial)',
+    formula: 'C₅H₈O₃',
+    description: 'α-Keto acid derivative of valine in mitochondria',
+    smiles: 'CC(C)C(=O)C(=O)O',
+    position: { x: base_x + column_spacing * 0.5, y: base_y + unit_space * 3 }
   },
   {
     id: 'isobutyryl_coa',
@@ -178,7 +205,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₅H₄₂N₇O₁₇P₃S',
     description: 'CoA derivative from valine catabolism',
     smiles: 'CC(C)CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x + column_spacing * 0.5, y: base_y + unit_space * 2 }
+    position: { x: base_x + column_spacing * 0.5, y: base_y + unit_space * 4 }
   },
   
   // Column 4: Lysine pathway (x: base_x + unit_space * 1.5)
@@ -222,11 +249,20 @@ export const branchedChainAminoAcidBreakdownNodes = [
   {
     id: 'alpha_ketoadipate',
     type: 'molecule',
-    name: 'α-Ketoadipate',
+    name: 'α-Ketoadipate (Cytosolic)',
     formula: 'C₆H₈O₅',
-    description: 'Intermediate in lysine catabolism',
+    description: 'Intermediate in lysine catabolism in cytosol',
     smiles: 'CC(=O)CCCC(=O)C(=O)O',
     position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space }
+  },
+  {
+    id: 'alpha_ketoadipate_mito',
+    type: 'molecule',
+    name: 'α-Ketoadipate (Mitochondrial)',
+    formula: 'C₆H₈O₅',
+    description: 'Intermediate in lysine catabolism in mitochondria',
+    smiles: 'CC(=O)CCCC(=O)C(=O)O',
+    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 3 }
   },
   {
     id: 'glutaryl_coa',
@@ -235,7 +271,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₆H₄₀N₇O₂₀P₃S',
     description: 'CoA derivative in lysine catabolism',
     smiles: 'OC(=O)CCCC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 2 }
+    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 4 }
   },
   {
     id: 'crotonyl_coa',
@@ -244,7 +280,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₅H₄₀N₇O₁₇P₃S',
     description: 'Intermediate in lysine catabolism',
     smiles: 'CC=CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 3 }
+    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 5 }
   },
   {
     id: 'beta_hydroxybutyryl_coa',
@@ -253,7 +289,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₅H₄₂N₇O₁₈P₃S',
     description: 'Intermediate in lysine catabolism',
     smiles: 'CC(CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1)O',
-    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 4 }
+    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 6 }
   },
   {
     id: 'acetoacetyl_coa',
@@ -262,7 +298,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₅H₄₀N₇O₁₈P₃S',
     description: 'Intermediate in lysine catabolism',
     smiles: 'CC(=O)CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 5 }
+    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 7 }
   },
   {
     id: 'acetyl_coa_lys',
@@ -271,7 +307,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     formula: 'C₂₃H₃₈N₇O₁₇P₃S',
     description: 'Final product from lysine catabolism, feeds into TCA cycle',
     smiles: 'CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
-    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 6 }
+    position: { x: base_x + column_spacing * 1.5, y: base_y + unit_space * 8 }
   },
   
   // Center: TCA cycle node
@@ -284,6 +320,110 @@ export const branchedChainAminoAcidBreakdownNodes = [
     imageUrl: 'https://praxilabs.com/en/blog/wp-content/uploads/2024/04/istockphoto-1034141326-612x612-1-1.jpg',
     description: 'Tricarboxylic acid cycle (Krebs cycle)',
     pathwayIdToRoute: 'citric-acid-cycle',
-    position: { x: base_x + column_spacing * 0.5, y: base_y + unit_space * 7 }
+    position: { x: base_x + column_spacing * 0.5, y: base_y + unit_space * 9 }
+  },
+
+  // Bymolecule nodes: α-Ketoglutarate for transaminase reactions
+  {
+    id: 'alpha_ketoglutarate_leu',
+    type: 'molecule',
+    name: 'α-Ketoglutarate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₅H₆O₅',
+    smiles: 'C(CC(=O)O)CC(=O)C(=O)O',
+    description: 'α-Ketoglutarate, amino group acceptor for leucine transamination',
+    position: { x: base_x - column_spacing * 1.5 + unit_space * 0.66, y: base_y + unit_space * 0.05 }
+  },
+  {
+    id: 'alpha_ketoglutarate_ile',
+    type: 'molecule',
+    name: 'α-Ketoglutarate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₅H₆O₅',
+    smiles: 'C(CC(=O)O)CC(=O)C(=O)O',
+    description: 'α-Ketoglutarate, amino group acceptor for isoleucine transamination',
+    position: { x: base_x - column_spacing * 0.5 + unit_space * 0.66, y: base_y + unit_space * 0.05 }
+  },
+  {
+    id: 'alpha_ketoglutarate_val',
+    type: 'molecule',
+    name: 'α-Ketoglutarate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₅H₆O₅',
+    smiles: 'C(CC(=O)O)CC(=O)C(=O)O',
+    description: 'α-Ketoglutarate, amino group acceptor for valine transamination',
+    position: { x: base_x + column_spacing * 0.5 + unit_space * 0.66, y: base_y + unit_space * 0.05 }
+  },
+  {
+    id: 'alpha_ketoglutarate_lys_trans',
+    type: 'molecule',
+    name: 'α-Ketoglutarate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₅H₆O₅',
+    smiles: 'C(CC(=O)O)CC(=O)C(=O)O',
+    description: 'α-Ketoglutarate, amino group acceptor for α-aminoadipate transamination',
+    position: { x: base_x + column_spacing * 1.5 + unit_space * 0.66, y: base_y + unit_space * 0.05 }
+  },
+  {
+    id: 'alpha_ketoglutarate_lys_1',
+    type: 'molecule',
+    name: 'α-Ketoglutarate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₅H₆O₅',
+    smiles: 'C(CC(=O)O)CC(=O)C(=O)O',
+    description: 'α-Ketoglutarate, substrate for lysine-α-ketoglutarate reductase',
+    position: { x: base_x + column_spacing * 1.5 + unit_space * 0.9, y: base_y + unit_space * -2.8 }
+  },
+
+  // Bymolecule nodes: Glutamate for transaminase reactions and saccharopine dehydrogenation
+  {
+    id: 'glutamate_leu',
+    type: 'molecule',
+    name: 'Glutamate',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₉NO₄',
+    smiles: 'C(CC(=O)O)CC(C(=O)O)N',
+    description: 'Glutamate, amino group donor produced from leucine transamination',
+    position: { x: base_x - column_spacing * 1.5 + unit_space * 0.66, y: base_y + unit_space * 0.95 }
+  },
+  {
+    id: 'glutamate_ile',
+    type: 'molecule',
+    name: 'Glutamate',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₉NO₄',
+    smiles: 'C(CC(=O)O)CC(C(=O)O)N',
+    description: 'Glutamate, amino group donor produced from isoleucine transamination',
+    position: { x: base_x - column_spacing * 0.5 + unit_space * 0.66, y: base_y + unit_space * 0.95 }
+  },
+  {
+    id: 'glutamate_val',
+    type: 'molecule',
+    name: 'Glutamate',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₉NO₄',
+    smiles: 'C(CC(=O)O)CC(C(=O)O)N',
+    description: 'Glutamate, amino group donor produced from valine transamination',
+    position: { x: base_x + column_spacing * 0.5 + unit_space * 0.66, y: base_y + unit_space * 0.95 }
+  },
+  {
+    id: 'glutamate_lys_trans',
+    type: 'molecule',
+    name: 'Glutamate',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₉NO₄',
+    smiles: 'C(CC(=O)O)CC(C(=O)O)N',
+    description: 'Glutamate, amino group donor produced from α-aminoadipate transamination',
+    position: { x: base_x + column_spacing * 1.5 + unit_space * 0.66, y: base_y + unit_space * 0.95 }
+  },
+  {
+    id: 'glutamate_lys_2',
+    type: 'molecule',
+    name: 'Glutamate',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₉NO₄',
+    smiles: 'C(CC(=O)O)CC(C(=O)O)N',
+    description: 'Glutamate, produced from saccharopine dehydrogenation',
+    position: { x: base_x + column_spacing * 1.5 + unit_space * 0.9, y: base_y + unit_space * -1.2 }
   }
 ];
