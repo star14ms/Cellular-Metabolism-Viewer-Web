@@ -5165,6 +5165,8 @@ export class MetabolismViewer {
               
               // For additional arrows, add arrowhead AFTER translation
               // The arrowhead must use the fully translated coordinates
+              const isReversible = this.isReactionReversible(reaction);
+              
               if (!isMainArrow && currentDrawByproduct) {
                 const arrowheadSize = PATHWAY_CONFIG.arrowSettings.arrowheadSize;
                 // Recalculate tangent angle using translated coordinates
@@ -5184,6 +5186,52 @@ export class MetabolismViewer {
                 
                 const baseCenterX = tipX - baseDistance * Math.cos(byproductTangentAngle);
                 const baseCenterY = tipY - baseDistance * Math.sin(byproductTangentAngle);
+                
+                let baseLeftX = baseCenterX - baseWidth * Math.cos(arrowheadPerpAngle);
+                let baseLeftY = baseCenterY - baseWidth * Math.sin(arrowheadPerpAngle);
+                let baseRightX = baseCenterX + baseWidth * Math.cos(arrowheadPerpAngle);
+                let baseRightY = baseCenterY + baseWidth * Math.sin(arrowheadPerpAngle);
+                
+                // Priority: arrow data > reaction data > default to 0
+                const byMoleculeRotationAngle = (rawArrow.byMoleculeAngle !== undefined 
+                  ? rawArrow.byMoleculeAngle 
+                  : (reaction.byMoleculeAngle !== undefined ? reaction.byMoleculeAngle : 0)) * Math.PI / 180;
+                if (byMoleculeRotationAngle !== 0) {
+                  [baseLeftX, baseRightX] = [baseRightX, baseLeftX];
+                  [baseLeftY, baseRightY] = [baseRightY, baseLeftY];
+                }
+                
+                const arrowheadPoints = [
+                  [tipX, tipY],
+                  [baseLeftX, baseLeftY],
+                  [baseRightX, baseRightY]
+                ];
+                
+                currentArrowGroup.append('polygon')
+                  .attr('points', arrowheadPoints.map(p => p.join(',')).join(' '))
+                  .attr('fill', PATHWAY_CONFIG.colors.byMoleculeArrow)
+                  .attr('fill-opacity', 1);
+              }
+              
+              // Add triangle arrowhead at the end of the byreactant arrow (if reversible)
+              if (!isMainArrow && currentDrawByreactant && isReversible) {
+                const arrowheadSize = PATHWAY_CONFIG.arrowSettings.arrowheadSize;
+                // Recalculate tangent angle using translated coordinates
+                const byreactantTangentAngle = Math.atan2(
+                  currentByreactantEndY - currentByreactantControlY,
+                  currentByreactantEndX - currentByreactantControlX
+                );
+                
+                const shiftDistance = arrowheadSize * 0.25;
+                const tipX = currentByreactantEndX + shiftDistance * Math.cos(byreactantTangentAngle);
+                const tipY = currentByreactantEndY + shiftDistance * Math.sin(byreactantTangentAngle);
+                
+                const baseDistance = arrowheadSize;
+                const baseWidth = arrowheadSize * 0.6;
+                const arrowheadPerpAngle = byreactantTangentAngle + Math.PI / 2;
+                
+                const baseCenterX = tipX - baseDistance * Math.cos(byreactantTangentAngle);
+                const baseCenterY = tipY - baseDistance * Math.sin(byreactantTangentAngle);
                 
                 let baseLeftX = baseCenterX - baseWidth * Math.cos(arrowheadPerpAngle);
                 let baseLeftY = baseCenterY - baseWidth * Math.sin(arrowheadPerpAngle);
@@ -5469,11 +5517,13 @@ export class MetabolismViewer {
       // are already rotated around midX, midY. The labels are calculated from these rotated end points,
       // so they are already in the correct position. No additional rotation needed.
       
-      // Add triangle arrowhead only at the end of the byproduct arrow
+      // Add triangle arrowheads for by-molecule arrows
       let byproductArrowhead = null;
+      let byreactantArrowhead = null;
       const arrowheadSize = PATHWAY_CONFIG.arrowSettings.arrowheadSize;
+      const isReversible = this.isReactionReversible(reaction);
       
-      // Add triangle arrowhead at the end of the byproduct arrow (only on byproduct side)
+      // Add triangle arrowhead at the end of the byproduct arrow
       if (drawByproduct) {
         // Use the already-calculated byproductTangentAngle which accounts for:
         // - Rotation (byMoleculeRotationAngle) if set
@@ -5489,6 +5539,25 @@ export class MetabolismViewer {
           midX,
           midY,
           true // isByproduct: true to create mirror image
+        );
+      }
+      
+      // Add triangle arrowhead at the end of the byreactant arrow (if reversible)
+      if (drawByreactant && isReversible) {
+        // Use the already-calculated byreactantTangentAngle which accounts for:
+        // - Rotation (byMoleculeRotationAngle) if set
+        // - Bezier curve tangent (control to end)
+        // Draw at the actual end of the path (byreactantEndX/Y), not the extended tip
+        // Pass isByproduct=false since this is a byreactant arrow
+        byreactantArrowhead = drawTriangleArrowhead(
+          byreactantEndX,
+          byreactantEndY,
+          byreactantTangentAngle,
+          arrowheadSize,
+          byMoleculeRotationAngle,
+          midX,
+          midY,
+          false // isByproduct: false for byreactant arrow
         );
       }
       

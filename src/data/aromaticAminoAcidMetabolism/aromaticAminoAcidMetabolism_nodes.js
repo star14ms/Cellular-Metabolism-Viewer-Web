@@ -316,6 +316,7 @@ export const aromaticAminoAcidMetabolismNodes = [
     id: 'gtp_aromatic',
     type: 'molecule',
     name: 'Guanosine triphosphate (GTP)',
+    pathwayType: 'nucleotides',
     formula: 'C₁₀H₁₆N₅O₁₄P₃',
     smiles: 'NC1=NC2=C(N1)C(=O)N(C(=O)N2)[C@H]3[C@@H]([C@H]([C@@H](O3)COP(=O)(O)OP(=O)(O)OP(=O)(O)O)O)O',
     description: 'Guanosine triphosphate, precursor to tetrahydrobiopterin',

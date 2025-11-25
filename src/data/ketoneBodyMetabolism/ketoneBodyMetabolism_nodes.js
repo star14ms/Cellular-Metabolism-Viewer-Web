@@ -150,6 +150,7 @@ export const ketoneBodyMetabolismNodes = [
     id: 'succinyl_coa_kbm',
     type: 'molecule',
     name: 'Succinyl-CoA',
+    pathwayType: 'oxidative-metabolism',
     description: 'CoA donor for acetoacetate activation',
     position: { x: base_x + unit_space * 1.25, y: base_y + unit_space * 3.1 }
   },
@@ -157,6 +158,7 @@ export const ketoneBodyMetabolismNodes = [
     id: 'succinate_kbm',
     type: 'molecule',
     name: 'Succinate',
+    pathwayType: 'oxidative-metabolism',
     description: 'Product of succinyl-CoA after CoA transfer',
     position: { x: base_x + unit_space * 1.25, y: base_y + unit_space * 3.9 }
   }

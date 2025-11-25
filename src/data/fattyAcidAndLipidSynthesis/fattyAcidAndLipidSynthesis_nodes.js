@@ -208,6 +208,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     id: 'citrate_fas',
     type: 'molecule',
     name: 'Citrate',
+    pathwayType: 'oxidative-metabolism',
     formula: 'C₆H₈O₇',
     smiles: 'C(C(=O)O)C(CC(=O)O)(C(=O)O)O',
     description: 'Citrate, key precursor for fatty acid synthesis via tricarboxylate transporter',

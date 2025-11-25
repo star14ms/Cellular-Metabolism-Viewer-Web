@@ -130,6 +130,7 @@ export const fattyAcidOxidationNodes = [
     id: 'succinyl_coa_fao',
     type: 'molecule',
     name: 'Succinyl-CoA',
+    pathwayType: 'oxidative-metabolism',
     description: 'Intermediate in the breakdown of odd-chain fatty acids, enters the TCA cycle.',
     position: { x: base_x + unit_space * 2, y: base_y + unit_space * 5 }
   },
