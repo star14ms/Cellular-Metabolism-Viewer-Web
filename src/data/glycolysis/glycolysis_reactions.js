@@ -400,6 +400,7 @@ export const glycolysisReactions = [
     id: 'rxn_fadh2_to_coenzyme_q',
     name: 'FADH₂ to Coenzyme Q Electron Transfer',
     byproduct: ['coenzyme_q_reduced', 'fad_glycolysis'],
+    hideByproductLabels: true,
     enzyme: {
       name: 'Electron Transfer System',
       ecNumber: 'N/A',

@@ -30,7 +30,7 @@ export const glycolysisData = {
   subPathways: [
     {
       id: 'main-glycolysis',
-      name: 'Main Glycolysis Pathway',
+      name: 'Glycolysis',
       description: 'The core ten-step pathway that converts glucose to pyruvate, producing ATP and NADH. Steps 1-10: Glucose → Glucose-6-phosphate → Fructose-6-phosphate → Fructose-1,6-bisphosphate → Glyceraldehyde-3-phosphate → 1,3-Bisphosphoglycerate → 3-Phosphoglycerate → 2-Phosphoglycerate → Phosphoenolpyruvate → Pyruvate.',
       reactionIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], // Steps 1-10
       nodeIds: ['glucose', 'glucose_6_phosphate', 'fructose_6_phosphate', 'fructose_1_6_bisphosphate', 'dihydroxyacetone_phosphate', 'glyceraldehyde_3_phosphate', '1_3_bisphosphoglycerate', '3_phosphoglycerate', '2_phosphoglycerate', 'phosphoenolpyruvate', 'pyruvate_glycolysis']

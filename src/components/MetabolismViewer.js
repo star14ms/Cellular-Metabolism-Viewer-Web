@@ -766,6 +766,667 @@ export class MetabolismViewer {
         this.handleResize();
       }
     }, 500); // Check every 500ms as fallback
+    
+    // Initialize search component
+    this.initSearchComponent();
+  }
+  
+  initSearchComponent() {
+    // Remove existing search component if it exists
+    const existingSearch = this.container.querySelector('.molecule-reaction-search');
+    if (existingSearch) {
+      existingSearch.remove();
+    }
+    
+    // Create search container
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'molecule-reaction-search';
+    
+    // Create search input
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'search-input';
+    searchInput.placeholder = 'Search molecule, reaction, or pathway...';
+    searchInput.setAttribute('aria-label', 'Search molecule, reaction, or pathway');
+    
+    // Create dropdown container
+    const dropdown = document.createElement('div');
+    dropdown.className = 'search-dropdown';
+    dropdown.style.display = 'none';
+    
+    searchContainer.appendChild(searchInput);
+    searchContainer.appendChild(dropdown);
+    this.container.appendChild(searchContainer);
+    
+    // Store references
+    this.searchInput = searchInput;
+    this.searchDropdown = dropdown;
+    this.searchContainer = searchContainer;
+    this.currentPreviewResult = null; // Track current preview for clearing
+    
+    // Search functionality
+    let searchTimeout;
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim().toLowerCase();
+      
+      // Clear previous timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+      
+      if (query.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+      }
+      
+      // Debounce search
+      searchTimeout = setTimeout(() => {
+        this.performSearch(query);
+      }, 150);
+    });
+    
+    // Handle focus/blur
+    searchInput.addEventListener('focus', () => {
+      if (dropdown.children.length > 0) {
+        dropdown.style.display = 'block';
+      }
+      searchContainer.classList.add('active');
+    });
+    
+    searchInput.addEventListener('blur', () => {
+      // Delay hiding dropdown to allow click events
+      setTimeout(() => {
+        if (!searchContainer.matches(':hover') && !dropdown.matches(':hover')) {
+          dropdown.style.display = 'none';
+          searchContainer.classList.remove('active');
+        }
+      }, 200);
+    });
+    
+    // Keep dropdown visible when hovering
+    dropdown.addEventListener('mouseenter', () => {
+      dropdown.style.display = 'block';
+    });
+    
+    dropdown.addEventListener('mouseleave', () => {
+      if (document.activeElement !== searchInput) {
+        dropdown.style.display = 'none';
+        searchContainer.classList.remove('active');
+      }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!searchContainer.contains(e.target)) {
+        dropdown.style.display = 'none';
+        searchContainer.classList.remove('active');
+      }
+    });
+  }
+  
+  performSearch(query) {
+    // Separate results by type to ensure balanced representation
+    const pathwayResults = [];
+    const subpathwayResults = [];
+    const moleculeResults = [];
+    const reactionResults = [];
+    
+    // Search pathways first (highest priority)
+    this.pathways.forEach(pathway => {
+      const name = pathway.name || '';
+      const id = pathway.id || '';
+      const summaryName = pathway.summary?.name || '';
+      const searchText = `${name} ${id} ${summaryName}`.toLowerCase();
+      
+      if (searchText.includes(query)) {
+        pathwayResults.push({
+          type: 'pathway',
+          name: name,
+          id: id,
+          pathway: pathway,
+          displayName: name || summaryName || id
+        });
+      }
+      
+      // Search subpathways within this pathway
+      if (pathway.subPathways && pathway.subPathways.length > 0) {
+        pathway.subPathways.forEach(subPathway => {
+          const subName = subPathway.name || '';
+          const subId = subPathway.id || '';
+          const subDescription = subPathway.description || '';
+          const subSearchText = `${subName} ${subId} ${subDescription}`.toLowerCase();
+          
+          if (subSearchText.includes(query)) {
+            subpathwayResults.push({
+              type: 'subpathway',
+              name: subName,
+              id: subId,
+              subPathway: subPathway,
+              parentPathway: pathway,
+              displayName: subName || subId
+            });
+          }
+        });
+      }
+    });
+    
+    // Search molecules (nodes)
+    this.nodes.forEach(node => {
+      const name = node.name || '';
+      const id = node.id || '';
+      const searchText = `${name} ${id}`.toLowerCase();
+      
+      if (searchText.includes(query)) {
+        moleculeResults.push({
+          type: 'molecule',
+          name: name,
+          id: id,
+          node: node,
+          displayName: name || id
+        });
+      }
+    });
+    
+    // Check for duplicate names in molecule results and add pathway name to distinguish them
+    const nameCounts = new Map();
+    moleculeResults.forEach(result => {
+      const name = result.name || '';
+      nameCounts.set(name, (nameCounts.get(name) || 0) + 1);
+    });
+    
+    // Update display names to include subpathway name when there are duplicates
+    moleculeResults.forEach(result => {
+      const name = result.name || '';
+      if (nameCounts.get(name) > 1) {
+        // Multiple nodes with same name - find subpathway name to distinguish
+        let subpathwayName = null;
+        
+        // Find the reaction that uses this node
+        const reaction = this.reactions.find(r => 
+          r.nodeId === result.id || 
+          (r.node && r.node.id === result.id) ||
+          (r.product && r.product.id === result.id) ||
+          (r.substrate && r.substrate.id === result.id)
+        );
+        
+        if (reaction) {
+          const pathway = this.getPathwayForReaction(reaction);
+          if (pathway && pathway.subPathways && Array.isArray(pathway.subPathways)) {
+            // Check if this node belongs to any subpathway
+            for (const subPathway of pathway.subPathways) {
+              if (subPathway.nodeIds && Array.isArray(subPathway.nodeIds)) {
+                if (subPathway.nodeIds.includes(result.id)) {
+                  subpathwayName = subPathway.name || null;
+                  break;
+                }
+              }
+            }
+          }
+          
+          // If no subpathway found, fall back to pathway name
+          if (!subpathwayName && pathway) {
+            subpathwayName = pathway.summary?.name || pathway.name || null;
+          }
+        }
+        
+        // Show subpathway name if found, otherwise fall back to pathway name or ID
+        if (subpathwayName) {
+          result.displayName = `${name} (${subpathwayName})`;
+        } else {
+          result.displayName = `${name} (${result.id})`;
+        }
+      }
+    });
+    
+    // Search reactions
+    this.reactions.forEach(reaction => {
+      const name = reaction.name || '';
+      const id = reaction.id || '';
+      const enzymeName = reaction.enzyme?.name || '';
+      const searchText = `${name} ${id} ${enzymeName}`.toLowerCase();
+      
+      if (searchText.includes(query)) {
+        reactionResults.push({
+          type: 'reaction',
+          name: name,
+          id: id,
+          reaction: reaction,
+          displayName: name || id || 'Unnamed Reaction'
+        });
+      }
+    });
+    
+    // Combine results with priority: always show all pathways and subpathways
+    // Show all molecules (no limit) since we want to show all nodes with same name
+    // But still limit reactions to keep list manageable
+    const totalLimit = 50; // Increased limit to accommodate all molecules
+    const pathwaySlots = pathwayResults.length + subpathwayResults.length;
+    const remainingSlots = Math.max(0, totalLimit - pathwaySlots);
+    
+    // Show all molecules (no limit), but limit reactions
+    const reactionLimit = Math.min(reactionResults.length, remainingSlots);
+    
+    // Combine results in display order: molecules → reactions → pathways → subpathways
+    // Show all molecules to ensure nodes with same name are all visible
+    const combinedResults = [
+      ...moleculeResults, // Show all molecules (no limit)
+      ...reactionResults.slice(0, reactionLimit),
+      ...pathwayResults, // Show all pathways (no limit)
+      ...subpathwayResults // Show all subpathways (no limit)
+    ];
+    
+    // Render results
+    this.renderSearchResults(combinedResults);
+  }
+  
+  renderSearchResults(results) {
+    const dropdown = this.searchDropdown;
+    
+    // Clear previous results
+    dropdown.innerHTML = '';
+    
+    if (results.length === 0) {
+      const noResults = document.createElement('div');
+      noResults.className = 'search-result-item no-results';
+      noResults.textContent = 'No matches found';
+      dropdown.appendChild(noResults);
+      dropdown.style.display = 'block';
+      return;
+    }
+    
+    // Group results by type
+    const molecules = results.filter(r => r.type === 'molecule');
+    const reactions = results.filter(r => r.type === 'reaction');
+    const pathways = results.filter(r => r.type === 'pathway');
+    const subpathways = results.filter(r => r.type === 'subpathway');
+    
+    // Add molecule results first
+    if (molecules.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'search-section-header';
+      sectionHeader.textContent = `Molecules (${molecules.length})`;
+      dropdown.appendChild(sectionHeader);
+      
+      molecules.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item molecule-item';
+        item.textContent = result.displayName;
+        item.addEventListener('mouseenter', (e) => {
+          e.stopPropagation();
+          this.previewSearchResult(result);
+        });
+        item.addEventListener('mouseleave', (e) => {
+          e.stopPropagation();
+          this.clearPreview();
+        });
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.selectSearchResult(result);
+        });
+        dropdown.appendChild(item);
+      });
+    }
+    
+    // Add reaction results second
+    if (reactions.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'search-section-header';
+      sectionHeader.textContent = `Reactions (${reactions.length})`;
+      dropdown.appendChild(sectionHeader);
+      
+      reactions.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item reaction-item';
+        item.textContent = result.displayName;
+        item.addEventListener('mouseenter', (e) => {
+          e.stopPropagation();
+          this.previewSearchResult(result);
+        });
+        item.addEventListener('mouseleave', (e) => {
+          e.stopPropagation();
+          this.clearPreview();
+        });
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.selectSearchResult(result);
+        });
+        dropdown.appendChild(item);
+      });
+    }
+    
+    // Add pathway results third
+    if (pathways.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'search-section-header';
+      sectionHeader.textContent = `Pathways (${pathways.length})`;
+      dropdown.appendChild(sectionHeader);
+      
+      pathways.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item pathway-item';
+        item.textContent = result.displayName;
+        item.addEventListener('mouseenter', (e) => {
+          e.stopPropagation();
+          this.previewSearchResult(result);
+        });
+        item.addEventListener('mouseleave', (e) => {
+          e.stopPropagation();
+          this.clearPreview();
+        });
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.selectSearchResult(result);
+        });
+        dropdown.appendChild(item);
+      });
+    }
+    
+    // Add subpathway results last
+    if (subpathways.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'search-section-header';
+      sectionHeader.textContent = `Subpathways (${subpathways.length})`;
+      dropdown.appendChild(sectionHeader);
+      
+      subpathways.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item subpathway-item';
+        // Show parent pathway name in parentheses
+        const parentName = result.parentPathway?.name || '';
+        item.textContent = `${result.displayName}${parentName ? ` (${parentName})` : ''}`;
+        item.addEventListener('mouseenter', (e) => {
+          e.stopPropagation();
+          this.previewSearchResult(result);
+        });
+        item.addEventListener('mouseleave', (e) => {
+          e.stopPropagation();
+          this.clearPreview();
+        });
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.selectSearchResult(result);
+        });
+        dropdown.appendChild(item);
+      });
+    }
+    
+    dropdown.style.display = 'block';
+  }
+  
+  previewSearchResult(result) {
+    // Clear any existing preview first
+    this.clearPreview();
+    
+    // Store current preview
+    this.currentPreviewResult = result;
+    
+    if (result.type === 'molecule') {
+      // Use node ID-based highlighting to avoid substring matching issues
+      // This ensures we only highlight the exact molecule, not molecules that contain the name
+      this.previewMoleculeHighlight(result.id, result.node);
+    } else if (result.type === 'reaction') {
+      // Preview highlight reaction arrows
+      this.highlightReactionArrows(result.reaction.id, PATHWAY_CONFIG.arrowSettings.strokeWidthHover);
+      // Preview highlight reaction nodes
+      this.applyReactionHighlight(result.reaction, { useNodeIdOnly: true });
+    } else if (result.type === 'pathway') {
+      this.previewPathwayHighlight(result.pathway);
+    } else if (result.type === 'subpathway') {
+      this.previewSubPathwayHighlight(result.parentPathway, result.subPathway);
+    }
+  }
+  
+  previewMoleculeHighlight(moleculeId, moleculeNode) {
+    // Reset all node highlighting
+    this.resetAllNodeHighlights();
+    
+    // Initialize highlighted node IDs tracking
+    this.highlightedNodeIds = new Set();
+    
+    if (!moleculeId) return;
+    
+    // Highlight only the single node that exactly matches the molecule ID
+    // Since search results already show all matches in the list, we only need to highlight one node on hover
+    const matchingNode = this.reactionGroups.filter(d => d && d.nodeId === moleculeId);
+    
+    if (!matchingNode.empty()) {
+      // Highlight only the first matching node (there should typically be only one)
+      this.applyNodeHighlightStyle(matchingNode, 'default');
+      matchingNode.each(d => {
+        if (d && d.nodeId) {
+          this.highlightedNodeIds.add(d.nodeId);
+        }
+      });
+    }
+    
+    // Update opacity for non-highlighted nodes
+    this.updateNodeOpacityForHighlight();
+  }
+  
+  clearPreview() {
+    // Only clear if we have a preview active
+    if (!this.currentPreviewResult) return;
+    
+    // Reset all highlights to default state
+    this.resetAllNodeHighlights();
+    this.g.selectAll('.connection')
+      .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+      .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
+      .attr('stroke', PATHWAY_CONFIG.colors.secondary)
+      .attr('marker-end', 'url(#arrowhead)')
+      .each(function() {
+        const element = d3.select(this);
+        if (element.attr('marker-start')) {
+          element.attr('marker-start', 'url(#arrowhead)');
+        }
+      });
+    
+    // Restore current selection if any (re-apply highlighting without triggering events)
+    if (this.selectedMolecule && this.selectedNode) {
+      this.applyMoleculeHighlight(this.selectedMolecule, this.selectedNode);
+    } else if (this.selectedReaction) {
+      this.highlightReactionArrows(this.selectedReaction.id, PATHWAY_CONFIG.arrowSettings.strokeWidthHover);
+      this.applyReactionHighlight(this.selectedReaction, { useNodeIdOnly: true });
+    } else if (this.selectedPathway) {
+      const pathway = this.pathways.find(p => p.id === this.selectedPathway);
+      if (pathway) {
+        // Use the same logic as selectPathway for highlighting
+        const pathwayNodeIds = new Set();
+        if (pathway.nodes) {
+          pathway.nodes.forEach(n => pathwayNodeIds.add(n.id));
+        }
+        if (pathway.arrows) {
+          pathway.arrows.forEach(arrow => {
+            if (arrow.from_id) pathwayNodeIds.add(arrow.from_id);
+            if (arrow.to_id) pathwayNodeIds.add(arrow.to_id);
+          });
+        }
+        if (pathway.subPathways) {
+          pathway.subPathways.forEach(subPathway => {
+            if (subPathway.nodeIds) {
+              subPathway.nodeIds.forEach(nodeId => pathwayNodeIds.add(nodeId));
+            }
+          });
+        }
+        
+        this.highlightedNodeIds = new Set();
+        const viewer = this;
+        this.reactionGroups.each(function(d) {
+          if (!d || !d.nodeId) return;
+          const nodeGroup = d3.select(this);
+          const nodeId = d.nodeId;
+          if (pathwayNodeIds.has(nodeId)) {
+            viewer.highlightedNodeIds.add(nodeId);
+            viewer.applyNodeHighlightStyle(nodeGroup, 'default');
+          }
+        });
+        this.updateNodeOpacityForHighlight();
+      }
+    }
+    
+    this.currentPreviewResult = null;
+  }
+  
+  previewPathwayHighlight(pathway) {
+    // Reset all node highlighting
+    this.resetAllNodeHighlights();
+    
+    // Reset all arrow highlighting
+    this.g.selectAll('.connection')
+      .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+      .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
+      .attr('stroke', PATHWAY_CONFIG.colors.secondary)
+      .attr('marker-end', 'url(#arrowhead)')
+      .each(function() {
+        const element = d3.select(this);
+        if (element.attr('marker-start')) {
+          element.attr('marker-start', 'url(#arrowhead)');
+        }
+      });
+    
+    // Collect all node IDs from the pathway
+    const pathwayNodeIds = new Set();
+    if (pathway.nodes) {
+      pathway.nodes.forEach(n => pathwayNodeIds.add(n.id));
+    }
+    if (pathway.arrows) {
+      pathway.arrows.forEach(arrow => {
+        if (arrow.from_id) pathwayNodeIds.add(arrow.from_id);
+        if (arrow.to_id) pathwayNodeIds.add(arrow.to_id);
+      });
+    }
+    if (pathway.subPathways) {
+      pathway.subPathways.forEach(subPathway => {
+        if (subPathway.nodeIds) {
+          subPathway.nodeIds.forEach(nodeId => pathwayNodeIds.add(nodeId));
+        }
+      });
+    }
+    
+    // Initialize highlighted node IDs tracking
+    this.highlightedNodeIds = new Set();
+    const viewer = this;
+    
+    // Highlight all nodes from the pathway
+    this.reactionGroups.each(function(d) {
+      if (!d || !d.nodeId) return;
+      const nodeGroup = d3.select(this);
+      const nodeId = d.nodeId;
+      
+      if (pathwayNodeIds.has(nodeId)) {
+        viewer.highlightedNodeIds.add(nodeId);
+        viewer.applyNodeHighlightStyle(nodeGroup, 'default');
+      }
+    });
+    
+    // Update opacity for non-highlighted nodes
+    this.updateNodeOpacityForHighlight();
+  }
+  
+  previewSubPathwayHighlight(parentPathway, subPathway) {
+    // Reset all node highlighting
+    this.resetAllNodeHighlights();
+    
+    // Reset all arrow highlighting
+    this.g.selectAll('.connection')
+      .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
+      .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
+      .attr('stroke', PATHWAY_CONFIG.colors.secondary)
+      .attr('marker-end', 'url(#arrowhead)')
+      .each(function() {
+        const element = d3.select(this);
+        if (element.attr('marker-start')) {
+          element.attr('marker-start', 'url(#arrowhead)');
+        }
+      });
+    
+    // Collect node IDs from subpathway
+    const subPathwayNodeIds = new Set();
+    if (subPathway.nodeIds) {
+      subPathway.nodeIds.forEach(nodeId => subPathwayNodeIds.add(nodeId));
+    }
+    
+    // Also get arrows for this subpathway
+    if (parentPathway.arrows && subPathway.reactionIndices) {
+      const subPathwayReactionIds = new Set(
+        subPathway.reactionIndices.map(idx => parentPathway.reactions[idx]?.id).filter(Boolean)
+      );
+      parentPathway.arrows.forEach(arrow => {
+        if (arrow.reaction_id && subPathwayReactionIds.has(arrow.reaction_id)) {
+          if (arrow.from_id) subPathwayNodeIds.add(arrow.from_id);
+          if (arrow.to_id) subPathwayNodeIds.add(arrow.to_id);
+        }
+      });
+    }
+    
+    // Initialize highlighted node IDs tracking
+    this.highlightedNodeIds = new Set();
+    const viewer = this;
+    
+    // Highlight all nodes from the subpathway
+    this.reactionGroups.each(function(d) {
+      if (!d || !d.nodeId) return;
+      const nodeGroup = d3.select(this);
+      const nodeId = d.nodeId;
+      
+      if (subPathwayNodeIds.has(nodeId)) {
+        viewer.highlightedNodeIds.add(nodeId);
+        viewer.applyNodeHighlightStyle(nodeGroup, 'default');
+      }
+    });
+    
+    // Update opacity for non-highlighted nodes
+    this.updateNodeOpacityForHighlight();
+  }
+  
+  selectSearchResult(result) {
+    // Clear preview before selecting
+    this.clearPreview();
+    
+    // Close dropdown and clear input
+    this.searchDropdown.style.display = 'none';
+    this.searchInput.value = '';
+    this.searchContainer.classList.remove('active');
+    
+    if (result.type === 'molecule') {
+      // Find the reaction node that displays this molecule by exact ID match
+      // Only match on nodeId or node.id (the displayed node), not on product/substrate IDs
+      // This ensures we zoom to the correct position where the molecule is actually displayed
+      const reactionNode = this.reactions.find(r => 
+        r.nodeId === result.id || 
+        (r.node && r.node.id === result.id)
+      );
+      
+      if (reactionNode) {
+        // Use the exact molecule from the search result or from the reaction node
+        // The node object is the source of truth for the displayed molecule
+        const molecule = result.node || reactionNode.node || reactionNode.product || reactionNode.substrate;
+        if (molecule && (molecule.id === result.id || reactionNode.nodeId === result.id)) {
+          // Ensure we use the molecule with the exact ID from the search result
+          // Show detail page first, then zoom after detail panel appears
+          this.selectMolecule(molecule, reactionNode);
+          // Wait for detail panel to appear before zooming, so we calculate center from cropped viewport
+          setTimeout(() => {
+            this.zoomToNode(reactionNode);
+          }, 100); // Small delay to allow detail panel to render and resize container
+        } else {
+          // Fallback: use node data directly with exact ID
+          this.selectMoleculeByName(result.name, result.id);
+        }
+      } else {
+        // Fallback: try to find by name with exact ID
+        this.selectMoleculeByName(result.name, result.id);
+      }
+    } else if (result.type === 'reaction') {
+      this.selectReaction(result.reaction);
+      this.zoomToReactionArrow(result.reaction);
+    } else if (result.type === 'pathway') {
+      this.selectPathway(result.pathway);
+      // Zoom to pathway (selectPathway handles zooming internally)
+    } else if (result.type === 'subpathway') {
+      this.selectSubPathway(result.parentPathway, result.subPathway);
+      // Zoom to subpathway (selectSubPathway handles zooming internally)
+    }
   }
   
   destroy() {
@@ -787,6 +1448,10 @@ export class MetabolismViewer {
     if (this.resizeCheckInterval) {
       clearInterval(this.resizeCheckInterval);
       this.resizeCheckInterval = null;
+    }
+    // Clean up search component
+    if (this.searchContainer && this.searchContainer.parentNode) {
+      this.searchContainer.remove();
     }
   }
   
@@ -8177,7 +8842,10 @@ export class MetabolismViewer {
       this.selectMolecule(targetMolecule, targetReaction, options);
       // Zoom to the molecule node only if skipZoom is not set (for by-molecules, skip zoom)
       if (!options.skipZoom) {
-        this.zoomToNode(targetReaction);
+        // Wait for detail panel to appear before zooming, so we calculate center from cropped viewport
+        setTimeout(() => {
+          this.zoomToNode(targetReaction);
+        }, 100); // Small delay to allow detail panel to render and resize container
       }
     } else {
       console.warn(`Molecule "${moleculeName}" not found in reactions, coSubstrates, or byproducts`);
@@ -8357,10 +9025,24 @@ export class MetabolismViewer {
       }
     }
     
-    // Find all nodes matching any of the names
+    // Find all nodes matching - prioritize ID matching for exact matches
     const matchingNodes = this.reactionGroups.filter(d => {
       if (!d) return false;
       
+      // First, check if node ID exactly matches the molecule ID (most reliable)
+      if (molecule.id && d.nodeId === molecule.id) {
+        return true;
+      }
+      
+      // Also check if the node's molecule ID matches
+      if (molecule.id) {
+        const nodeMoleculeId = d.node?.id || d.product?.id || d.substrate?.id;
+        if (nodeMoleculeId === molecule.id) {
+          return true;
+        }
+      }
+      
+      // Only if no ID match, fall back to exact name matching
       // Get the molecule name from the node
       let nodeMoleculeName = null;
       if (d.node && d.node.name) {
@@ -8376,7 +9058,7 @@ export class MetabolismViewer {
       
       if (!nodeMoleculeName) return false;
       
-      // Check if node name matches any of the names to match
+      // Check if node name exactly matches any of the names to match (exact match only, no substring)
       // Also check if normalized names (removing leading coefficients) match
       // This handles cases like "Acetyl-CoA" matching "2 Acetyl-CoA"
       return namesToMatch.some(name => {
@@ -8433,9 +9115,16 @@ export class MetabolismViewer {
    * Zoom to a node without selecting the reaction (for molecule selection)
    */
   zoomToNode(reactionNode) {
+    // Get current container dimensions (accounts for detail panel if visible)
+    // This ensures we calculate center from the cropped viewport, not the full map
+    const containerRect = this.container.getBoundingClientRect();
+    const containerWidth = containerRect.width || this.options.width || 800;
+    const containerHeight = containerRect.height || this.options.height || 600;
+    
     const scale = 2;
-    const x = this.options.width / 2 - reactionNode.position.x * scale;
-    const y = this.options.height / 2 - reactionNode.position.y * scale;
+    // Calculate center based on current container size (after detail panel appears)
+    const x = containerWidth / 2 - reactionNode.position.x * scale;
+    const y = containerHeight / 2 - reactionNode.position.y * scale;
     
     const transform = d3.zoomIdentity
       .translate(x, y)
@@ -8489,14 +9178,20 @@ export class MetabolismViewer {
           const centerX = (minX + maxX) / 2;
           const centerY = (minY + maxY) / 2;
           
+          // Get current container dimensions (accounts for detail panel if visible)
+          // This ensures we calculate center from the cropped viewport, not the full map
+          const containerRect = this.container.getBoundingClientRect();
+          const containerWidth = containerRect.width || this.options.width || 800;
+          const containerHeight = containerRect.height || this.options.height || 600;
+          
           // Calculate scale to fit the bounds in the viewport
-          const scaleX = (this.options.width * 0.9) / width;
-          const scaleY = (this.options.height * 0.9) / height;
+          const scaleX = (containerWidth * 0.9) / width;
+          const scaleY = (containerHeight * 0.9) / height;
           const scale = Math.min(scaleX, scaleY, 3); // Cap at 3x zoom
           
-          // Calculate translation to center the bounds
-          const x = this.options.width / 2 - centerX * scale;
-          const y = this.options.height / 2 - centerY * scale;
+          // Calculate translation to center the bounds (using current container size)
+          const x = containerWidth / 2 - centerX * scale;
+          const y = containerHeight / 2 - centerY * scale;
           
           const transform = d3.zoomIdentity
             .translate(x, y)
@@ -8530,9 +9225,16 @@ export class MetabolismViewer {
             targetCoords = reaction.position;
           }
           
+          // Get current container dimensions (accounts for detail panel if visible)
+          // This ensures we calculate center from the cropped viewport, not the full map
+          const containerRect = this.container.getBoundingClientRect();
+          const containerWidth = containerRect.width || this.options.width || 800;
+          const containerHeight = containerRect.height || this.options.height || 600;
+          
           const scale = 2;
-          const x = this.options.width / 2 - targetCoords.x * scale;
-          const y = this.options.height / 2 - targetCoords.y * scale;
+          // Calculate center based on current container size (after detail panel appears)
+          const x = containerWidth / 2 - targetCoords.x * scale;
+          const y = containerHeight / 2 - targetCoords.y * scale;
           
           const transform = d3.zoomIdentity
             .translate(x, y)
