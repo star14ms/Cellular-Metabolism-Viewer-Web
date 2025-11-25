@@ -68,6 +68,25 @@ export const singleCarbonMetabolismReactions = [
     }
   },
 
+  // Reaction 3a: N10-formyl-THF → Purine Synthesis
+  {
+    id: 'rxn_single_carbon_3a',
+    name: 'N10-formyl-THF to Purine Synthesis',
+    enzyme: {
+      name: 'Various purine synthesis enzymes',
+      ecNumber: 'Multiple',
+      cofactors: [],
+      description: 'N10-formyl-THF provides formyl groups for purine nucleotide synthesis'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Connects single-carbon metabolism to purine synthesis',
+      isReversible: false
+    }
+  },
+
   // Reaction 4: N10-formyl-THF → N5,N10-methenyl-THF
   {
     id: 'rxn_single_carbon_4',
@@ -85,6 +104,25 @@ export const singleCarbonMetabolismReactions = [
       temperature: '37°C',
       regulation: 'Reversible reaction, interconverts formyl and methenyl forms',
       isReversible: true
+    }
+  },
+
+  // Reaction 4a: Histidine Catabolism → N5,N10-methenyl-THF
+  {
+    id: 'rxn_single_carbon_4a',
+    name: 'Histidine Catabolism to N5,N10-methenyl-THF',
+    enzyme: {
+      name: 'Histidine catabolism enzymes',
+      ecNumber: 'Multiple',
+      cofactors: [],
+      description: 'Histidine catabolism produces N5,N10-methenyl-THF as a product'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Connects histidine catabolism to single-carbon metabolism',
+      isReversible: false
     }
   },
 
@@ -106,6 +144,25 @@ export const singleCarbonMetabolismReactions = [
       temperature: '37°C',
       regulation: 'Reversible reaction, can also be formed from histidine catabolism',
       isReversible: true
+    }
+  },
+
+  // Reaction 5a: N5,N10-methylene-THF → Pyrimidine Synthesis
+  {
+    id: 'rxn_single_carbon_5a',
+    name: 'N5,N10-methylene-THF to Pyrimidine Synthesis',
+    enzyme: {
+      name: 'Various pyrimidine synthesis enzymes',
+      ecNumber: 'Multiple',
+      cofactors: [],
+      description: 'N5,N10-methylene-THF provides methylene groups for pyrimidine nucleotide synthesis'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Connects single-carbon metabolism to pyrimidine synthesis',
+      isReversible: false
     }
   },
 
@@ -137,7 +194,8 @@ export const singleCarbonMetabolismReactions = [
     id: 'rxn_single_carbon_7',
     name: '3-Phosphopyruvate Transamination',
     byreactant: ['Glutamate'],
-    byproduct: ['α-Ketoglutarate'],
+    byproduct: ['alpha_ketoglutarate_serine'],
+    hideByproductLabels: true,
     enzyme: {
       name: 'Phosphoserine transaminase',
       ecNumber: 'EC 2.6.1.52',
@@ -174,6 +232,25 @@ export const singleCarbonMetabolismReactions = [
     }
   },
 
+  // Reaction 8a: Serine → Phosphatidylserine, Ceramide, Sphingosine
+  {
+    id: 'rxn_single_carbon_8a',
+    name: 'Serine to Lipid Derivatives',
+    enzyme: {
+      name: 'Phosphatidylserine synthase, Serine palmitoyltransferase, and related enzymes',
+      ecNumber: 'Multiple',
+      cofactors: [],
+      description: 'Serine serves as a precursor for multiple lipid derivatives: phosphatidylserine (via phosphatidylserine synthase), ceramide and sphingosine (via serine palmitoyltransferase and sphingolipid synthesis pathways)'
+    },
+    conditions: {
+      location: 'Endoplasmic reticulum',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Important for membrane phospholipid and sphingolipid biosynthesis',
+      isReversible: false
+    }
+  },
+
   // Reaction 9: Serine → Glycine
   {
     id: 'rxn_single_carbon_9',
@@ -194,6 +271,25 @@ export const singleCarbonMetabolismReactions = [
       temperature: '37°C',
       regulation: 'Reversible reaction, key connection between amino acid metabolism and single-carbon metabolism',
       isReversible: true
+    }
+  },
+
+  // Reaction 9a: Glycine → Glutathione, Nucleotides, Porphyrins
+  {
+    id: 'rxn_single_carbon_9a',
+    name: 'Glycine to Multiple Products',
+    enzyme: {
+      name: 'Multiple enzymes',
+      ecNumber: 'Multiple',
+      cofactors: [],
+      description: 'Glycine serves as a precursor for multiple biosynthetic pathways: glutathione synthesis (with glutamate and cysteine), nucleotide synthesis (purine ring formation), and porphyrin synthesis (heme and chlorophyll biosynthesis)'
+    },
+    conditions: {
+      location: 'Cytoplasm, Mitochondria',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Glycine is a versatile precursor for multiple essential biomolecules',
+      isReversible: false
     }
   },
 
@@ -416,7 +512,8 @@ export const singleCarbonMetabolismReactions = [
   {
     id: 'rxn_single_carbon_20',
     name: 'S-Adenosylhomocysteine Hydrolysis',
-    byproduct: ['Adenosine'],
+    byproduct: ['adenosine_single_carbon'],
+    hideByproductLabels: true,
     enzyme: {
       name: 'S-adenosylhomocysteine hydrolase',
       ecNumber: 'EC 3.3.1.1',
@@ -429,6 +526,25 @@ export const singleCarbonMetabolismReactions = [
       temperature: '37°C',
       regulation: 'Reversible reaction, product inhibition by adenosine',
       isReversible: true
+    }
+  },
+
+  // Reaction 20a: Adenosine → Nucleotide Salvage
+  {
+    id: 'rxn_single_carbon_20a',
+    name: 'Adenosine to Nucleotide Salvage',
+    enzyme: {
+      name: 'Adenosine kinase and other salvage pathway enzymes',
+      ecNumber: 'Multiple',
+      cofactors: ['ATP'],
+      description: 'Adenosine is recycled through the nucleotide salvage pathway to regenerate nucleotides'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Important for nucleotide recycling and energy conservation',
+      isReversible: false
     }
   },
 
@@ -471,6 +587,25 @@ export const singleCarbonMetabolismReactions = [
       ph: '7.0-7.4',
       temperature: '37°C',
       regulation: 'Second step in transsulfuration pathway, irreversible',
+      isReversible: false
+    }
+  },
+
+  // Reaction 22a: Cysteine → Glutathione, Coenzyme A
+  {
+    id: 'rxn_single_carbon_23a',
+    name: 'Cysteine to Glutathione and Coenzyme A',
+    enzyme: {
+      name: 'Glutathione synthetase, γ-glutamylcysteine synthetase, and Coenzyme A synthetase',
+      ecNumber: 'EC 6.3.2.2, EC 6.3.2.3, EC 2.7.1.33',
+      cofactors: ['ATP'],
+      description: 'Cysteine serves as a precursor for both glutathione (combining with glutamate and glycine to form a key antioxidant tripeptide) and coenzyme A (essential cofactor derived from cysteine, pantothenate, and ATP)'
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      regulation: 'Important for cellular antioxidant defense and cofactor biosynthesis',
       isReversible: false
     }
   },

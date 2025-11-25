@@ -313,7 +313,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
   // Center: TCA cycle node
   {
     id: 'tca_cycle_bcaa',
-    type: 'molecule',
+    type: 'pathway',
     name: 'TCA Cycle',
     pathwayType: 'oxidative-metabolism',
     formula: 'Multiple',

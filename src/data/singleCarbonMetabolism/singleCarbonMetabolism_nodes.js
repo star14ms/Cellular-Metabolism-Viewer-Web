@@ -56,6 +56,17 @@ export const singleCarbonMetabolismNodes = [
     position: { x: upper_base_x + unit_space * 3, y: upper_y }
   },
   {
+    id: 'purine_synthesis_single_carbon',
+    type: 'pathway',
+    name: 'Purine Synthesis',
+    imageUrl: 'https://microbenotes.com/wp-content/uploads/2022/10/Purine-adenine-and-guanine.jpg',
+    pathwayType: 'nucleotides',
+    formula: 'Multiple',
+    description: 'Purine nucleotide synthesis pathway, uses N10-formyl-THF as formyl group donor',
+    pathwayIdToRoute: 'purine-synthesis',
+    position: { x: upper_base_x + unit_space * 3, y: upper_y - unit_space * 1 }
+  },
+  {
     id: 'n5_n10_methenyl_thf',
     type: 'molecule',
     name: 'N⁵,N¹⁰-methenyl-THF',
@@ -65,6 +76,16 @@ export const singleCarbonMetabolismNodes = [
     position: { x: upper_base_x + unit_space * 4, y: upper_y }
   },
   {
+    id: 'histidine_catabolism_single_carbon',
+    type: 'molecule',
+    name: 'Histidine Catabolism',
+    pathwayType: 'amino_acids',
+    pubchemCid: 6274,
+    formula: 'Multiple',
+    description: 'Histidine catabolism pathway, produces N5,N10-methenyl-THF',
+    position: { x: upper_base_x + unit_space * 4, y: upper_y - unit_space * 1 }
+  },
+  {
     id: 'n5_n10_methylene_thf',
     type: 'molecule',
     name: 'N⁵,N¹⁰-methylene-THF',
@@ -72,6 +93,17 @@ export const singleCarbonMetabolismNodes = [
     smiles: 'C1=CC(=CC=C1C(=O)N[C@@H](CCC(=O)O)C(=O)O)NCC2=CN=C3C(=N2)C(=O)NC(=N3)N',
     description: 'N5,N10-methylene-tetrahydrofolate, methylene group carrier for pyrimidine synthesis and serine-glycine interconversion',
     position: { x: upper_base_x + unit_space * 5, y: upper_y }
+  },
+  {
+    id: 'pyrimidine_synthesis_single_carbon',
+    type: 'pathway',
+    name: 'Pyrimidine Synthesis',
+    imageUrl: 'https://microbenotes.com/wp-content/uploads/2022/10/Purine-adenine-and-guanine.jpg',
+    pathwayType: 'nucleotides',
+    formula: 'Multiple',
+    description: 'Pyrimidine nucleotide synthesis pathway, uses N5,N10-methylene-THF as methylene group donor',
+    pathwayIdToRoute: 'pyrimidine-synthesis',
+    position: { x: upper_base_x + unit_space * 5, y: upper_y - unit_space * 1 }
   },
   {
     id: 'n5_methyl_thf',
@@ -113,6 +145,28 @@ export const singleCarbonMetabolismNodes = [
     smiles: 'CSCCC(C(=O)O)N[C@@H](CC1=CN=CN1)C(=O)N[C@@H](CC(C)C)C(=O)O',
     description: 'S-adenosylhomocysteine, product of SAM methylation reactions',
     position: { x: upper_base_x + unit_space * 7.5 + unit_space * 0.7, y: upper_y + unit_space * 0.7 - unit_space * 0.3 }
+  },
+  {
+    id: 'adenosine_single_carbon',
+    type: 'molecule',
+    name: 'Adenosine',
+    pathwayType: 'nucleotides',
+    formula: 'C₁₀H₁₃N₅O₄',
+    smiles: 'C1=NC(=C2C(=N1)N(C=N2)C3C(C(C(O3)CO)O)O)N',
+    description: 'Adenosine, nucleoside produced from SAH hydrolysis',
+    position: { x: upper_base_x + unit_space * 7.33, y: upper_y + unit_space * 1.05 }
+  },
+  {
+    id: 'nucleotide_salvage',
+    type: 'pathway',
+    name: 'Nucleotide Salvage',
+    imageUrl: 'https://www.novocib.com/app/img/ADK_Reaction.png',
+    pathwayType: 'nucleotides',
+    formula: 'Multiple',
+    smiles: '',
+    description: 'Nucleotide salvage pathway, recycles adenosine and other nucleosides into nucleotides',
+    pathwayIdToRoute: 'nucleoside-salvage',
+    position: { x: upper_base_x + unit_space * 8.83, y: upper_y + unit_space * 1.05 }
   },
   {
     id: 'homocysteine',
@@ -157,6 +211,46 @@ export const singleCarbonMetabolismNodes = [
     position: { x: base_x + unit_space * 3, y: lower_y }
   },
   {
+    id: 'alpha_ketoglutarate_serine',
+    type: 'molecule',
+    name: 'α-Ketoglutarate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₅H₆O₅',
+    smiles: 'C(CC(=O)O)CC(=O)C(=O)O',
+    description: 'α-Ketoglutarate, produced from glutamate in 3-phosphopyruvate transamination',
+    position: { x: base_x + unit_space * 1.66, y: lower_y + unit_space * 0.66 }
+  },
+  {
+    id: 'phosphatidylserine_single_carbon',
+    type: 'molecule',
+    name: 'Phosphatidylserine',
+    pathwayType: 'lipids',
+    formula: 'Variable',
+    smiles: '',
+    description: 'Phosphatidylserine, phospholipid derived from serine',
+    position: { x: base_x + unit_space * 2.25, y: lower_y + unit_space * 1 }
+  },
+  {
+    id: 'ceramide_single_carbon',
+    type: 'molecule',
+    name: 'Ceramide',
+    pathwayType: 'lipids',
+    formula: 'Variable',
+    smiles: '',
+    description: 'Ceramide, sphingolipid intermediate derived from serine',
+    position: { x: base_x + unit_space * 3, y: lower_y + unit_space * 1 }
+  },
+  {
+    id: 'sphingosine_single_carbon',
+    type: 'molecule',
+    name: 'Sphingosine',
+    pathwayType: 'lipids',
+    formula: 'Variable',
+    smiles: '',
+    description: 'Sphingosine, sphingolipid base derived from serine',
+    position: { x: base_x + unit_space * 3.75, y: lower_y + unit_space * 1 }
+  },
+  {
     id: 'glycine',
     type: 'molecule',
     name: 'Glycine',
@@ -165,6 +259,48 @@ export const singleCarbonMetabolismNodes = [
     smiles: 'NCC(=O)O',
     description: 'Glycine, simplest amino acid, formed from serine with transfer of one-carbon unit to THF',
     position: { x: base_x + unit_space * 6, y: lower_y } // One unit space right from serine
+  },
+  {
+    id: 'nucleotides_glycine',
+    type: 'molecule',
+    name: 'Nucleotides',
+    pathwayType: 'nucleotides',
+    imageUrl: 'https://media.gettyimages.com/id/1393171730/photo/nitrogenous-bases-of-dna.jpg?s=612x612&w=gi&k=20&c=XP6gXowh3NwM5gm_ZlsZ-GGuzPdNLWnukczugUFRQDA=',
+    formula: 'Multiple',
+    smiles: '',
+    description: 'Nucleotides, building blocks of DNA and RNA, synthesized using glycine as a precursor',
+    position: { x: base_x + unit_space * 6 + unit_space * 1, y: lower_y - unit_space * 0 }
+  },
+  {
+    id: 'porphyrins_glycine',
+    type: 'molecule',
+    name: 'Porphyrins',
+    pathwayType: 'oxidative-metabolism',
+    pubchemCid: 5481287,
+    formula: 'Multiple',
+    smiles: '',
+    description: 'Porphyrins, precursors to heme and chlorophyll, synthesized using glycine as a precursor',
+    position: { x: base_x + unit_space * 6 + unit_space * 1, y: lower_y + unit_space * 0.7 }
+  },
+  {
+    id: 'glutathione_glycine',
+    type: 'molecule',
+    name: 'Glutathione',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₁₀H₁₇N₃O₆S',
+    smiles: 'C(CC(=O)NC(CS)C(=O)NCC(=O)O)NC(=O)CCC(C(=O)O)N',
+    description: 'Glutathione, tripeptide antioxidant synthesized from glycine, glutamate, and cysteine',
+    position: { x: base_x + unit_space * 6 + unit_space * 1, y: lower_y + unit_space * 1.4 }
+  },
+  {
+    id: 'coenzyme_a_single_carbon',
+    type: 'molecule',
+    name: 'Coenzyme A',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₂₁H₃₆N₇O₁₆P₃S',
+    smiles: '',
+    description: 'Coenzyme A, essential cofactor derived from cysteine, pantothenate, and ATP',
+    position: { x: base_x + unit_space * 6 + unit_space * 1, y: lower_y + unit_space * 2.1 }
   },
 
   // Creatine Synthesis Pathway (extending rightward)
@@ -274,7 +410,7 @@ export const singleCarbonMetabolismNodes = [
     formula: 'C₄H₉NO₃',
     smiles: 'CC(C(C(=O)O)N)O',
     description: 'Threonine, essential amino acid, catabolized to α-ketobutyrate',
-    position: { x: upper_base_x + unit_space * 7.5, y: upper_y + unit_space * 0.5 - unit_space * 0.3 + unit_space * 1.25 }
+    position: { x: upper_base_x + unit_space * 7.5, y: upper_y + unit_space * 0.5 - unit_space * 0.3 + unit_space * 1.4 }
   },
   {
     id: 'alpha_ketobutyrate',
@@ -297,7 +433,7 @@ export const singleCarbonMetabolismNodes = [
   },
   {
     id: 'tca_cycle_single_carbon',
-    type: 'molecule',
+    type: 'pathway',
     name: 'TCA Cycle',
     pathwayType: 'oxidative-metabolism',
     formula: 'Multiple',

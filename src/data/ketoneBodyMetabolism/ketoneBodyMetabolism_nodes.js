@@ -40,11 +40,12 @@ export const ketoneBodyMetabolismNodes = [
   },
   {
     id: 'tca_kbm_1',
-    type: 'pathway_node',
+    type: 'pathway',
     name: 'TCA Cycle',
     pathwayType: 'oxidative-metabolism',
     imageUrl: 'https://praxilabs.com/en/blog/wp-content/uploads/2024/04/istockphoto-1034141326-612x612-1-1.jpg',
     description: 'Entry to Citric Acid Cycle',
+    pathwayIdToRoute: 'citric-acid-cycle',
     position: { x: base_x, y: base_y + unit_space * 3 }
   },
 
@@ -135,11 +136,12 @@ export const ketoneBodyMetabolismNodes = [
   },
   {
     id: 'tca_kbm_2',
-    type: 'pathway_node',
+    type: 'pathway',
     name: 'TCA Cycle',
     pathwayType: 'oxidative-metabolism',
     imageUrl: 'https://praxilabs.com/en/blog/wp-content/uploads/2024/04/istockphoto-1034141326-612x612-1-1.jpg',
     description: 'Entry to Citric Acid Cycle in extrahepatic tissues',
+    pathwayIdToRoute: 'citric-acid-cycle',
     position: { x: base_x + unit_space * 2, y: base_y + unit_space * 6 } // Up towards TCA
   },
   

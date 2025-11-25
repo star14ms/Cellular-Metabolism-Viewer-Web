@@ -118,11 +118,12 @@ export const fattyAcidOxidationNodes = [
   // (2, n) where n starts from 2
   {
     id: 'tca_entry_fao',
-    type: 'molecule',
+    type: 'pathway',
     name: 'TCA Cycle',
     pathwayType: 'oxidative-metabolism',
     imageUrl: 'https://praxilabs.com/en/blog/wp-content/uploads/2024/04/istockphoto-1034141326-612x612-1-1.jpg',
     description: 'Tricarboxylic Acid (Krebs) Cycle, where Acetyl-CoA is further oxidized.',
+    pathwayIdToRoute: 'citric-acid-cycle',
     position: { x: base_x + unit_space * 2, y: base_y + unit_space * 4 }
   },
   {

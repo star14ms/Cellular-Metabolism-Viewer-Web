@@ -239,7 +239,7 @@ export const aromaticAminoAcidMetabolismNodes = [
   },
   {
     id: 'tca_cycle',
-    type: 'molecule',
+    type: 'pathway',
     name: 'TCA Cycle',
     pathwayType: 'oxidative-metabolism',
     formula: 'Multiple',
