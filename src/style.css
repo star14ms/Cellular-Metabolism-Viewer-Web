@@ -483,6 +483,22 @@ body {
   gap: 0.75rem;
 }
 
+.reaction-list .reaction-item {
+  padding: 1rem;
+  background: var(--bg-panel-secondary);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.reaction-list .reaction-item:hover {
+  background: var(--border-color-light);
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  cursor: pointer;
+}
+
 .reaction-selection-note {
   margin-top: 0.5rem;
   padding: 0.5rem;

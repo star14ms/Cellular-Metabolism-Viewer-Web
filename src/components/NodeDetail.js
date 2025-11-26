@@ -20,6 +20,19 @@ function removeCoefficients(moleculeName) {
   return moleculeName.replace(/^(\d+\/\d+|\d+)\s+/, '').trim();
 }
 
+function getSafeDataAttribute(value) {
+  return (value || '').replace(/"/g, '&quot;');
+}
+
+function renderFormulaDiv(name, formula) {
+  if (!name) return '';
+  const safeName = getSafeDataAttribute(name);
+  if (formula && formula.trim().length > 0) {
+    return `<div class="molecule-formula" data-molecule-name="${safeName}" data-formula-resolved="true">${formula}</div>`;
+  }
+  return `<div class="molecule-formula" data-molecule-name="${safeName}" data-formula-resolved="false"></div>`;
+}
+
 export class NodeDetail {
   constructor(container) {
     this.container = container;
@@ -43,17 +56,17 @@ export class NodeDetail {
    */
   resolveByMolecule(value) {
     if (!value || typeof value !== 'string') {
-      return { name: value, id: '' };
+      return { name: value, id: '', formula: '' };
     }
     
     // Check if it's a node_id (exists in nodeMap)
     if (this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(value)) {
       const node = this.viewer.nodeMap.get(value);
-      return { name: node.name, id: node.id };
+      return { name: node.name, id: node.id, formula: node.formula || '' };
     }
     
     // Otherwise, treat as molecule name
-    return { name: value, id: '' };
+    return { name: value, id: '', formula: '' };
   }
   
   render(molecule, reactionNode = null, isDirectNodeClick = true) {
@@ -190,23 +203,32 @@ export class NodeDetail {
         const searchName = removeCoefficients(moleculeName);
         const pubchemData = await fetchPubChemData(searchName, this.pubchemCache);
         if (pubchemData && pubchemData.molecularFormula) {
-          // Find the molecule element(s) - there might be multiple with the same name
-          // Use CSS.escape to handle special characters in molecule names
           const escapedName = CSS.escape(moleculeName);
-          const moleculeElements = container.querySelectorAll(`[data-molecule-name="${escapedName}"]`);
+          let formulaElements = container.querySelectorAll(`.molecule-formula[data-molecule-name="${escapedName}"]`);
           
-          if (moleculeElements.length === 0) {
-            console.warn(`No elements found for molecule: ${moleculeName}`);
+          if (formulaElements.length === 0) {
+            const moleculeElements = container.querySelectorAll(`[data-molecule-name="${escapedName}"]`);
+            moleculeElements.forEach(moleculeElement => {
+              if (moleculeElement) {
+                const formulaDiv = document.createElement('div');
+                formulaDiv.className = 'molecule-formula';
+                formulaDiv.dataset.moleculeName = moleculeElement.getAttribute('data-molecule-name') || moleculeName;
+                formulaDiv.dataset.formulaResolved = 'false';
+                moleculeElement.appendChild(formulaDiv);
+              }
+            });
+            formulaElements = container.querySelectorAll(`.molecule-formula[data-molecule-name="${escapedName}"]`);
+          }
+          
+          if (formulaElements.length === 0) {
+            console.warn(`No formula elements found for molecule: ${moleculeName}`);
             return;
           }
           
-          moleculeElements.forEach(moleculeElement => {
-            // Only add formula if it doesn't already exist
-            if (moleculeElement && !moleculeElement.querySelector('.molecule-formula')) {
-              const formulaDiv = document.createElement('div');
-              formulaDiv.className = 'molecule-formula';
-              formulaDiv.textContent = pubchemData.molecularFormula;
-              moleculeElement.appendChild(formulaDiv);
+          formulaElements.forEach(formulaElement => {
+            if (formulaElement.dataset.formulaResolved !== 'true') {
+              formulaElement.textContent = pubchemData.molecularFormula;
+              formulaElement.dataset.formulaResolved = 'true';
             }
           });
         } else {
@@ -233,6 +255,7 @@ export class NodeDetail {
                        data-molecule-name="${reactionNode.coSubstrate.name}" 
                        data-molecule-id="">
                     <strong>${removeCoefficients(reactionNode.coSubstrate.name)}</strong>
+                    ${renderFormulaDiv(reactionNode.coSubstrate.name, reactionNode.coSubstrate.formula || '')}
                   </div>
                 ` : ''}
                 ${reactionNode.byreactant ? (() => {
@@ -245,6 +268,7 @@ export class NodeDetail {
                            data-molecule-name="${resolved.name}" 
                            data-molecule-id="${resolved.id}">
                         <strong>${resolved.name}</strong>
+                       ${renderFormulaDiv(resolved.name, resolved.formula)}
                       </div>
                     `;
                   } else if (Array.isArray(reactionNode.byreactant)) {
@@ -255,6 +279,7 @@ export class NodeDetail {
                            data-molecule-name="${resolved.name}" 
                            data-molecule-id="${resolved.id}">
                         <strong>${resolved.name}</strong>
+                       ${renderFormulaDiv(resolved.name, resolved.formula)}
                       </div>
                     `;
                     }).join('');
@@ -266,6 +291,7 @@ export class NodeDetail {
                            data-molecule-name="${resolved.name}" 
                            data-molecule-id="${resolved.id}">
                         <strong>${resolved.name}</strong>
+                       ${renderFormulaDiv(resolved.name, resolved.formula)}
                       </div>
                     `;
                     }).join('');
@@ -276,6 +302,7 @@ export class NodeDetail {
                            data-molecule-name="${resolved.name}" 
                            data-molecule-id="${resolved.id}">
                         <strong>${resolved.name}</strong>
+                       ${renderFormulaDiv(resolved.name, resolved.formula)}
                       </div>
                     `;
                   }
@@ -294,6 +321,7 @@ export class NodeDetail {
                            data-molecule-name="${resolved.name}" 
                            data-molecule-id="${resolved.id}">
                         <strong>${resolved.name}</strong>
+                       ${renderFormulaDiv(resolved.name, resolved.formula)}
                       </div>
                     `;
                   } else if (Array.isArray(reactionNode.byproduct)) {
@@ -304,6 +332,7 @@ export class NodeDetail {
                            data-molecule-name="${resolved.name}" 
                            data-molecule-id="${resolved.id}">
                         <strong>${resolved.name}</strong>
+                       ${renderFormulaDiv(resolved.name, resolved.formula)}
                       </div>
                     `;
                     }).join('');
@@ -314,6 +343,7 @@ export class NodeDetail {
                            data-molecule-name="${resolved.name}" 
                            data-molecule-id="${resolved.id}">
                         <strong>${resolved.name}</strong>
+                       ${renderFormulaDiv(resolved.name, resolved.formula)}
                       </div>
                     `;
                   } else if (reactionNode.byproduct.molecules && Array.isArray(reactionNode.byproduct.molecules)) {
@@ -324,6 +354,7 @@ export class NodeDetail {
                            data-molecule-name="${resolved.name}" 
                            data-molecule-id="${resolved.id}">
                         <strong>${resolved.name}</strong>
+                       ${renderFormulaDiv(resolved.name, resolved.formula)}
                       </div>
                     `;
                   }).join('');

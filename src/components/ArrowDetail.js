@@ -20,6 +20,19 @@ function removeCoefficients(moleculeName) {
   return moleculeName.replace(/^(\d+\/\d+|\d+)\s+/, '').trim();
 }
 
+function getSafeDataAttribute(value) {
+  return (value || '').replace(/"/g, '&quot;');
+}
+
+function renderFormulaDiv(name, formula) {
+  if (!name) return '';
+  const safeName = getSafeDataAttribute(name);
+  if (formula && formula.trim().length > 0) {
+    return `<div class="molecule-formula" data-molecule-name="${safeName}" data-formula-resolved="true">${formula}</div>`;
+  }
+  return `<div class="molecule-formula" data-molecule-name="${safeName}" data-formula-resolved="false"></div>`;
+}
+
 export class ArrowDetail {
   constructor(container) {
     this.container = container;
@@ -43,17 +56,17 @@ export class ArrowDetail {
    */
   resolveByMolecule(value) {
     if (!value || typeof value !== 'string') {
-      return { name: value, id: '' };
+      return { name: value, id: '', formula: '' };
     }
     
     // Check if it's a node_id (exists in nodeMap)
     if (this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(value)) {
       const node = this.viewer.nodeMap.get(value);
-      return { name: node.name, id: node.id };
+      return { name: node.name, id: node.id, formula: node.formula || '' };
     }
     
     // Otherwise, treat as molecule name
-    return { name: value, id: '' };
+    return { name: value, id: '', formula: '' };
   }
 
   render(reaction) {
@@ -135,23 +148,32 @@ export class ArrowDetail {
         const searchName = removeCoefficients(moleculeName);
         const pubchemData = await fetchPubChemData(searchName, this.pubchemCache);
         if (pubchemData && pubchemData.molecularFormula) {
-          // Find the molecule element(s) - there might be multiple with the same name
-          // Use CSS.escape to handle special characters in molecule names
           const escapedName = CSS.escape(moleculeName);
-          const moleculeElements = container.querySelectorAll(`[data-molecule-name="${escapedName}"]`);
+          let formulaElements = container.querySelectorAll(`.molecule-formula[data-molecule-name="${escapedName}"]`);
           
-          if (moleculeElements.length === 0) {
-            console.warn(`No elements found for molecule: ${moleculeName}`);
+          if (formulaElements.length === 0) {
+            const moleculeElements = container.querySelectorAll(`[data-molecule-name="${escapedName}"]`);
+            moleculeElements.forEach(moleculeElement => {
+              if (moleculeElement) {
+                const formulaDiv = document.createElement('div');
+                formulaDiv.className = 'molecule-formula';
+                formulaDiv.dataset.moleculeName = moleculeElement.getAttribute('data-molecule-name') || moleculeName;
+                formulaDiv.dataset.formulaResolved = 'false';
+                moleculeElement.appendChild(formulaDiv);
+              }
+            });
+            formulaElements = container.querySelectorAll(`.molecule-formula[data-molecule-name="${escapedName}"]`);
+          }
+          
+          if (formulaElements.length === 0) {
+            console.warn(`No formula elements found for molecule: ${moleculeName}`);
             return;
           }
           
-          moleculeElements.forEach(moleculeElement => {
-            // Only add formula if it doesn't already exist
-            if (moleculeElement && !moleculeElement.querySelector('.molecule-formula')) {
-              const formulaDiv = document.createElement('div');
-              formulaDiv.className = 'molecule-formula';
-              formulaDiv.textContent = pubchemData.molecularFormula;
-              moleculeElement.appendChild(formulaDiv);
+          formulaElements.forEach(formulaElement => {
+            if (formulaElement.dataset.formulaResolved !== 'true') {
+              formulaElement.textContent = pubchemData.molecularFormula;
+              formulaElement.dataset.formulaResolved = 'true';
             }
           });
         } else {
@@ -191,7 +213,7 @@ export class ArrowDetail {
                    data-molecule-id="${reaction.substrate.id || ''}"
                    style="cursor: pointer;">
                 <strong>${reaction.substrate.name}</strong>
-                ${reaction.substrate.formula ? `<div class="molecule-formula">${reaction.substrate.formula}</div>` : ''}
+                ${renderFormulaDiv(reaction.substrate.name, reaction.substrate.formula)}
               </div>
               ` : ''}
               ${Array.from(allSubstrateNodes.values()).map(node => {
@@ -209,7 +231,7 @@ export class ArrowDetail {
                        data-molecule-id="${node.id}"
                        style="cursor: pointer;">
                     <strong>${node.name}</strong>
-                    ${node.formula ? `<div class="molecule-formula">${node.formula}</div>` : ''}
+                    ${renderFormulaDiv(node.name, node.formula)}
                   </div>
                 `;
               }).join('')}
@@ -219,6 +241,7 @@ export class ArrowDetail {
                      data-molecule-id=""
                      style="cursor: pointer;">
                   <strong>${removeCoefficients(reaction.coSubstrate.name)}</strong>
+                  ${renderFormulaDiv(reaction.coSubstrate.name, reaction.coSubstrate.formula || '')}
                 </div>
               ` : ''}
               ${mergedByreactant && !arrowsStartFromNode ? (() => {
@@ -245,6 +268,7 @@ export class ArrowDetail {
                          data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
                       <strong>${resolved.name}</strong>
+                      ${renderFormulaDiv(resolved.name, resolved.formula)}
                     </div>
                   `;
                     }).join('');
@@ -269,6 +293,7 @@ export class ArrowDetail {
                          data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
                       <strong>${resolved.name}</strong>
+                      ${renderFormulaDiv(resolved.name, resolved.formula)}
                     </div>
                   `;
                 } else if (Array.isArray(reaction.displayByreactant)) {
@@ -286,6 +311,7 @@ export class ArrowDetail {
                          data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
                       <strong>${resolved.name}</strong>
+                      ${renderFormulaDiv(resolved.name, resolved.formula)}
                     </div>
                   `;
                     }).join('');
@@ -304,6 +330,7 @@ export class ArrowDetail {
                          data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
                       <strong>${resolved.name}</strong>
+                      ${renderFormulaDiv(resolved.name, resolved.formula)}
                     </div>
                   `;
                     }).join('');
@@ -319,13 +346,14 @@ export class ArrowDetail {
                          data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
                       <strong>${resolved.name}</strong>
+                      ${renderFormulaDiv(resolved.name, resolved.formula)}
                     </div>
                   `;
                 }
                 return '';
               })() : ''}
             </div>
-            ${!reaction.hasCurvedArrow ? '<div class="reaction-arrow">→</div>' : ''}
+            <div class="reaction-arrow">→</div>
             <div class="reaction-products">
               ${!reaction.hasCurvedArrow ? (
                 reaction.products && Array.isArray(reaction.products) ? `
@@ -335,7 +363,7 @@ export class ArrowDetail {
                        data-molecule-id="${p.id || ''}"
                        style="cursor: pointer;">
                     <strong>${p.name}</strong>
-                    ${p.formula ? `<div class="molecule-formula">${p.formula}</div>` : ''}
+                    ${renderFormulaDiv(p.name, p.formula)}
                   </div>
                 `).join('')}
               ` : `
@@ -344,7 +372,7 @@ export class ArrowDetail {
                      data-molecule-id="${reaction.product.id || ''}"
                      style="cursor: pointer;">
                   <strong>${reaction.product.name}</strong>
-                  ${reaction.product.formula ? `<div class="molecule-formula">${reaction.product.formula}</div>` : ''}
+                  ${renderFormulaDiv(reaction.product.name, reaction.product.formula)}
                 </div>
               `
               ) : ''}
@@ -369,7 +397,7 @@ export class ArrowDetail {
                        data-molecule-id="${node.id}"
                        style="cursor: pointer;">
                     <strong>${node.name}</strong>
-                    ${node.formula ? `<div class="molecule-formula">${node.formula}</div>` : ''}
+                    ${renderFormulaDiv(node.name, node.formula)}
                   </div>
                 `;
               }).join('')}
@@ -385,6 +413,7 @@ export class ArrowDetail {
                          data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
                       <strong>${resolved.name}</strong>
+                      ${renderFormulaDiv(resolved.name, resolved.formula)}
                     </div>
                   `;
                   }).join('');
@@ -403,6 +432,7 @@ export class ArrowDetail {
                          data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
                       <strong>${resolved.name}</strong>
+                      ${renderFormulaDiv(resolved.name, resolved.formula)}
                     </div>
                   `;
                 } else if (Array.isArray(reaction.displayByproduct)) {
@@ -414,6 +444,7 @@ export class ArrowDetail {
                          data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
                       <strong>${resolved.name}</strong>
+                      ${renderFormulaDiv(resolved.name, resolved.formula)}
                     </div>
                   `;
                   }).join('');
@@ -425,6 +456,7 @@ export class ArrowDetail {
                          data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
                       <strong>${resolved.name}</strong>
+                      ${renderFormulaDiv(resolved.name, resolved.formula)}
                     </div>
                   `;
                 } else if (reaction.displayByproduct.molecules && Array.isArray(reaction.displayByproduct.molecules)) {
@@ -436,6 +468,7 @@ export class ArrowDetail {
                          data-molecule-id="${resolved.id}"
                          style="cursor: pointer;">
                       <strong>${resolved.name}</strong>
+                      ${renderFormulaDiv(resolved.name, resolved.formula)}
                     </div>
                   `;
                   }).join('');
@@ -780,6 +813,32 @@ export class ArrowDetail {
     setTimeout(() => {
       const moleculeNames = new Set();
       
+        // Include main substrate and product molecules
+        if (reaction.substrate && reaction.substrate.name) {
+          moleculeNames.add(reaction.substrate.name);
+        }
+        if (reaction.products && Array.isArray(reaction.products)) {
+          reaction.products.forEach(product => {
+            if (product && product.name) {
+              moleculeNames.add(product.name);
+            }
+          });
+        } else if (reaction.product && reaction.product.name) {
+          moleculeNames.add(reaction.product.name);
+        }
+        
+        // Include additional substrates/products from arrow connections
+        Array.from(allSubstrateNodes.values()).forEach(node => {
+          if (node && node.name) {
+            moleculeNames.add(node.name);
+          }
+        });
+        Array.from(allProductNodes.values()).forEach(node => {
+          if (node && node.name) {
+            moleculeNames.add(node.name);
+          }
+        });
+        
       // Add coSubstrate if it exists (it's displayed in the reaction flow section)
       if (reaction.coSubstrate && reaction.coSubstrate.name && !arrowsStartFromNode) {
         moleculeNames.add(reaction.coSubstrate.name);
