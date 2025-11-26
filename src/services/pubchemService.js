@@ -342,31 +342,48 @@ export async function fetchCompoundByCid(cid, imageVersion = null) {
 /**
  * Fetch compound information with fallback options
  * @param {string} compoundName - Primary name to search
- * @param {string[]} alternativeNames - Alternative names to try if primary fails
+ * @param {Array<string|number>} alternativeNames - Alternative names or CIDs to try if primary fails
  * @param {number} [imageVersion] - Optional PubChem image API version (defaults to PUBCHEM_IMAGE_VERSION)
  * @returns {Promise<Object>} Compound data from PubChem
  */
 export async function fetchCompoundWithFallback(compoundName, alternativeNames = [], imageVersion = null) {
   const namesToTry = [compoundName, ...alternativeNames];
   
-  // Add Greek-to-English converted versions to the list
-  const greekConverted = convertGreekToEnglish(compoundName);
-  if (greekConverted !== compoundName) {
-    namesToTry.push(greekConverted);
+  // Add Greek-to-English converted versions to the list (only for string names)
+  if (typeof compoundName === 'string') {
+    const greekConverted = convertGreekToEnglish(compoundName);
+    if (greekConverted !== compoundName) {
+      namesToTry.push(greekConverted);
+    }
   }
   
-  // Also convert alternative names
+  // Also convert alternative names (only for strings)
   const convertedAlternatives = alternativeNames
+    .filter(name => typeof name === 'string')
     .map(name => convertGreekToEnglish(name))
     .filter(name => name !== compoundName && !alternativeNames.includes(name));
   namesToTry.push(...convertedAlternatives);
   
-  for (const name of namesToTry) {
+  for (const nameOrCid of namesToTry) {
     try {
-      const result = await fetchCompoundByName(name, imageVersion);
-      return result;
+      // Check if this is a CID (number) or a name (string)
+      if (typeof nameOrCid === 'number' || (typeof nameOrCid === 'string' && /^\d+$/.test(nameOrCid))) {
+        // It's a CID - fetch directly by CID
+        const cid = typeof nameOrCid === 'number' ? nameOrCid : parseInt(nameOrCid, 10);
+        console.log(`Trying CID ${cid} for ${compoundName}...`);
+        const result = await fetchCompoundByCid(cid, imageVersion);
+        // Override name with our compound name if different
+        if (result && result.name !== compoundName) {
+          result.name = compoundName;
+        }
+        return result;
+      } else {
+        // It's a name - fetch by name
+        const result = await fetchCompoundByName(nameOrCid, imageVersion);
+        return result;
+      }
     } catch (error) {
-      console.warn(`Failed to fetch ${name}, trying next...`);
+      console.warn(`Failed to fetch ${nameOrCid}, trying next...`);
       continue;
 
     }

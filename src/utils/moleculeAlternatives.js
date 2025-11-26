@@ -6,7 +6,7 @@
 /**
  * Get alternative names for a molecule
  * @param {string} moleculeName - The molecule name to get alternatives for
- * @returns {string[]} Array of alternative names
+ * @returns {Array<string|number>} Array of alternative names or CIDs (numbers)
  */
 export function getAlternativeNames(moleculeName) {
   // Unified alternatives object - merged from all sources, duplicates removed
@@ -102,6 +102,8 @@ export function getAlternativeNames(moleculeName) {
     'Glutamic Semialdehyde': ['L-Glutamic gamma-semialdehyde', 'L-glutamic 5-semialdehyde', 'Glutamate-5-semialdehyde', 'L-Glutamic 5-semialdehyde', 'Glutamic 5-semialdehyde'],
     // Ammonium Capture and Release compounds
     'Many α-Ketoacids': ['alpha-ketoglutarate'],
+    // Fatty Acid and Lipid Synthesis compounds
+    'ACP': [5490374, 'acyl-carrier-protein'],
   };
   
   return alternatives[moleculeName] || [];
