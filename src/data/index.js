@@ -276,6 +276,23 @@ const pathwayDefinitions = [
     subPathways: glycolysisData.subPathways // Include sub-pathways
   },
   {
+    id: 'pentose-phosphate-pathway',
+    name: 'Pentose Phosphate Pathway',
+    nodes: pentosePhosphatePathwayNodes,
+    reactions: pentosePhosphatePathwayReactions,
+    arrows: pentosePhosphatePathwayArrows,
+    data: pentosePhosphatePathwayData
+  },
+  {
+    id: 'glycogen-and-galactose-metabolism',
+    name: 'Glycogen and Galactose Metabolism',
+    nodes: glycogenAndGalactoseMetabolismNodes,
+    reactions: glycogenAndGalactoseMetabolismReactions,
+    arrows: glycogenAndGalactoseMetabolismArrows,
+    data: glycogenAndGalactoseMetabolismData,
+    subPathways: glycogenAndGalactoseMetabolismData.subPathways
+  },
+  {
     id: 'pyruvate-oxidation',
     name: 'Pyruvate Oxidation',
     nodes: pyruvateOxidationNodes,
@@ -298,50 +315,6 @@ const pathwayDefinitions = [
     reactions: electronTransportChainReactions,
     arrows: electronTransportChainArrows,
     data: electronTransportChainData
-  },
-  {
-    id: 'purine-synthesis',
-    name: 'Purine Synthesis',
-    nodes: purineSynthesisNodes,
-    reactions: purineSynthesisReactions,
-    arrows: purineSynthesisArrows,
-    data: purineSynthesisData,
-    subPathways: purineSynthesisData.subPathways // Include sub-pathways
-  },
-  {
-    id: 'pyrimidine-synthesis',
-    name: 'Pyrimidine Synthesis',
-    nodes: pyrimidineSynthesisNodes,
-    reactions: pyrimidineSynthesisReactions,
-    arrows: pyrimidineSynthesisArrows,
-    data: pyrimidineSynthesisData
-  },
-  {
-    id: 'nucleotide-breakdown',
-    name: 'Nucleotide Breakdown',
-    nodes: nucleotideBreakdownNodes,
-    reactions: nucleotideBreakdownReactions,
-    arrows: nucleotideBreakdownArrows,
-    data: nucleotideBreakdownData,
-    subPathways: nucleotideBreakdownData.subPathways // Include sub-pathways
-  },
-  {
-    id: 'deoxyribonucleotides',
-    name: 'Deoxyribonucleotides Synthesis',
-    nodes: deoxyribonucleotidesNodes,
-    reactions: deoxyribonucleotidesReactions,
-    arrows: deoxyribonucleotidesArrows,
-    data: deoxyribonucleotidesData,
-    subPathways: deoxyribonucleotidesData.subPathways // Include sub-pathways
-  },
-  {
-    id: 'nucleoside-salvage',
-    name: 'Nucleoside Salvage',
-    nodes: nucleosideSalvageNodes,
-    reactions: nucleosideSalvageReactions,
-    arrows: nucleosideSalvageArrows,
-    data: nucleosideSalvageData,
-    subPathways: nucleosideSalvageData.subPathways // Include sub-pathways
   },
   {
     id: 'aromatic-amino-acid-metabolism',
@@ -387,23 +360,6 @@ const pathwayDefinitions = [
     arrows: ureaCycleArrows,
     data: ureaCycleData,
     subPathways: ureaCycleData.subPathways // Include sub-pathways
-  },
-  {
-    id: 'pentose-phosphate-pathway',
-    name: 'Pentose Phosphate Pathway',
-    nodes: pentosePhosphatePathwayNodes,
-    reactions: pentosePhosphatePathwayReactions,
-    arrows: pentosePhosphatePathwayArrows,
-    data: pentosePhosphatePathwayData
-  },
-  {
-    id: 'glycogen-and-galactose-metabolism',
-    name: 'Glycogen and Galactose Metabolism',
-    nodes: glycogenAndGalactoseMetabolismNodes,
-    reactions: glycogenAndGalactoseMetabolismReactions,
-    arrows: glycogenAndGalactoseMetabolismArrows,
-    data: glycogenAndGalactoseMetabolismData,
-    subPathways: glycogenAndGalactoseMetabolismData.subPathways
   },
   {
     id: 'cholesterol-synthesis',
@@ -467,6 +423,50 @@ const pathwayDefinitions = [
     arrows: hemeDegradationArrows,
     data: hemeDegradationData,
     subPathways: hemeDegradationData.subPathways || null
+  },
+  {
+    id: 'purine-synthesis',
+    name: 'Purine Synthesis',
+    nodes: purineSynthesisNodes,
+    reactions: purineSynthesisReactions,
+    arrows: purineSynthesisArrows,
+    data: purineSynthesisData,
+    subPathways: purineSynthesisData.subPathways // Include sub-pathways
+  },
+  {
+    id: 'pyrimidine-synthesis',
+    name: 'Pyrimidine Synthesis',
+    nodes: pyrimidineSynthesisNodes,
+    reactions: pyrimidineSynthesisReactions,
+    arrows: pyrimidineSynthesisArrows,
+    data: pyrimidineSynthesisData
+  },
+  {
+    id: 'nucleotide-breakdown',
+    name: 'Nucleotide Breakdown',
+    nodes: nucleotideBreakdownNodes,
+    reactions: nucleotideBreakdownReactions,
+    arrows: nucleotideBreakdownArrows,
+    data: nucleotideBreakdownData,
+    subPathways: nucleotideBreakdownData.subPathways // Include sub-pathways
+  },
+  {
+    id: 'deoxyribonucleotides',
+    name: 'Deoxyribonucleotides Synthesis',
+    nodes: deoxyribonucleotidesNodes,
+    reactions: deoxyribonucleotidesReactions,
+    arrows: deoxyribonucleotidesArrows,
+    data: deoxyribonucleotidesData,
+    subPathways: deoxyribonucleotidesData.subPathways // Include sub-pathways
+  },
+  {
+    id: 'nucleoside-salvage',
+    name: 'Nucleoside Salvage',
+    nodes: nucleosideSalvageNodes,
+    reactions: nucleosideSalvageReactions,
+    arrows: nucleosideSalvageArrows,
+    data: nucleosideSalvageData,
+    subPathways: nucleosideSalvageData.subPathways // Include sub-pathways
   }
 ];
 
