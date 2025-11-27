@@ -47,9 +47,6 @@ if (!app) {
 } else {
   app.innerHTML = `
     <div class="app-container">
-        <button id="theme-toggle" class="theme-toggle" title="Toggle light/dark mode" aria-label="Toggle theme">
-          <span class="theme-icon">🌙</span>
-        </button>
         <div class="main-content">
           <div class="viewer-panel">
             <div id="metabolism-viewer" class="metabolism-viewer"></div>
@@ -70,38 +67,65 @@ if (!app) {
           </div>
         </div>
       </div>
+      
+      <!-- References Modal -->
+      <div id="references-modal" class="references-modal">
+        <div class="references-modal-content">
+          <div class="references-modal-header">
+            <h2>References</h2>
+            <button class="references-modal-close" aria-label="Close references">&times;</button>
+          </div>
+          <div class="references-modal-body">
+            <ul class="references-list">
+              <li>
+                <a href="https://metabolicpathways.stanford.edu/" target="_blank" rel="noopener noreferrer">
+                  Stanford Metabolic Pathways Map
+                </a>
+                <p>Stanford Pathways of Human Metabolism - A comprehensive overview of human metabolism, forming the basis for Stanford's introductory biochemistry course for first-year medical students.</p>
+              </li>
+              <li>
+                <a href="https://link.springer.com/article/10.1007/s00018-021-03996-3/figures/2" target="_blank" rel="noopener noreferrer">
+                  Dihydrolipoamide dehydrogenase, pyruvate oxidation, and acetylation-dependent mechanisms
+                </a>
+                <p>Figure 2 from Cellular and Molecular Life Sciences - VPA interference with E3 (DLD) and E3-dependent multienzyme systems in mitochondrial metabolic pathways.</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   `
   
-  // Update theme icon based on current theme
-  const updateThemeIcon = (theme) => {
-    const themeToggle = document.getElementById('theme-toggle');
-    if (themeToggle) {
-      const icon = themeToggle.querySelector('.theme-icon');
-      if (icon) {
-        icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  // Theme toggle is now handled by the SVG button in MetabolismViewer
+  // No need for separate HTML button or event listeners
+  
+  // References modal functionality
+  const referencesModal = document.getElementById('references-modal');
+  const referencesModalClose = document.querySelector('.references-modal-close');
+  
+  if (referencesModalClose) {
+    referencesModalClose.addEventListener('click', () => {
+      if (referencesModal) {
+        referencesModal.style.display = 'none';
       }
-    }
-  };
-  
-  // Toggle theme
-  const toggleTheme = () => {
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateThemeIcon(newTheme);
-  };
-  
-  // Update icon based on current theme
-  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-  updateThemeIcon(currentTheme);
-  
-  // Add theme toggle button event listener
-  const themeToggle = document.getElementById('theme-toggle');
-  if (themeToggle) {
-    themeToggle.addEventListener('click', toggleTheme);
+    });
   }
+  
+  // Close modal when clicking outside of it
+  if (referencesModal) {
+    referencesModal.addEventListener('click', (e) => {
+      if (e.target === referencesModal) {
+        referencesModal.style.display = 'none';
+      }
+    });
+  }
+  
+  // Close modal with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && referencesModal && referencesModal.style.display === 'flex') {
+      referencesModal.style.display = 'none';
+    }
+  });
 
   // Hide detail panel by default
   const detailPanel = document.querySelector('.detail-panel')
@@ -546,10 +570,20 @@ if (!app) {
           if (panelResizer) {
             panelResizer.style.display = 'none'
           }
+          
+          // Update button positions to account for detail panel being hidden
+          if (viewer && viewer.updateTopRightButtonGroupPosition) {
+            viewer.updateTopRightButtonGroupPosition()
+          }
+          
           // Trigger resize on viewer after a brief delay to allow layout to settle
           setTimeout(() => {
             if (viewer && viewer.handleResize) {
               viewer.handleResize()
+            }
+            // Also update button positions after layout settles
+            if (viewer && viewer.updateTopRightButtonGroupPosition) {
+              viewer.updateTopRightButtonGroupPosition()
             }
           }, 50)
         }
@@ -580,10 +614,19 @@ if (!app) {
             panelResizer.style.display = 'block'
           }
           
+          // Update button positions to account for detail panel
+          if (viewer && viewer.updateTopRightButtonGroupPosition) {
+            viewer.updateTopRightButtonGroupPosition()
+          }
+          
           // Trigger resize on viewer after a brief delay to allow layout to settle
           setTimeout(() => {
             if (viewer && viewer.handleResize) {
               viewer.handleResize()
+            }
+            // Also update button positions after layout settles
+            if (viewer && viewer.updateTopRightButtonGroupPosition) {
+              viewer.updateTopRightButtonGroupPosition()
             }
           }, 50)
         }
@@ -644,6 +687,10 @@ if (!app) {
           setTimeout(() => {
             if (viewer && viewer.handleResize) {
               viewer.handleResize()
+            }
+            // Update button positions to account for panel resize
+            if (viewer && viewer.updateTopRightButtonGroupPosition) {
+              viewer.updateTopRightButtonGroupPosition()
             }
           }, 10)
         }

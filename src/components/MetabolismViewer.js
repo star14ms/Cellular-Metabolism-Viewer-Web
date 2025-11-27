@@ -467,18 +467,20 @@ export class MetabolismViewer {
       
       // Update all rect elements that should be black in dark mode
       if (this.svg && isDarkMode) {
-        // Update all rects except buttons, tooltips, and transparent ones
+        // Update all rects except buttons, tooltips, protein complexes, mobile carriers, and transparent ones
         this.svg.selectAll('rect')
           .filter(function() {
             const fill = d3.select(this).attr('fill');
             const className = d3.select(this).attr('class') || '';
-            // Keep buttons, tooltips, and transparent rects as they are
+            // Keep buttons, tooltips, protein complexes, mobile carriers, and transparent rects as they are
             return fill !== 'transparent' && 
                    fill !== '#667eea' && 
                    fill !== '#2c5f7c' && 
                    fill !== '#5568d3' &&
                    !className.includes('button') &&
-                   !className.includes('tooltip');
+                   !className.includes('tooltip') &&
+                   !className.includes('protein-complex') &&
+                   !className.includes('mobile-carrier');
           })
           .attr('fill', '#000000');
         
@@ -489,6 +491,35 @@ export class MetabolismViewer {
         // Reset to white in light mode
         this.svg.selectAll('g.molecule-image-group')
           .style('background-color', '#ffffff');
+      }
+      
+      // Update protein complexes and mobile carriers with their pathway-specific colors
+      if (this.reactionGroups) {
+        const viewer = this;
+        this.reactionGroups.each(function(d) {
+          if (!d || !d.nodeId) return;
+          
+          const nodeGroup = d3.select(this);
+          const nodeId = d.nodeId;
+          
+          // Get pathway type and colors for this node
+          const pathwayType = viewer.getPathwayTypeForNode(nodeId);
+          const colors = viewer.getPathwayTypeColors(pathwayType);
+          
+          // Update protein complex
+          const complex = nodeGroup.select('.protein-complex');
+          if (!complex.empty()) {
+            complex.attr('fill', colors.proteinComplexFill)
+                   .attr('stroke', colors.proteinComplexStroke);
+          }
+          
+          // Update mobile carrier
+          const carrier = nodeGroup.select('.mobile-carrier');
+          if (!carrier.empty()) {
+            carrier.attr('fill', colors.proteinComplexFill)
+                   .attr('stroke', colors.proteinComplexStroke);
+          }
+        });
       }
       
       // Label colors are now handled by CSS variables, no need to update here
@@ -529,10 +560,37 @@ export class MetabolismViewer {
       }
     };
     
+    // Update theme toggle button when theme changes
+    const updateThemeToggleButton = () => {
+      if (this.themeToggleButton && !this.themeToggleButton.empty()) {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const circle = this.themeToggleButton.select('circle');
+        const iconText = this.themeToggleButton.select('.theme-icon-text');
+        
+        // Get computed CSS values for current theme
+        const bgPanel = getComputedStyle(document.documentElement).getPropertyValue('--bg-panel').trim();
+        const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim();
+        const textPrimary = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+        
+        // Update button colors
+        circle
+          .transition().duration(200)
+          .attr('fill', bgPanel)
+          .attr('stroke', borderColor);
+        
+        // Update icon
+        iconText
+          .transition().duration(200)
+          .attr('fill', textPrimary)
+          .text(currentTheme === 'dark' ? '☀️' : '🌙');
+      }
+    };
+    
     // Listen for theme changes
     const observer = new MutationObserver(() => {
       updateSVGBackground();
       updateButtonTextColors();
+      updateThemeToggleButton();
     });
     observer.observe(document.documentElement, {
       attributes: true,
@@ -640,8 +698,11 @@ export class MetabolismViewer {
     // Draw pathway buttons (in zoomable group)
     this.drawPathwayButtons();
     
-    // Add help button in upper right (in fixed overlay)
-    this.drawHelpButton();
+    // Create common container for theme toggle and help buttons
+    this.createTopRightButtonGroup();
+    
+    // Add references button in lower left (in fixed overlay)
+    this.drawReferencesButton();
     
     // Add click handlers
     this.setupInteractions();
@@ -697,34 +758,19 @@ export class MetabolismViewer {
             // with the new dimensions without any adjustment
           }
           
-          // Update help button position relative to theme toggle button
-          // Theme toggle: right: 20px, top: 20px, width: 50px, height: 50px (fixed to viewport)
+          // Update top right button group position (theme toggle + help button)
+          this.updateTopRightButtonGroupPosition();
+          
+          // Update references button position in lower left
           if (this.overlay) {
-            const helpButton = this.overlay.select('.help-button');
-            if (!helpButton.empty()) {
-              // Calculate position relative to theme toggle using viewport width (not container width)
-              const viewportWidth = window.innerWidth;
-              const themeToggleRight = 20; // Theme toggle right margin
-              const themeToggleWidth = 50; // Theme toggle width
-              const helpButtonRadius = 15; // Help button radius
-              const spacing = 15; // Spacing between buttons
-              
-              // Position help button to the left of theme toggle with spacing
-              const buttonX = viewportWidth - themeToggleRight - themeToggleWidth - spacing - helpButtonRadius;
-              const buttonY = 20 + 25; // Align with center of theme toggle button
-              helpButton.attr('transform', `translate(${buttonX}, ${buttonY})`);
-              
-              // Also update tooltip position to avoid going off right edge
-              const tooltipGroup = helpButton.select('.help-tooltip');
-              if (!tooltipGroup.empty()) {
-                const tooltipWidth = 450;
-                const tooltipX = -tooltipWidth / 2;
-                // Use viewport width since button is positioned relative to viewport
-                const maxRight = viewportWidth - 20;
-                const tooltipRightEdge = buttonX + tooltipX + tooltipWidth;
-                const adjustedX = tooltipRightEdge > maxRight ? tooltipX - (tooltipRightEdge - maxRight) : tooltipX;
-                tooltipGroup.attr('transform', `translate(${adjustedX}, 25)`);
-              }
+            const referencesButton = this.overlay.select('.references-button');
+            if (!referencesButton.empty()) {
+              const buttonRadius = 15;
+              const leftMargin = 20;
+              const bottomMargin = 20;
+              const buttonX = leftMargin + buttonRadius; // Center X position (margin + radius)
+              const buttonY = window.innerHeight - bottomMargin - buttonRadius; // Center Y position (from bottom: margin + radius)
+              referencesButton.attr('transform', `translate(${buttonX}, ${buttonY})`);
             }
           }
           
@@ -1513,24 +1559,199 @@ export class MetabolismViewer {
     this.updateNodeDisplay(scale);
   }
   
-  drawHelpButton() {
-    // Position button relative to theme toggle button
-    // Theme toggle: right: 20px, top: 20px, width: 50px, height: 50px (fixed to viewport)
-    // Help button: radius 15px (30px total width)
-    // Calculate position relative to theme toggle using viewport width (not container width)
-    const viewportWidth = window.innerWidth;
-    const themeToggleRight = 20; // Theme toggle right margin
-    const themeToggleWidth = 50; // Theme toggle width
+  createTopRightButtonGroup() {
+    // Create a container group for theme toggle and help buttons
+    const buttonGroup = this.overlay.append('g')
+      .attr('class', 'top-right-buttons-group');
+    
+    // Store reference for positioning updates
+    this.topRightButtonGroup = buttonGroup;
+    
+    // Draw theme toggle button inside the group
+    this.drawThemeToggleButton(buttonGroup);
+    
+    // Draw help button inside the group (positioned relative to theme toggle)
+    this.drawHelpButton(buttonGroup);
+    
+    // Initial positioning
+    this.updateTopRightButtonGroupPosition();
+  }
+  
+  updateTopRightButtonGroupPosition() {
+    if (!this.topRightButtonGroup || this.topRightButtonGroup.empty()) return;
+    
+    // Calculate available width (viewport width minus detail panel if visible)
+    const detailPanel = document.querySelector('.detail-panel');
+    const isDetailPanelVisible = detailPanel && 
+      detailPanel.style.display !== 'none' && 
+      detailPanel.style.visibility !== 'hidden' &&
+      detailPanel.style.opacity !== '0';
+    
+    let availableWidth = window.innerWidth;
+    if (isDetailPanelVisible) {
+      // Get the actual rendered width of the viewer panel
+      // Use a small delay to ensure layout has settled
+      setTimeout(() => {
+        const viewerPanel = document.querySelector('.viewer-panel');
+        if (viewerPanel) {
+          const viewerPanelRect = viewerPanel.getBoundingClientRect();
+          availableWidth = viewerPanelRect.width;
+        } else {
+          // Fallback: detail panel takes 35% of width, so available width is 65%
+          availableWidth = window.innerWidth * 0.65;
+        }
+        
+        // Position group in upper right of available space
+        const rightMargin = 20;
+        const topMargin = 20;
+        const themeToggleRadius = 25;
+        const groupX = availableWidth - rightMargin - themeToggleRadius;
+        const groupY = topMargin + themeToggleRadius;
+        
+        this.topRightButtonGroup.attr('transform', `translate(${groupX}, ${groupY})`);
+        
+        // Also update help button tooltip position
+        this.updateHelpButtonTooltip();
+      }, 10);
+    } else {
+      // Position group in upper right of full viewport
+      const rightMargin = 20;
+      const topMargin = 20;
+      const themeToggleRadius = 25;
+      const groupX = availableWidth - rightMargin - themeToggleRadius;
+      const groupY = topMargin + themeToggleRadius;
+      
+      this.topRightButtonGroup.attr('transform', `translate(${groupX}, ${groupY})`);
+      
+      // Also update help button tooltip position
+      this.updateHelpButtonTooltip();
+    }
+  }
+  
+  updateHelpButtonTooltip() {
+    if (!this.overlay) return;
+    
+    const helpButton = this.overlay.select('.help-button');
+    if (helpButton.empty()) return;
+    
+    const tooltipGroup = helpButton.select('.help-tooltip');
+    if (tooltipGroup.empty()) return;
+    
+    // Get the button group position to calculate tooltip adjustment
+    const buttonGroupTransform = this.topRightButtonGroup ? 
+      this.topRightButtonGroup.attr('transform') : '';
+    let groupX = 0;
+    if (buttonGroupTransform) {
+      const match = buttonGroupTransform.match(/translate\(([^,]+),/);
+      if (match) groupX = parseFloat(match[1]) || 0;
+    }
+    
+    // Get help button's relative X position within group
+    const helpButtonTransform = helpButton.attr('transform');
+    let helpButtonX = 0;
+    if (helpButtonTransform) {
+      const match = helpButtonTransform.match(/translate\(([^,]+),/);
+      if (match) helpButtonX = parseFloat(match[1]) || 0;
+    }
+    
+    // Calculate absolute position and adjust tooltip if needed
+    const tooltipWidth = 450;
+    const tooltipX = -tooltipWidth / 2;
+    const absoluteButtonX = groupX + helpButtonX;
+    const maxRight = window.innerWidth - 20;
+    const tooltipRightEdge = absoluteButtonX + tooltipX + tooltipWidth;
+    const adjustedX = tooltipRightEdge > maxRight ? tooltipX - (tooltipRightEdge - maxRight) : tooltipX;
+    tooltipGroup.attr('transform', `translate(${adjustedX}, 25)`);
+  }
+  
+  drawThemeToggleButton(container) {
+    // Position button at origin of container (will be positioned by container)
+    const buttonRadius = 25; // Button radius (50px total width)
+    
+    const themeGroup = container.append('g')
+      .attr('class', 'theme-toggle-button btn')
+      .attr('transform', 'translate(0, 0)'); // At container origin
+    
+    // Get current theme colors
+    const getThemeColors = () => {
+      const bgPanel = getComputedStyle(document.documentElement).getPropertyValue('--bg-panel').trim();
+      const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim();
+      const textPrimary = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+      return { bgPanel, borderColor, textPrimary };
+    };
+    
+    const colors = getThemeColors();
+    
+    // Button circle
+    const circle = themeGroup.append('circle')
+      .attr('r', buttonRadius)
+      .attr('fill', colors.bgPanel)
+      .attr('stroke', colors.borderColor)
+      .attr('stroke-width', 2);
+    
+    // Theme icon (moon/sun emoji)
+    const iconText = themeGroup.append('text')
+      .attr('x', 0)
+      .attr('y', 8)
+      .attr('text-anchor', 'middle')
+      .attr('fill', colors.textPrimary)
+      .attr('font-size', '24px')
+      .attr('class', 'theme-icon-text');
+    
+    // Set initial icon based on current theme
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    iconText.text(currentTheme === 'dark' ? '☀️' : '🌙');
+    
+    // Click handler to toggle theme
+    themeGroup.on('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      
+      // Update icon
+      iconText.text(newTheme === 'dark' ? '☀️' : '🌙');
+      
+      // Update button colors to match theme (use computed styles)
+      const newColors = getThemeColors();
+      circle
+        .transition().duration(200)
+        .attr('fill', newColors.bgPanel)
+        .attr('stroke', newColors.borderColor);
+      iconText
+        .transition().duration(200)
+        .attr('fill', newColors.textPrimary);
+    });
+    
+    // Hover effects - only change stroke width, not background color
+    themeGroup.on('mouseenter', function() {
+      d3.select(this).select('circle')
+        .transition().duration(200)
+        .attr('stroke-width', 3);
+    })
+    .on('mouseleave', function() {
+      d3.select(this).select('circle')
+        .transition().duration(200)
+        .attr('stroke-width', 2);
+    });
+    
+    // Store reference for theme updates
+    this.themeToggleButton = themeGroup;
+  }
+  
+  drawHelpButton(container) {
+    // Position button relative to theme toggle button within the container
+    const themeToggleRadius = 25; // Theme toggle radius
     const helpButtonRadius = 15; // Help button radius
     const spacing = 15; // Spacing between buttons
     
-    // Position help button to the left of theme toggle with spacing
-    // X: viewport width - theme toggle right - theme toggle width - spacing - help button radius
-    const buttonX = viewportWidth - themeToggleRight - themeToggleWidth - spacing - helpButtonRadius;
-    // Y: Align vertically with theme toggle (top: 20px + half height: 25px = 45px)
-    const buttonY = 20 + 25; // Align with center of theme toggle button
+    // Position help button to the left of theme toggle
+    // X: negative offset (left of theme toggle) = -(spacing + themeToggleRadius + helpButtonRadius)
+    const buttonX = -(spacing + themeToggleRadius + helpButtonRadius);
+    // Y: Align vertically with theme toggle (same Y = 0)
+    const buttonY = 0;
     
-    const helpGroup = this.overlay.append('g')
+    const helpGroup = container.append('g')
       .attr('class', 'help-button btn')
       .attr('transform', `translate(${buttonX}, ${buttonY})`);
     
@@ -1556,14 +1777,11 @@ export class MetabolismViewer {
     // Use wider tooltip and split text into more lines to prevent overflow
     const tooltipWidth = 450; // Wider to accommodate text
     const tooltipX = -tooltipWidth / 2; // Center on button
-    // Adjust if tooltip would go off right edge (use viewport width since button is positioned relative to viewport)
-    const maxRight = viewportWidth - 20; // 20px margin from right edge
-    const tooltipRightEdge = buttonX + tooltipX + tooltipWidth;
-    const adjustedX = tooltipRightEdge > maxRight ? tooltipX - (tooltipRightEdge - maxRight) : tooltipX;
     
+    // Calculate tooltip position - will be adjusted on resize if needed
     const tooltipGroup = helpGroup.append('g')
       .attr('class', 'help-tooltip btn')
-      .attr('transform', `translate(${adjustedX}, 25)`); // Position below button, adjusted for right edge
+      .attr('transform', `translate(${tooltipX}, 25)`); // Position below button
     
     const tooltipRect = tooltipGroup.append('rect')
       .attr('x', 0)
@@ -1609,6 +1827,57 @@ export class MetabolismViewer {
     
     // Hover effects
     helpGroup.on('mouseenter', function() {
+      d3.select(this).select('circle')
+        .transition().duration(200)
+        .attr('fill', PATHWAY_CONFIG.colors.primaryHover)
+        .attr('stroke-width', 3);
+    })
+    .on('mouseleave', function() {
+      d3.select(this).select('circle')
+        .transition().duration(200)
+        .attr('fill', PATHWAY_CONFIG.colors.primary)
+        .attr('stroke-width', 2);
+    });
+  }
+  
+  drawReferencesButton() {
+    // Position button in lower left corner
+    const buttonRadius = 15; // Button radius
+    const leftMargin = 20; // Left margin from edge
+    const bottomMargin = 20; // Bottom margin from edge
+    const buttonX = leftMargin + buttonRadius; // Center X position (margin + radius)
+    const buttonY = window.innerHeight - bottomMargin - buttonRadius; // Center Y position (from bottom: margin + radius)
+    
+    const refGroup = this.overlay.append('g')
+      .attr('class', 'references-button btn')
+      .attr('transform', `translate(${buttonX}, ${buttonY})`);
+
+    // Button circle
+    const circle = refGroup.append('circle')
+      .attr('r', 15)
+      .attr('fill', PATHWAY_CONFIG.colors.primary)
+      .attr('stroke', PATHWAY_CONFIG.colors.primaryHover)
+      .attr('stroke-width', 2);
+    
+    // References icon (book/document icon)
+    refGroup.append('text')
+      .attr('x', 0)
+      .attr('y', 5)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'white')
+      .attr('font-size', '16px')
+      .text('📚');
+    
+    // Click handler to show references modal
+    refGroup.on('click', () => {
+      const modal = document.getElementById('references-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+    });
+    
+    // Hover effects
+    refGroup.on('mouseenter', function() {
       d3.select(this).select('circle')
         .transition().duration(200)
         .attr('fill', PATHWAY_CONFIG.colors.primaryHover)
@@ -1752,7 +2021,7 @@ export class MetabolismViewer {
     let currentY = buttonY;
     const buttonGap = 15;
     const lineHeight = buttonHeight + 10;
-    const rightMargin = 150;
+    const rightMargin = 130;
     
     const getAvailableWidth = () => {
       const svgWidth = this.svg.attr('width') ? parseFloat(this.svg.attr('width')) : this.options.width;
@@ -1817,7 +2086,7 @@ export class MetabolismViewer {
     const buttonHeight = 28;
     const buttonGap = 15;
     const lineHeight = buttonHeight + 10;
-    const rightMargin = 150;
+    const rightMargin = 130;
     const horizontalPadding = 16;
     
     // Helper to calculate button width
@@ -2055,7 +2324,7 @@ export class MetabolismViewer {
     const buttonHeight = 28;
     const buttonGap = 15;
     const lineHeight = buttonHeight + 10;
-    const rightMargin = 150;
+    const rightMargin = 130;
     const horizontalPadding = 16;
     
     // Helper to calculate button width
@@ -2329,7 +2598,7 @@ export class MetabolismViewer {
     const buttonHeight = 28;
     const buttonGap = 15;
     const lineHeight = buttonHeight + 10;
-    const rightMargin = 150; // Right margin to prevent buttons from overlapping with dark mode button
+    const rightMargin = 130; // Right margin to prevent buttons from overlapping with dark mode button
     
     // Get "Show All" button width (first button in group)
     const showAllButton = this.pathwayButtonGroup.select('.pathway-button').node();
