@@ -8,7 +8,7 @@
 
 const unit_space = 150;
 const base_x = 65;
-const base_y = 2915; // Continuation from citric acid cycle
+const base_y = 3300; // Continuation from citric acid cycle
 
 export const electronTransportChainNodes = [
   // Protein complexes

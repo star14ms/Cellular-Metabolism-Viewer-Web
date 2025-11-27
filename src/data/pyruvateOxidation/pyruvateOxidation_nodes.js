@@ -16,7 +16,7 @@
 const unit_space = 150;
 const height_arrow = 74;
 const base_x = 100;
-const base_y = 1650; // Continuation from glycolysis pyruvate
+const base_y = 2035; // Continuation from glycolysis pyruvate
 
 export const pyruvateOxidationNodes = [
   // Molecules

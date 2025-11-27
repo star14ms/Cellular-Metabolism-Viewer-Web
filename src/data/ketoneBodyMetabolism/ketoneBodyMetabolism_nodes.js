@@ -6,8 +6,8 @@
  */
 
 const unit_space = 150;
-const base_x = -1450; // Align with acetaldehyde_fas column
-const base_y = 2200;  // Start below acetaldehyde_fas
+const base_x = -1500; // Align with acetaldehyde_fas column
+const base_y = 2300;  // Start below acetaldehyde_fas
 
 export const ketoneBodyMetabolismNodes = [
   // 1. Preparation Column (Left)

@@ -7,8 +7,8 @@
  */
 
 const unit_space = 200;
-const base_x = 1000;
-const base_y = 3400;
+const base_x = 4200;
+const base_y = 2500;
 const column_spacing = 300; // Horizontal spacing between columns
 
 export const nucleotideBreakdownNodes = [

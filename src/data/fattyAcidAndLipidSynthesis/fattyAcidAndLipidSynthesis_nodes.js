@@ -306,7 +306,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₂H₅OH',
     smiles: 'CCO',
     description: 'Alcohol that can be metabolized to acetaldehyde',
-    position: { x: base_x + unit_space * -7, y: base_y + unit_space * 4.5 }
+    position: { x: base_x + unit_space * -7 - 50, y: base_y + unit_space * 4 }
   },
   {
     id: 'acetaldehyde_fas',
@@ -315,7 +315,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₂H₄O',
     smiles: 'CC=O',
     description: 'Toxic intermediate in alcohol metabolism',
-    position: { x: base_x + unit_space * -7, y: base_y + unit_space * 5.5 }
+    position: { x: base_x + unit_space * -7 - 50, y: base_y + unit_space * 5 }
   }
 ];
 

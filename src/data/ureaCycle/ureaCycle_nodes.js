@@ -15,8 +15,8 @@
  */
 
 const unit_space = 200;
-const base_x = 3200; // Starting x position for the cycle center
-const base_y = 2200; // Starting y position for the cycle center
+const base_x = 2400; // Starting x position for the cycle center
+const base_y = 2500; // Starting y position for the cycle center
 
 // Circle parameters for 6 nodes arranged in a perfect circle
 // Rotated backward by 2 positions (120° counterclockwise)

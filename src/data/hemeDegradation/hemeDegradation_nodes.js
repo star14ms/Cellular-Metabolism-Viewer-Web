@@ -7,8 +7,8 @@
  */
 
 const unit_space = 150;
-const base_x = -450;
-const base_y = 3450; // Align with heme synthesis output generally
+const base_x = -550;
+const base_y = 3600; // Align with heme synthesis output generally
 
 export const hemeDegradationNodes = [
   {

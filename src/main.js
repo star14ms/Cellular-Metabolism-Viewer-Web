@@ -229,6 +229,32 @@ if (!app) {
         })
       })
       
+      // Listen for mitochondria selection
+      viewerContainer.addEventListener('mitochondria-selected', (event) => {
+        const mitochondriaData = event.detail.mitochondria || event.detail.pathway;
+        
+        // Clear other detail views
+        nodeDetail.render(null)
+        arrowDetail.render(null)
+        
+        // Format as pathway for PathwayDetail component
+        pathwayView.render({
+          pathway: mitochondriaData,
+          summary: mitochondriaData.summary,
+          reactions: mitochondriaData.reactions || [],
+          nodes: mitochondriaData.nodes || []
+        });
+        
+        // Switch to pathway tab
+        tabs.forEach(t => t.classList.remove('active'))
+        tabs[2].classList.add('active')
+        views.forEach(v => v.classList.remove('active'))
+        pathwayContainer.classList.add('active')
+        
+        // Show detail panel
+        showDetailPanel();
+      })
+      
       // Listen for pathway selection
       viewerContainer.addEventListener('pathway-selected', (event) => {
         pathwayView.render(event.detail)

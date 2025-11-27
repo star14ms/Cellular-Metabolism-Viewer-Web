@@ -9,7 +9,7 @@
 
 const unit_space = 150;
 const base_x = -2100; // Leftmost position on the map
-const base_y = -750; // Starting y position
+const base_y = -650; // Starting y position
 
 export const cholesterolSynthesisNodes = [
   // Main pathway nodes (sequential flow)

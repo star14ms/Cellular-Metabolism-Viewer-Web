@@ -7,7 +7,7 @@
 
 const unit_space = 200;
 const base_x = 2800; // Tyrosine position
-const base_y = 200;
+const base_y = -200;
 
 export const aromaticAminoAcidMetabolismNodes = [
   {

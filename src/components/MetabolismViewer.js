@@ -14,6 +14,7 @@ import {
   generatePathwaysArray,
   pathwayDefinitions 
 } from '../data/index.js';
+import { mitochondriaData } from '../data/mitochondria/mitochondria_index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import {
   calculateArrowCoords,
@@ -117,7 +118,16 @@ const VIEWER_CONFIG = {
     strokeWidthHover: 6,
     strokeOpacity: 0.7,
     strokeOpacityHover: 1
-  }
+  },
+  
+  // Mitochondrial border coordinates
+  // Array of {x, y} points that define the border between inside and outside of mitochondria
+  // Lines will be drawn connecting these points in order
+  mitochondrialBorder: [
+    // Add your (x, y) coordinates here
+    {x: -200, y: 2212.5}, {x: -1650, y: 2212.5}, {x: -1650, y: 3300}, {x: -200, y: 3300}, {x: 2300, y: 3300}, {x: 2300, y: 2212.5 }, {x: 1300, y: 2212.5 }, {x: 1300, y: 1690 }, {x: -200, y: 1690 }, {x: -200, y: 2212.5 }
+    // Example: {x: 100, y: 100}, {x: 200, y: 100}, {x: 200, y: 200}, {x: 100, y: 200}
+  ]
 };
 
 // Merge PATHWAY_CONFIG with VIEWER_CONFIG for backward compatibility
@@ -612,6 +622,9 @@ export class MetabolismViewer {
     
     // Draw connections between reactions
     this.drawConnections();
+    
+    // Draw mitochondrial border (behind nodes and arrows)
+    this.drawMitochondrialBorder();
     
     // Draw H+ arrows first (behind complexes) - will be moved behind nodes after drawing
     this.drawETCSubArrows();
@@ -2689,6 +2702,100 @@ export class MetabolismViewer {
     // Update current zoom level
     this.currentZoom = scale;
     this.updateNodeDisplay(scale);
+  }
+  
+  drawMitochondrialBorder() {
+    // Draw a border line to distinguish inside and outside of mitochondria
+    // Uses coordinates from PATHWAY_CONFIG.mitochondrialBorder array
+    // Points should be provided as {x, y} objects in the order they should be connected
+    const borderCoords = PATHWAY_CONFIG.mitochondrialBorder || [];
+    
+    // Only draw if we have at least 2 points
+    if (borderCoords.length < 2) {
+      return;
+    }
+    
+    // Create a group for the mitochondrial border
+    const borderGroup = this.g.append('g')
+      .attr('class', 'mitochondrial-border');
+    
+    // Store all visible lines for highlighting
+    const allVisibleLines = [];
+    
+    // Draw lines connecting the points in order
+    for (let i = 0; i < borderCoords.length - 1; i++) {
+      const currentPoint = borderCoords[i];
+      const nextPoint = borderCoords[i + 1];
+      
+      // Create a group for this line segment
+      const lineGroup = borderGroup.append('g')
+        .attr('class', 'mitochondrial-border-segment');
+      
+      // Add invisible wide hit area for easier clicking (20px wide)
+      const hitAreaWidth = 20;
+      lineGroup.append('line')
+        .attr('x1', currentPoint.x)
+        .attr('y1', currentPoint.y)
+        .attr('x2', nextPoint.x)
+        .attr('y2', nextPoint.y)
+        .attr('stroke', 'transparent')
+        .attr('stroke-width', hitAreaWidth)
+        .attr('pointer-events', 'all')
+        .attr('cursor', 'pointer')
+        .style('cursor', 'pointer')
+        .on('click', (event) => {
+          event.stopPropagation(); // Prevent triggering background click
+          this.selectMitochondria();
+        });
+      
+      // Draw visible line
+      const visibleLine = lineGroup.append('line')
+        .attr('x1', currentPoint.x)
+        .attr('y1', currentPoint.y)
+        .attr('x2', nextPoint.x)
+        .attr('y2', nextPoint.y)
+        .attr('stroke', '#ff9800')
+        .attr('stroke-width', 8)
+        .attr('stroke-opacity', 0.8)
+        .attr('stroke-dasharray', '5,5') // Dashed line to distinguish it
+        .attr('pointer-events', 'none'); // Let hit area handle clicks
+      
+      // Store this line for group highlighting
+      allVisibleLines.push(visibleLine);
+      
+      // Add hover effect to the entire group - highlight all lines
+      lineGroup.on('mouseenter', () => {
+        // Highlight all lines in the border
+        allVisibleLines.forEach(line => {
+          line
+            .attr('stroke-opacity', 1)
+            .attr('stroke-width', 10);
+        });
+      })
+      .on('mouseleave', () => {
+        // Restore all lines to normal state
+        allVisibleLines.forEach(line => {
+          line
+            .attr('stroke-opacity', 0.8)
+            .attr('stroke-width', 8);
+        });
+      });
+    }
+    
+    // Move border behind other elements (lower z-order)
+    borderGroup.lower();
+  }
+  
+  selectMitochondria() {
+    // Dispatch custom event for mitochondria detail view
+    // Use mitochondria data from data folder
+    const detailEvent = new CustomEvent('mitochondria-selected', {
+      detail: {
+        mitochondria: mitochondriaData,
+        pathway: mitochondriaData // Use pathway format for compatibility with PathwayDetail
+      }
+    });
+    this.container.dispatchEvent(detailEvent);
   }
   
   drawConnections() {

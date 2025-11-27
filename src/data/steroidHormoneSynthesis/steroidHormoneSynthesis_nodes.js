@@ -12,7 +12,7 @@
 
 const unit_space = 150;
 const base_x = -2100; // Column 1 position
-const base_y = 600; // Starting y position
+const base_y = 700; // Starting y position
 
 export const steroidHormoneSynthesisNodes = [
   // Column 1: Zona Glomerulosa (Mineralocorticoid Synthesis)

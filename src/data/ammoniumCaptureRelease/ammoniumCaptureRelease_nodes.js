@@ -14,7 +14,7 @@ const unit_space = 200;
 // = (200 + 150 * 1.06, 1975 + 150 * 2.56) = (359, 2359)
 
 const base_x = 1000; // α-ketoglutarate x position
-const base_y = 2434; // α-ketoglutarate y position
+const base_y = 2819; // α-ketoglutarate y position
 
 export const ammoniumCaptureReleaseNodes = [
   // Core pathway nodes

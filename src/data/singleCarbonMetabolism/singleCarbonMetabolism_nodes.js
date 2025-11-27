@@ -329,7 +329,7 @@ export const singleCarbonMetabolismNodes = [
     formula: 'C₄H₁₀N₃O₅P',
     smiles: 'CN(CC(=O)O)C(=N)NP(=O)(O)O',
     description: 'Phosphocreatine, high-energy phosphate storage molecule',
-    position: { x: base_x + unit_space * 5, y: lower_y + unit_space * 2.5 }
+    position: { x: base_x + unit_space * 6.5, y: lower_y + unit_space * 3 }
   },
   {
     id: 'creatinine',
@@ -338,7 +338,7 @@ export const singleCarbonMetabolismNodes = [
     formula: 'C₄H₇N₃O',
     smiles: 'CN1CC(=O)NC1=O',
     description: 'Creatinine, waste product excreted in urine',
-    position: { x: base_x + unit_space * 4, y: lower_y + unit_space * 2 }
+    position: { x: base_x + unit_space * 6, y: lower_y + unit_space * 4 }
   },
 
   // Homocysteine Catabolism Pathway (extending downward from homocysteine)

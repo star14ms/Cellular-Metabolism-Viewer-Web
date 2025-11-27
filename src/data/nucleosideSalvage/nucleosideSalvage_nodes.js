@@ -9,8 +9,8 @@
  */
 
 const unit_space = 150;
-const base_x = 4500; // Substrates x position
-const base_y = 3200; // Same y-level as ETC
+const base_x = 4300; // Substrates x position
+const base_y = 0; // Same y-level as ETC
 const product_x_offset = 200; // Products are to the right of substrates
 
 export const nucleosideSalvageNodes = [

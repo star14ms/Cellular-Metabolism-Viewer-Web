@@ -7,8 +7,8 @@
  */
 
 const unit_space = 200;
-const base_x = 5000; // Upper right position
-const base_y = 0; // Start below top to avoid overlap
+const base_x = 3900; // Upper right position
+const base_y = 600; // Start below top to avoid overlap
 
 export const pyrimidineSynthesisNodes = [
   // Starting precursors (at top)
