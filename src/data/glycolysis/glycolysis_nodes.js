@@ -264,6 +264,15 @@ export const glycolysisNodes = [
     position: { x: base_x, y: base_y + unit_space * 9 }
   },
   {
+    id: 'lactate',
+    type: 'molecule',
+    name: 'Lactate',
+    formula: 'C₃H₅O₃⁻',
+    description: 'Lactic acid, produced by fermentation from pyruvate',
+    smiles: 'CC(C(=O)[O-])O',
+    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 9 } // To the right of pyruvate
+  },
+  {
     id: 'oxaloacetate_glycolysis',
     type: 'molecule',
     name: 'Oxaloacetate',

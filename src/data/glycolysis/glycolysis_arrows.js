@@ -233,6 +233,13 @@ export const glycolysisArrows = [
     to_id: 'pyruvate_glycolysis',
     reaction_id: 'rxn_malic_enzyme'
   },
+  // Lactate fermentation pathway
+  {
+    id: 'arrow_fermentation_1',
+    from_id: 'pyruvate_glycolysis',
+    to_id: 'lactate',
+    reaction_id: 'rxn_fermentation_1',
+  },
   // Pyruvate to Alanine transamination
   {
     id: 'arrow_glycolysis_pyruvate_alanine',

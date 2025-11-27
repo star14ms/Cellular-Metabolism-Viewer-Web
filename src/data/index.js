@@ -10,7 +10,6 @@ import { glycolysisNodes, glycolysisReactions, glycolysisArrows, glycolysisData 
 import { pyruvateOxidationNodes, pyruvateOxidationReactions, pyruvateOxidationArrows, pyruvateOxidationData } from './pyruvateOxidation/pyruvateOxidation_index.js';
 import { citricAcidCycleNodes, citricAcidCycleReactions, citricAcidCycleArrows, citricAcidCycleData } from './citricAcidCycle/citricAcidCycle_index.js';
 import { electronTransportChainNodes, electronTransportChainReactions, electronTransportChainArrows, electronTransportChainData } from './electronTransportChain/electronTransportChain_index.js';
-import { fermentationNodes, fermentationReactions, fermentationArrows, fermentationData } from './fermentation/fermentation_index.js';
 import { purineSynthesisNodes, purineSynthesisReactions, purineSynthesisArrows, purineSynthesisData } from './purineSynthesis/purineSynthesis_index.js';
 import { pyrimidineSynthesisNodes, pyrimidineSynthesisReactions, pyrimidineSynthesisArrows, pyrimidineSynthesisData } from './pyrimidineSynthesis/pyrimidineSynthesis_index.js';
 import { nucleotideBreakdownNodes, nucleotideBreakdownReactions, nucleotideBreakdownArrows, nucleotideBreakdownData } from './nucleotideBreakdown/nucleotideBreakdown_index.js';
@@ -37,7 +36,6 @@ export const allNodes = [
   ...pyruvateOxidationNodes,
   ...citricAcidCycleNodes,
   ...electronTransportChainNodes,
-  ...fermentationNodes,
   ...purineSynthesisNodes,
   ...pyrimidineSynthesisNodes,
   ...nucleotideBreakdownNodes,
@@ -65,7 +63,6 @@ export const allReactions = [
   ...pyruvateOxidationReactions,
   ...citricAcidCycleReactions,
   ...electronTransportChainReactions,
-  ...fermentationReactions,
   ...purineSynthesisReactions,
   ...pyrimidineSynthesisReactions,
   ...nucleotideBreakdownReactions,
@@ -93,7 +90,6 @@ export const allArrows = [
   ...pyruvateOxidationArrows,
   ...citricAcidCycleArrows,
   ...electronTransportChainArrows,
-  ...fermentationArrows,
   ...purineSynthesisArrows,
   ...pyrimidineSynthesisArrows,
   ...nucleotideBreakdownArrows,
@@ -123,7 +119,6 @@ export const PATHWAY_CONFIG = {
     'pyruvate-oxidation': 'Pyruvate Oxidation',
     'citric-acid-cycle': 'Citric Acid Cycle (Tricarboxylic Acid Cycle)',
     'electron-transport-chain': 'Electron Transport Chain',
-    'fermentation': 'Fermentation',
     
     'purine-synthesis': 'Purine Synthesis',
     'pyrimidine-synthesis': 'Pyrimidine Synthesis',
@@ -166,11 +161,6 @@ export const PATHWAY_CONFIG = {
       calculateOutwardDirection: true // Special handling for cycle
     },
     'electron-transport-chain': {
-      rotationAngle: Math.PI, // 180 degrees
-      offsetDirection: -1, // Above (like glycolysis)
-      useStandardShape: true
-    },
-    'fermentation': {
       rotationAngle: Math.PI, // 180 degrees
       offsetDirection: -1, // Above (like glycolysis)
       useStandardShape: true
@@ -308,15 +298,6 @@ const pathwayDefinitions = [
     reactions: electronTransportChainReactions,
     arrows: electronTransportChainArrows,
     data: electronTransportChainData
-  },
-  {
-    id: 'fermentation',
-    name: 'Fermentation',
-    nodes: fermentationNodes,
-    reactions: fermentationReactions,
-    arrows: fermentationArrows,
-    data: fermentationData,
-    subPathways: fermentationData.subPathways // Include sub-pathways
   },
   {
     id: 'purine-synthesis',
