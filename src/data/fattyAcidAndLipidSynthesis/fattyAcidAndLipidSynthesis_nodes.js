@@ -238,7 +238,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Free fatty acids (in plasma membrane)',
     pubchemCid: 985, // Palmitic Acid as representative
     description: 'Free fatty acids crossing the plasma membrane',
-    position: { x: base_x + unit_space * -4, y: base_y + unit_space * 3.5 }
+    position: { x: base_x + unit_space * -4.33, y: base_y + unit_space * 3.5 }
   },
   {
     id: 'fatty_acids_peroxisomes',
@@ -246,7 +246,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Fatty acids > C24 to peroxisomes',
     pubchemCid: 10469,
     description: 'Very long chain fatty acids (>C24) destined for peroxisomes',
-    position: { x: base_x + unit_space * -5, y: base_y + unit_space * 4.5 }
+    position: { x: base_x + unit_space * -5.33, y: base_y + unit_space * 4.5 }
   },
   {
     id: 'fatty_acids_short',
@@ -254,7 +254,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Fatty acids ≤ C12',
     pubchemCid: 379,
     description: 'Short and medium chain fatty acids (≤C12) that can diffuse into mitochondria',
-    position: { x: base_x + unit_space * -4, y: base_y + unit_space * 4.5 }
+    position: { x: base_x + unit_space * -4.33, y: base_y + unit_space * 4.5 }
   },
   {
     id: 'fatty_acids_medium_long',
@@ -262,7 +262,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Fatty acids > C14 and < C22',
     pubchemCid: 985,
     description: 'Long chain fatty acids (>C14 and <C22) requiring carnitine shuttle',
-    position: { x: base_x + unit_space * -3, y: base_y + unit_space * 4.5 }
+    position: { x: base_x + unit_space * -3.33, y: base_y + unit_space * 4.5 }
   },
   {
     id: 'fatty_acids_short_mitochondria',
@@ -270,7 +270,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Fatty acids ≤ C12 to mitochondria',
     pubchemCid: 379,
     description: 'Short and medium chain fatty acids (≤C12) that can diffuse into mitochondria',
-    position: { x: base_x + unit_space * -4, y: base_y + unit_space * 7.5 }
+    position: { x: base_x + unit_space * -4.33, y: base_y + unit_space * 7.5 }
   },
   {
     id: 'diet_fas',

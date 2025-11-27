@@ -125,7 +125,7 @@ const VIEWER_CONFIG = {
   // Lines will be drawn connecting these points in order
   mitochondrialBorder: [
     // Add your (x, y) coordinates here
-    {x: -200, y: 2212.5}, {x: -1650, y: 2212.5}, {x: -1650, y: 3300}, {x: -200, y: 3300}, {x: 2300, y: 3300}, {x: 2300, y: 2212.5 }, {x: 1300, y: 2212.5 }, {x: 1300, y: 1690 }, {x: -200, y: 1690 }, {x: -200, y: 2212.5 }
+    {x: -475, y: 2212.5}, {x: -1650, y: 2212.5}, {x: -1650, y: 3300}, {x: -200, y: 3300}, {x: 2300, y: 3300}, {x: 2300, y: 2212.5 }, {x: 1300, y: 2212.5 }, {x: 1300, y: 1690 }, {x: -475, y: 1690 }, {x: -475, y: 2212.5 }
     // Example: {x: 100, y: 100}, {x: 200, y: 100}, {x: 200, y: 200}, {x: 100, y: 200}
   ]
 };
@@ -1019,13 +1019,13 @@ export class MetabolismViewer {
     // Show all molecules (no limit), but limit reactions
     const reactionLimit = Math.min(reactionResults.length, remainingSlots);
     
-    // Combine results in display order: molecules → reactions → pathways → subpathways
+    // Combine results in display order: pathways → subpathways → molecules → reactions
     // Show all molecules to ensure nodes with same name are all visible
     const combinedResults = [
-      ...moleculeResults, // Show all molecules (no limit)
-      ...reactionResults.slice(0, reactionLimit),
       ...pathwayResults, // Show all pathways (no limit)
-      ...subpathwayResults // Show all subpathways (no limit)
+      ...subpathwayResults, // Show all subpathways (no limit)
+      ...moleculeResults, // Show all molecules (no limit)
+      ...reactionResults.slice(0, reactionLimit)
     ];
     
     // Render results
@@ -1053,61 +1053,7 @@ export class MetabolismViewer {
     const pathways = results.filter(r => r.type === 'pathway');
     const subpathways = results.filter(r => r.type === 'subpathway');
     
-    // Add molecule results first
-    if (molecules.length > 0) {
-      const sectionHeader = document.createElement('div');
-      sectionHeader.className = 'search-section-header';
-      sectionHeader.textContent = `Molecules (${molecules.length})`;
-      dropdown.appendChild(sectionHeader);
-      
-      molecules.forEach(result => {
-        const item = document.createElement('div');
-        item.className = 'search-result-item molecule-item';
-        item.textContent = result.displayName;
-        item.addEventListener('mouseenter', (e) => {
-          e.stopPropagation();
-          this.previewSearchResult(result);
-        });
-        item.addEventListener('mouseleave', (e) => {
-          e.stopPropagation();
-          this.clearPreview();
-        });
-        item.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.selectSearchResult(result);
-        });
-        dropdown.appendChild(item);
-      });
-    }
-    
-    // Add reaction results second
-    if (reactions.length > 0) {
-      const sectionHeader = document.createElement('div');
-      sectionHeader.className = 'search-section-header';
-      sectionHeader.textContent = `Reactions (${reactions.length})`;
-      dropdown.appendChild(sectionHeader);
-      
-      reactions.forEach(result => {
-        const item = document.createElement('div');
-        item.className = 'search-result-item reaction-item';
-        item.textContent = result.displayName;
-        item.addEventListener('mouseenter', (e) => {
-          e.stopPropagation();
-          this.previewSearchResult(result);
-        });
-        item.addEventListener('mouseleave', (e) => {
-          e.stopPropagation();
-          this.clearPreview();
-        });
-        item.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.selectSearchResult(result);
-        });
-        dropdown.appendChild(item);
-      });
-    }
-    
-    // Add pathway results third
+    // Add pathway results first
     if (pathways.length > 0) {
       const sectionHeader = document.createElement('div');
       sectionHeader.className = 'search-section-header';
@@ -1134,7 +1080,7 @@ export class MetabolismViewer {
       });
     }
     
-    // Add subpathway results last
+    // Add subpathway results second
     if (subpathways.length > 0) {
       const sectionHeader = document.createElement('div');
       sectionHeader.className = 'search-section-header';
@@ -1147,6 +1093,60 @@ export class MetabolismViewer {
         // Show parent pathway name in parentheses
         const parentName = result.parentPathway?.name || '';
         item.textContent = `${result.displayName}${parentName ? ` (${parentName})` : ''}`;
+        item.addEventListener('mouseenter', (e) => {
+          e.stopPropagation();
+          this.previewSearchResult(result);
+        });
+        item.addEventListener('mouseleave', (e) => {
+          e.stopPropagation();
+          this.clearPreview();
+        });
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.selectSearchResult(result);
+        });
+        dropdown.appendChild(item);
+      });
+    }
+    
+    // Add molecule results third
+    if (molecules.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'search-section-header';
+      sectionHeader.textContent = `Molecules (${molecules.length})`;
+      dropdown.appendChild(sectionHeader);
+      
+      molecules.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item molecule-item';
+        item.textContent = result.displayName;
+        item.addEventListener('mouseenter', (e) => {
+          e.stopPropagation();
+          this.previewSearchResult(result);
+        });
+        item.addEventListener('mouseleave', (e) => {
+          e.stopPropagation();
+          this.clearPreview();
+        });
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.selectSearchResult(result);
+        });
+        dropdown.appendChild(item);
+      });
+    }
+    
+    // Add reaction results last
+    if (reactions.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'search-section-header';
+      sectionHeader.textContent = `Reactions (${reactions.length})`;
+      dropdown.appendChild(sectionHeader);
+      
+      reactions.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item reaction-item';
+        item.textContent = result.displayName;
         item.addEventListener('mouseenter', (e) => {
           e.stopPropagation();
           this.previewSearchResult(result);
@@ -7045,7 +7045,7 @@ export class MetabolismViewer {
   }
   
   updateNodeDisplay(zoomLevel) {
-    const zoomThreshold = 0.5; // Show images when zoomed in beyond this threshold (decreased from 1.5)
+    const zoomThreshold = 0.8; // Show images when zoomed in beyond this threshold (decreased from 1.5)
     const nodeRadius = zoomLevel >= zoomThreshold ? 55 : 30; // Larger radius when showing images
     
     // Update arrow connections to avoid overlap
@@ -7084,7 +7084,7 @@ export class MetabolismViewer {
   }
   
   updateArrowConnections(zoomLevel, nodeRadius) {
-    const zoomThreshold = 0.5; // Decreased from 1.5 to change view mode earlier
+    const zoomThreshold = 0.8; // Decreased from 1.5 to change view mode earlier
     const radius = zoomLevel >= zoomThreshold ? nodeRadius : PATHWAY_CONFIG.nodeSizes.regular.radius;
     
     // Update regular connections based on zoom level

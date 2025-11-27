@@ -561,6 +561,141 @@ export const glycolysisReactions = [
       regulation: 'Source of cytosolic NADPH',
       isReversible: false
     }
+  },
+  {
+    id: 'rxn_pyruvate_transamination',
+    name: 'Pyruvate Transamination',
+    byreactant: ['glutamine_glycolysis'],
+    byproduct: ['alpha_ketoglutarate_glycolysis'],
+    hideByreactantLabels: true,
+    hideByproductLabels: true,
+    enzyme: {
+      name: 'Alanine Transaminase (ALT)',
+      ecNumber: '2.6.1.2',
+      description: 'Catalyzes the transamination of pyruvate to alanine, using glutamine as amino group donor and producing α-ketoglutarate',
+      cofactors: ['Vitamin B₆ (Pyridoxal phosphate)']
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      requirement: 'Reversible transamination reaction',
+      notes: 'Converts pyruvate to alanine via transamination, connecting amino acid metabolism with glycolysis',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_ast_mito_shuttle',
+    name: 'Aspartate Aminotransferase (Mitochondrial)',
+    byproduct: ['alpha_ketoglutarate_mito_shuttle', 'aspartate_mito_shuttle'],
+    hideByproductLabels: true,
+    enzyme: {
+      name: 'Aspartate Aminotransferase (AST)',
+      ecNumber: '2.6.1.1',
+      description: 'Catalyzes the reversible transamination between glutamate and oxaloacetate to form α-ketoglutarate and aspartate in the mitochondrial matrix',
+      cofactors: ['Vitamin B₆ (Pyridoxal phosphate)']
+    },
+    conditions: {
+      location: 'Mitochondrial matrix',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      requirement: 'Reversible transamination reaction',
+      notes: 'Part of the malate-aspartate shuttle, transfers reducing equivalents across mitochondrial membrane',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_shuttle_transport_glutamate',
+    name: 'Glutamate Transport (Mitochondrial)',
+    byproduct: ['glutamate_cyto_shuttle'],
+    hideByproductLabels: true,
+    enzyme: {
+      name: 'Glutamate/Aspartate Transporter',
+      ecNumber: 'N/A',
+      description: 'Transports glutamate from mitochondrial matrix to cytosol',
+      cofactors: []
+    },
+    conditions: {
+      location: 'Mitochondrial membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      requirement: 'Active transport',
+      notes: 'Part of the malate-aspartate shuttle, exchanges glutamate across the mitochondrial membrane',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_shuttle_transport_aspartate',
+    name: 'Aspartate Transport (Mitochondrial)',
+    enzyme: {
+      name: 'Glutamate/Aspartate Transporter',
+      ecNumber: 'N/A',
+      description: 'Transports aspartate from cytosol to mitochondrial matrix',
+      cofactors: []
+    },
+    conditions: {
+      location: 'Mitochondrial membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      requirement: 'Active transport',
+      notes: 'Part of the malate-aspartate shuttle, exchanges aspartate across the mitochondrial membrane',
+    }
+  },
+  {
+    id: 'rxn_shuttle_transport_ketoglutarate',
+    name: 'α-Ketoglutarate Transport (Mitochondrial)',
+    enzyme: {
+      name: 'Dicarboxylate Transporter',
+      ecNumber: 'N/A',
+      description: 'Transports α-ketoglutarate from mitochondrial matrix to cytosol',
+      cofactors: []
+    },
+    conditions: {
+      location: 'Mitochondrial membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      requirement: 'Active transport',
+      notes: 'Part of the malate-aspartate shuttle, exchanges α-ketoglutarate across the mitochondrial membrane',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_ast_cyto_shuttle',
+    name: 'Aspartate Aminotransferase (Cytosolic)',
+    byproduct: ['oxaloacetate_cyto_shuttle', 'glutamate_cyto_shuttle'],
+    hideByproductLabels: true,
+    enzyme: {
+      name: 'Aspartate Aminotransferase (AST)',
+      ecNumber: '2.6.1.1',
+      description: 'Catalyzes the reversible transamination between aspartate and α-ketoglutarate to form oxaloacetate and glutamate in the cytosol',
+      cofactors: ['Vitamin B₆ (Pyridoxal phosphate)']
+    },
+    conditions: {
+      location: 'Cytoplasm',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      requirement: 'Reversible transamination reaction',
+      notes: 'Part of the malate-aspartate shuttle, transfers reducing equivalents across mitochondrial membrane',
+      isReversible: true
+    }
+  },
+  {
+    id: 'rxn_shuttle_transport_citrate',
+    name: 'Citrate Transport (Mitochondrial)',
+    enzyme: {
+      name: 'Tricarboxylate Transporter',
+      ecNumber: 'N/A',
+      description: 'Transports citrate from mitochondrial matrix to cytosol',
+      cofactors: []
+    },
+    conditions: {
+      location: 'Mitochondrial membrane',
+      ph: '7.0-7.4',
+      temperature: '37°C',
+      requirement: 'Active transport',
+      notes: 'Transports citrate from mitochondria to cytosol for fatty acid synthesis and other cytosolic processes',
+      isReversible: true
+    }
   }
 ];
 

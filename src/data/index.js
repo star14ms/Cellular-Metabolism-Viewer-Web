@@ -121,7 +121,7 @@ export const PATHWAY_CONFIG = {
   pathwayNames: {
     'glycolysis': 'Glycolysis and Gluconeogenesis',
     'pyruvate-oxidation': 'Pyruvate Oxidation',
-    'citric-acid-cycle': 'Citric Acid Cycle (Krebs Cycle)',
+    'citric-acid-cycle': 'Citric Acid Cycle (Tricarboxylic Acid Cycle)',
     'electron-transport-chain': 'Electron Transport Chain',
     'fermentation': 'Fermentation',
     

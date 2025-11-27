@@ -28,23 +28,23 @@ export const fermentationNodes = [
     smiles: 'CC(C(=O)[O-])O',
     position: { x: base_x + unit_space, y: base_y }, // To the right of pyruvate
   },
-  {
-    id: 'acetaldehyde',
-    type: 'molecule',
-    name: 'Acetaldehyde',
-    formula: 'C₂H₄O',
-    description: 'Two-carbon aldehyde, intermediate in ethanol fermentation',
-    smiles: 'CC=O',
-    position: { x: base_x + unit_space * 0.5, y: base_y + unit_space * 0.5 }, // Lower right of pyruvate
-  },
-  {
-    id: 'ethanol',
-    type: 'molecule',
-    name: 'Ethanol',
-    formula: 'C₂H₆O',
-    description: 'Ethyl alcohol, final product of ethanol fermentation',
-    smiles: 'CCO',
-    position: { x: base_x + unit_space * 1, y: base_y + unit_space * 0.5 }, // Next to acetaldehyde
-  }
+  // {
+  //   id: 'acetaldehyde',
+  //   type: 'molecule',
+  //   name: 'Acetaldehyde',
+  //   formula: 'C₂H₄O',
+  //   description: 'Two-carbon aldehyde, intermediate in ethanol fermentation',
+  //   smiles: 'CC=O',
+  //   position: { x: base_x + unit_space * 0.5, y: base_y + unit_space * 0.5 }, // Lower right of pyruvate
+  // },
+  // {
+  //   id: 'ethanol',
+  //   type: 'molecule',
+  //   name: 'Ethanol',
+  //   formula: 'C₂H₆O',
+  //   description: 'Ethyl alcohol, final product of ethanol fermentation',
+  //   smiles: 'CCO',
+  //   position: { x: base_x + unit_space * 1, y: base_y + unit_space * 0.5 }, // Next to acetaldehyde
+  // }
 ];
 

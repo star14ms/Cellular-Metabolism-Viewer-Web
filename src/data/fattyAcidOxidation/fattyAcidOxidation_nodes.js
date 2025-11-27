@@ -1,5 +1,5 @@
 const unit_space = 150;
-const base_x = -600;
+const base_x = -750;
 const base_y = 1875;
 
 export const fattyAcidOxidationNodes = [

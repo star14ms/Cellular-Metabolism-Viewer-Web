@@ -35,9 +35,9 @@ export const citricAcidCycleData = {
     }
   ],
   summary: {
-    name: 'Citric Acid Cycle (Krebs Cycle)',
+    name: 'Citric Acid Cycle (Tricarboxylic Acid Cycle)',
     pathwayType: 'oxidative-metabolism',
-    description: 'A circular metabolic pathway that oxidizes acetyl-CoA to CO₂, producing energy carriers (ATP, NADH, FADH₂)',
+    description: 'A circular metabolic pathway that oxidizes acetyl-CoA to CO₂, producing energy carriers (ATP, NADH, FADH₂), also known as the Krebs cycle.',
     location: 'Mitochondrial matrix',
     netProducts: {
       'ATP': { produced: 1, consumed: 0, net: 1 },

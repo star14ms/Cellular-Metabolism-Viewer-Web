@@ -66,9 +66,16 @@ export const glycolysisData = {
     {
       id: 'gluconeogenesis-anaplerotic',
       name: 'Gluconeogenesis and Anaplerotic Extensions',
-      description: 'Reactions connecting Glycolysis to the Citric Acid Cycle and Gluconeogenesis. Includes the conversion between Oxaloacetate and Malate, and the bypass of Pyruvate Kinase via Oxaloacetate and Malate.',
-      reactionIndices: [27, 28, 29],
-      nodeIds: ['pyruvate_glycolysis', 'oxaloacetate_glycolysis', 'malate_glycolysis', 'phosphoenolpyruvate']
+      description: 'Reactions connecting Glycolysis to the Citric Acid Cycle and Gluconeogenesis. Includes the conversion between Oxaloacetate and Malate, the bypass of Pyruvate Kinase via Oxaloacetate and Malate, and pyruvate transamination to alanine.',
+      reactionIndices: [27, 28, 29, 30],
+      nodeIds: ['pyruvate_glycolysis', 'oxaloacetate_glycolysis', 'malate_glycolysis', 'phosphoenolpyruvate', 'alanine_glycolysis', 'glutamine_glycolysis', 'alpha_ketoglutarate_glycolysis']
+    },
+    {
+      id: 'malate-aspartate-shuttle',
+      name: 'Malate-Aspartate Shuttle',
+      description: 'A system for transferring reducing equivalents (NADH) from the cytosol into the mitochondria. Involves two aspartate aminotransferase (AST) reactions and membrane transporters that exchange glutamate/aspartate and α-ketoglutarate/malate between compartments. Also includes citrate transport from mitochondria to cytosol.',
+      reactionIndices: [31, 32, 33, 34, 35, 36], // Mitochondrial AST, Glutamate Transport, Aspartate Transport, α-Ketoglutarate Transport, Cytosolic AST, Citrate Transport
+      nodeIds: ['glutamate_mito_shuttle', 'aspartate_mito_shuttle', 'aspartate_cyto_shuttle', 'glutamate_cyto_shuttle', 'alpha_ketoglutarate_mito_shuttle', 'alpha_ketoglutarate_cyto_shuttle', 'oxaloacetate_glycolysis', 'oxaloacetate_cyto_shuttle', 'citrate', 'citrate_fas']
     }
   ]
 };

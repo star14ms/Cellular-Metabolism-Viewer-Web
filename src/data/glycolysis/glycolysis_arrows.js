@@ -232,6 +232,83 @@ export const glycolysisArrows = [
     from_id: 'malate_glycolysis',
     to_id: 'pyruvate_glycolysis',
     reaction_id: 'rxn_malic_enzyme'
+  },
+  // Pyruvate to Alanine transamination
+  {
+    id: 'arrow_glycolysis_pyruvate_alanine',
+    from_id: 'pyruvate_glycolysis',
+    to_id: 'alanine_glycolysis',
+    reaction_id: 'rxn_pyruvate_transamination',
+    flipped: true
+  },
+  // Malate-Aspartate Shuttle
+  // Reaction 1: Mitochondrial AST - Two curved arrows
+  {
+    id: 'arrow_shuttle_ast_mito_1',
+    from_id: 'glutamate_mito_shuttle',
+    reaction_id: 'rxn_ast_mito_shuttle',
+    curved: true,
+    flipped: true,
+    x_scale: 1.5,
+    y_scale: -0.75,
+    byMoleculeAngle: 270
+  },
+  {
+    id: 'arrow_shuttle_ast_mito_2',
+    from_id: 'oxaloacetate_glycolysis',
+    reaction_id: 'rxn_ast_mito_shuttle',
+    curved: true,
+    x_scale: 4.5,
+    y_scale: -0.75,
+    byMoleculeAngle: 90
+  },
+  // Reaction 2: Transport - Exchange arrows (separate reactions)
+  {
+    id: 'arrow_shuttle_transport_glutamate',
+    from_id: 'glutamate_mito_shuttle',
+    reaction_id: 'rxn_shuttle_transport_glutamate',
+    curved: true,
+    x_scale: 4.5,
+    byMoleculeAngle: 90
+  },
+  {
+    id: 'arrow_shuttle_transport_aspartate',
+    from_id: 'aspartate_cyto_shuttle',
+    to_id: 'aspartate_mito_shuttle',
+    reaction_id: 'rxn_shuttle_transport_aspartate'
+  },
+  {
+    id: 'arrow_shuttle_transport_ketoglutarate',
+    from_id: 'alpha_ketoglutarate_mito_shuttle',
+    to_id: 'alpha_ketoglutarate_cyto_shuttle',
+    reaction_id: 'rxn_shuttle_transport_ketoglutarate'
+  },
+  // Reaction 3: Cytosolic AST - Two curved arrows
+  {
+    id: 'arrow_shuttle_ast_cyto_1',
+    from_id: 'aspartate_cyto_shuttle',
+    reaction_id: 'rxn_ast_cyto_shuttle',
+    curved: true,
+    flipped: true,
+    x_scale: 1.5,
+    y_scale: 0.68,
+    byMoleculeAngle: 270
+  },
+  {
+    id: 'arrow_shuttle_ast_cyto_2',
+    from_id: 'alpha_ketoglutarate_cyto_shuttle',
+    reaction_id: 'rxn_ast_cyto_shuttle',
+    curved: true,
+    x_scale: 1.5,
+    y_scale: -0.68,
+    byMoleculeAngle: 90
+  },
+  // Citrate Transport
+  {
+    id: 'arrow_shuttle_transport_citrate',
+    from_id: 'citrate_cyto_shuttle',
+    to_id: 'citrate_fas',
+    reaction_id: 'rxn_shuttle_transport_citrate'
   }
 ];
 

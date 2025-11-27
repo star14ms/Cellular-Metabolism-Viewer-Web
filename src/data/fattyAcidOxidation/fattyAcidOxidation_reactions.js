@@ -142,6 +142,8 @@ export const fattyAcidOxidationReactions = [
   {
     id: 'rxn_fao_recycle',
     name: 'Chain Shortening Recycling',
+    byproduct: ['fatty_acyl_coa_mito_fao'],
+    hideByproductLabels: true,
     description: 'Shortened fatty acyl-CoA re-enters the beta-oxidation cycle'
   },
   // 11. Propionyl-CoA Carboxylase

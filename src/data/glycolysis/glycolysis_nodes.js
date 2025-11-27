@@ -270,16 +270,129 @@ export const glycolysisNodes = [
     formula: 'C₄H₄O₅',
     smiles: 'OC(=O)CC(=O)C(=O)O',
     description: 'Intermediate in the citric acid cycle and gluconeogenesis',
-    position: { x: base_x + unit_space * -2, y: base_y + unit_space * 8 }
+    position: { x: base_x + unit_space * -1.5, y: base_y + unit_space * 8 }
   },
   {
     id: 'malate_glycolysis',
     type: 'molecule',
-    name: 'L-Malate',
+    name: 'Malate',
     formula: 'C₄H₆O₅',
     smiles: 'OC(=O)C[C@H](O)C(=O)O',
     description: 'Intermediate in the citric acid cycle',
-    position: { x: base_x + unit_space * -2, y: base_y + unit_space * 9 }
+    position: { x: base_x + unit_space * -1.5, y: base_y + unit_space * 9 }
+  },
+  {
+    id: 'alanine_glycolysis',
+    type: 'molecule',
+    name: 'Alanine',
+    formula: 'C₃H₇NO₂',
+    description: 'Amino acid produced from pyruvate via transamination',
+    smiles: 'CC(C(=O)O)N',
+    position: { x: base_x + unit_space * 2, y: base_y + unit_space * 10 } // Below pyruvate
+  },
+  // By-molecule nodes for Pyruvate Transamination
+  {
+    id: 'glutamine_glycolysis',
+    type: 'molecule',
+    name: 'Glutamine',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₁₀N₂O₃',
+    smiles: 'N[C@@H](CCC(=O)O)C(=O)N',
+    description: 'Glutamine, amino group donor for pyruvate transamination',
+    position: { x: base_x + unit_space * 0.33, y: base_y + unit_space * 10.0 } // Left of pyruvate->alanine arrow
+  },
+  {
+    id: 'alpha_ketoglutarate_glycolysis',
+    type: 'molecule',
+    name: 'α-Ketoglutarate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₅H₆O₅',
+    smiles: 'C(CC(=O)O)CC(=O)C(=O)O',
+    description: 'α-Ketoglutarate, produced from glutamine in pyruvate transamination',
+    position: { x: base_x + unit_space * 1.05, y: base_y + unit_space * 10.33 } // Below glutamine
+  },
+  // Malate-Aspartate Shuttle nodes
+  // Left column: Glutamate (mito), Aspartate (mito), Aspartate (cyto), Glutamate (cyto)
+  {
+    id: 'glutamate_mito_shuttle',
+    type: 'molecule',
+    name: 'Glutamate',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₉NO₄',
+    smiles: 'C(CC(=O)O)CC(C(=O)O)N',
+    description: 'Glutamate in mitochondrial matrix, part of malate-aspartate shuttle',
+    position: { x: base_x + unit_space * -2.5, y: base_y + unit_space * 9.66 } // Top left
+  },
+  {
+    id: 'aspartate_mito_shuttle',
+    type: 'molecule',
+    name: 'Aspartate',
+    pathwayType: 'amino_acids',
+    formula: 'C₄H₇NO₄',
+    smiles: 'C(C(C(=O)O)N)C(=O)O',
+    description: 'Aspartate in mitochondrial matrix, part of malate-aspartate shuttle',
+    position: { x: base_x + unit_space * -2.5, y: base_y + unit_space * 10.66 } // Second from top left
+  },
+  {
+    id: 'aspartate_cyto_shuttle',
+    type: 'molecule',
+    name: 'Aspartate',
+    pathwayType: 'amino_acids',
+    formula: 'C₄H₇NO₄',
+    smiles: 'C(C(C(=O)O)N)C(=O)O',
+    description: 'Aspartate in cytosol, part of malate-aspartate shuttle',
+    position: { x: base_x + unit_space * -2.5, y: base_y + unit_space * 11.66 } // Third from top left
+  },
+  {
+    id: 'glutamate_cyto_shuttle',
+    type: 'molecule',
+    name: 'Glutamate',
+    pathwayType: 'amino_acids',
+    formula: 'C₅H₉NO₄',
+    smiles: 'C(CC(=O)O)CC(C(=O)O)N',
+    description: 'Glutamate in cytosol, part of malate-aspartate shuttle',
+    position: { x: base_x + unit_space * -2.5, y: base_y + unit_space * 12.66 } // Bottom left
+  },
+  // Right column: α-ketoglutarate (mito), α-ketoglutarate (cyto), oxaloacetate (cyto)
+  {
+    id: 'alpha_ketoglutarate_mito_shuttle',
+    type: 'molecule',
+    name: 'α-Ketoglutarate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₅H₆O₅',
+    smiles: 'C(CC(=O)O)CC(=O)C(=O)O',
+    description: 'α-Ketoglutarate in mitochondrial matrix, part of malate-aspartate shuttle',
+    position: { x: base_x + unit_space * -1.5, y: base_y + unit_space * 10.66 } // Same height as first Aspartate
+  },
+  {
+    id: 'alpha_ketoglutarate_cyto_shuttle',
+    type: 'molecule',
+    name: 'α-Ketoglutarate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₅H₆O₅',
+    smiles: 'C(CC(=O)O)CC(=O)C(=O)O',
+    description: 'α-Ketoglutarate in cytosol, part of malate-aspartate shuttle',
+    position: { x: base_x + unit_space * -1.5, y: base_y + unit_space * 11.66 } // Second from top right
+  },
+  {
+    id: 'oxaloacetate_cyto_shuttle',
+    type: 'molecule',
+    name: 'Oxaloacetate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₄H₄O₅',
+    smiles: 'OC(=O)CC(=O)C(=O)O',
+    description: 'Oxaloacetate in cytosol, part of malate-aspartate shuttle',
+    position: { x: base_x + unit_space * -1.5, y: base_y + unit_space * 12.66 } // Bottom right
+  },
+  {
+    id: 'citrate_cyto_shuttle',
+    type: 'molecule',
+    name: 'Citrate',
+    pathwayType: 'oxidative-metabolism',
+    formula: 'C₆H₈O₇',
+    smiles: 'C(C(=O)O)C(CC(=O)O)(C(=O)O)O',
+    description: 'Citrate in cytosol, transported from mitochondria for fatty acid synthesis',
+    position: { x: base_x - 500, y: base_y + unit_space * 12.66 } // Same height as lower Glutamate
   }
 ];
 

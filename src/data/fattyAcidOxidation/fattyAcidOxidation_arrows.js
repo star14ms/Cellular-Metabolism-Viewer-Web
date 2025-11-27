@@ -118,7 +118,7 @@ export const fattyAcidOxidationArrows = [
     flipped: true,
     byMoleculeAngle: 95,
     x_scale: 6,
-    y_scale: 1.33,
+    y_scale: 1,
 
   },
 
