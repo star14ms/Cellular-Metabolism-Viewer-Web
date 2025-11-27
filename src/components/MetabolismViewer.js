@@ -484,13 +484,31 @@ export class MetabolismViewer {
           })
           .attr('fill', '#000000');
         
-        // Ensure molecule-image-group backgrounds are black
+        // Ensure molecule-image-group backgrounds are black, except for nodes with disableDarkModeFilter
         this.svg.selectAll('g.molecule-image-group')
-          .style('background-color', '#000000');
+          .each(function() {
+            const group = d3.select(this);
+            const disableDarkFilter = group.attr('data-disable-dark-filter') === 'true';
+            if (disableDarkFilter) {
+              // Keep white background for nodes with disableDarkModeFilter
+              group.style('background-color', '#ffffff');
+              // Also update the background rectangle
+              group.select('.molecule-image-bg')
+                .attr('fill', '#ffffff');
+            } else {
+              group.style('background-color', '#000000');
+              // Update the background rectangle
+              group.select('.molecule-image-bg')
+                .attr('fill', '#000000');
+            }
+          });
       } else if (this.svg && !isDarkMode) {
         // Reset to white in light mode
         this.svg.selectAll('g.molecule-image-group')
           .style('background-color', '#ffffff');
+        // Update background rectangles
+        this.svg.selectAll('g.molecule-image-group .molecule-image-bg')
+          .attr('fill', '#ffffff');
       }
       
       // Update protein complexes and mobile carriers with their pathway-specific colors
@@ -6967,27 +6985,44 @@ export class MetabolismViewer {
     // Create image placeholder that will be updated when PubChem data is fetched
     // Add background rectangle for better visibility
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    imageGroups.append('rect')
-      .attr('class', 'molecule-image-bg')
-      .attr('x', -55)
-      .attr('y', -55)
-      .attr('width', 110)
-      .attr('height', 110)
-      .attr('fill', this.getImageBgColor())
-      .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
-      .attr('stroke-width', 2)
-      .attr('rx', 4);
-    
-    // Apply initial filter based on current theme
-    const imageFilter = isDarkMode ? 'invert(1) hue-rotate(180deg)' : 'none';
-    
-    imageGroups.append('image')
-      .attr('class', 'molecule-structure-image')
-      .attr('x', -50)
-      .attr('y', -50)
-      .attr('width', 100)
-      .attr('height', 100)
-      .attr('preserveAspectRatio', 'xMidYMid meet');
+    imageGroups.each(function(d) {
+      // Check if node has disableDarkModeFilter flag
+      const nodeId = d.nodeId;
+      const node = viewer.nodeMap.get(nodeId);
+      const disableDarkModeFilter = node && node.disableDarkModeFilter === true;
+      
+      // Set background color: white if disableDarkModeFilter, otherwise use theme color
+      const bgColor = viewer.getImageBgColor();
+      
+      // Add class to identify nodes with disabled dark mode filter
+      const imageGroup = d3.select(this);
+      if (disableDarkModeFilter) {
+        imageGroup.attr('data-disable-dark-filter', 'true');
+      }
+      
+      imageGroup.append('rect')
+        .attr('class', 'molecule-image-bg')
+        .attr('x', -55)
+        .attr('y', -55)
+        .attr('width', 110)
+        .attr('height', 110)
+        .attr('fill', bgColor)
+        .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
+        .attr('stroke-width', 2)
+        .attr('rx', 4);
+      
+      // Apply initial filter based on current theme and disableDarkModeFilter
+      const imageFilter = (isDarkMode && !disableDarkModeFilter) ? 'invert(1) hue-rotate(180deg)' : 'none';
+      const imageClass = disableDarkModeFilter ? 'molecule-structure-image no-filter' : 'molecule-structure-image';
+      
+      imageGroup.append('image')
+        .attr('class', imageClass)
+        .attr('x', -50)
+        .attr('y', -50)
+        .attr('width', 100)
+        .attr('height', 100)
+        .attr('preserveAspectRatio', 'xMidYMid meet');
+    });
     
     // Fetch PubChem image URLs for all molecules
     this.fetchMoleculeImages();
