@@ -732,7 +732,7 @@ export class MetabolismViewer {
     // Draw pathway buttons (in zoomable group)
     this.drawPathwayButtons();
     
-    // Create common container for buttons in lower left (theme toggle, references, help)
+    // Create common container for buttons in lower left (theme toggle, references)
     this.createLowerLeftButtonGroup();
     
     // Add click handlers
@@ -789,7 +789,7 @@ export class MetabolismViewer {
             // with the new dimensions without any adjustment
           }
           
-          // Update lower left button group position (theme toggle, references, help)
+          // Update lower left button group position (theme toggle, references)
           this.updateLowerLeftButtonGroupPosition();
           
           // Update pathway button positions on resize
@@ -1578,17 +1578,16 @@ export class MetabolismViewer {
   }
   
   createLowerLeftButtonGroup() {
-    // Create a container group for buttons in lower left (theme toggle, references, help)
+    // Create a container group for buttons in lower left (theme toggle, references)
     const buttonGroup = this.overlay.append('g')
       .attr('class', 'lower-left-buttons-group');
     
     // Store reference for positioning updates
     this.lowerLeftButtonGroup = buttonGroup;
     
-    // Draw buttons in order: theme toggle, references, help (from left to right)
+    // Draw buttons in order: theme toggle, references (from left to right)
     this.drawThemeToggleButton(buttonGroup);
     this.drawReferencesButton(buttonGroup);
-    this.drawHelpButton(buttonGroup);
     
     // Initial positioning
     this.updateLowerLeftButtonGroupPosition();
@@ -1605,47 +1604,6 @@ export class MetabolismViewer {
     const groupY = window.innerHeight - bottomMargin - themeToggleRadius;
     
     this.lowerLeftButtonGroup.attr('transform', `translate(${groupX}, ${groupY})`);
-    
-    // Also update help button tooltip position
-    this.updateHelpButtonTooltip();
-  }
-  
-  updateHelpButtonTooltip() {
-    if (!this.overlay) return;
-    
-    const helpButton = this.overlay.select('.help-button');
-    if (helpButton.empty()) return;
-    
-    const tooltipGroup = helpButton.select('.help-tooltip');
-    if (tooltipGroup.empty()) return;
-    
-    // Get the button group position to calculate tooltip adjustment
-    const buttonGroupTransform = this.lowerLeftButtonGroup ? 
-      this.lowerLeftButtonGroup.attr('transform') : '';
-    let groupX = 0;
-    if (buttonGroupTransform) {
-      const match = buttonGroupTransform.match(/translate\(([^,]+),/);
-      if (match) groupX = parseFloat(match[1]) || 0;
-    }
-    
-    // Get help button's relative X position within group
-    const helpButtonTransform = helpButton.attr('transform');
-    let helpButtonX = 0;
-    if (helpButtonTransform) {
-      const match = helpButtonTransform.match(/translate\(([^,]+),/);
-      if (match) helpButtonX = parseFloat(match[1]) || 0;
-    }
-    
-    // Calculate absolute position and adjust tooltip if needed
-    // Tooltip should appear above the button (since buttons are in lower left)
-    const tooltipWidth = 450;
-    const tooltipX = -tooltipWidth / 2;
-    const absoluteButtonX = groupX + helpButtonX;
-    const maxRight = window.innerWidth - 20;
-    const tooltipRightEdge = absoluteButtonX + tooltipX + tooltipWidth;
-    const adjustedX = tooltipRightEdge > maxRight ? tooltipX - (tooltipRightEdge - maxRight) : tooltipX;
-    // Position tooltip above button (negative Y offset)
-    tooltipGroup.attr('transform', `translate(${adjustedX}, -25)`);
   }
   
   drawThemeToggleButton(container) {
@@ -1721,109 +1679,6 @@ export class MetabolismViewer {
     
     // Store reference for theme updates
     this.themeToggleButton = themeGroup;
-  }
-  
-  drawHelpButton(container) {
-    // Position button relative to references button within the container
-    const themeToggleRadius = 25; // Theme toggle radius
-    const referencesButtonRadius = 15; // References button radius
-    const helpButtonRadius = 15; // Help button radius
-    const spacing = 15; // Spacing between buttons
-    
-    // Position help button to the right of references button
-    // X: offset from theme toggle origin = spacing + themeToggleRadius + referencesButtonRadius + spacing + referencesButtonRadius + helpButtonRadius
-    const buttonX = spacing + themeToggleRadius + referencesButtonRadius + spacing + referencesButtonRadius + helpButtonRadius;
-    // Y: Align vertically with theme toggle (same Y = 0)
-    const buttonY = 0;
-    
-    const helpGroup = container.append('g')
-      .attr('class', 'help-button btn')
-      .attr('transform', `translate(${buttonX}, ${buttonY})`);
-    
-    // Button circle
-    const circle = helpGroup.append('circle')
-      .attr('r', 15)
-      .attr('fill', PATHWAY_CONFIG.colors.primary)
-      .attr('stroke', PATHWAY_CONFIG.colors.primaryHover)
-      .attr('stroke-width', 2);
-    
-    // Question mark text
-    helpGroup.append('text')
-      .attr('x', 0)
-      .attr('y', 5)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('font-size', '20px')
-      .attr('font-weight', 'bold')
-      .text('?');
-    
-    // Tooltip text (hidden by default, positioned below button to avoid cropping)
-    // Calculate tooltip width and position to avoid right edge cropping
-    // Use wider tooltip and split text into more lines to prevent overflow
-    const tooltipWidth = 450; // Wider to accommodate text
-    const tooltipX = -tooltipWidth / 2; // Center on button
-    
-    // Calculate tooltip position - will be adjusted on resize if needed
-    // Position tooltip above button (since buttons are in lower left)
-    const tooltipGroup = helpGroup.append('g')
-      .attr('class', 'help-tooltip btn')
-      .attr('transform', `translate(${tooltipX}, -25)`); // Position above button
-    
-    const tooltipRect = tooltipGroup.append('rect')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('width', tooltipWidth)
-      .attr('height', 75) // Increased height for more lines
-      .attr('rx', 6)
-      .attr('fill', PATHWAY_CONFIG.colors.secondary)
-      .attr('opacity', 0.95);
-    
-    // Split text into multiple lines to prevent overflow
-    tooltipGroup.append('text')
-      .attr('x', tooltipWidth / 2)
-      .attr('y', 18)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('font-size', '12px')
-      .text('🖱️ Click arrow for reaction details');
-    
-    tooltipGroup.append('text')
-      .attr('x', tooltipWidth / 2)
-      .attr('y', 32)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('font-size', '12px')
-      .text('Click node for molecule details');
-    
-    tooltipGroup.append('text')
-      .attr('x', tooltipWidth / 2)
-      .attr('y', 46)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('font-size', '12px')
-      .text('Double-click to zoom | Scroll to pan');
-    
-    tooltipGroup.append('text')
-      .attr('x', tooltipWidth / 2)
-      .attr('y', 60)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('font-size', '12px')
-      .text('Ctrl/Cmd+Scroll to zoom | Drag to pan');
-    
-    // Hover effects
-    helpGroup.on('mouseenter', function() {
-      d3.select(this).select('circle')
-        .transition().duration(200)
-        .attr('fill', PATHWAY_CONFIG.colors.primaryHover)
-        .attr('stroke-width', 3);
-    })
-    .on('mouseleave', function() {
-      d3.select(this).select('circle')
-        .transition().duration(200)
-        .attr('fill', PATHWAY_CONFIG.colors.primary)
-        .attr('stroke-width', 2);
-    });
   }
   
   drawReferencesButton(container) {
