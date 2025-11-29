@@ -553,18 +553,37 @@ if (!app) {
         // Completely hide the detail panel to show the full map
         if (detailPanel) {
           detailPanel.style.display = 'none'
-          detailPanel.style.width = '0'
-          detailPanel.style.minWidth = '0'
-          detailPanel.style.flex = '0 0 0'
           detailPanel.style.visibility = 'hidden'
           detailPanel.style.opacity = '0'
-          // Expand viewer panel to take full width
-          const viewerPanel = document.querySelector('.viewer-panel')
-          if (viewerPanel) {
-            viewerPanel.style.flex = '1 1 0%'
-            viewerPanel.style.width = ''
-            viewerPanel.style.maxWidth = ''
+          
+          // Helper to detect mobile view
+          const isMobileView = () => window.innerWidth <= 1023
+          
+          if (isMobileView()) {
+            // Mobile: hide detail panel and expand viewer to full height
+            detailPanel.style.flex = '0 0 0'
+            detailPanel.style.width = '0'
+            detailPanel.style.minWidth = '0'
+            
+            const viewerPanel = document.querySelector('.viewer-panel')
+            if (viewerPanel) {
+              viewerPanel.style.flex = '0 0 100%'
+              viewerPanel.style.width = '100%'
+            }
+          } else {
+            // Desktop: hide detail panel and expand viewer to full width
+            detailPanel.style.width = '0'
+            detailPanel.style.minWidth = '0'
+            detailPanel.style.flex = '0 0 0'
+            
+            const viewerPanel = document.querySelector('.viewer-panel')
+            if (viewerPanel) {
+              viewerPanel.style.flex = '1 1 0%'
+              viewerPanel.style.width = ''
+              viewerPanel.style.maxWidth = ''
+            }
           }
+          
           // Hide resizer
           const panelResizer = document.getElementById('panel-resizer')
           if (panelResizer) {
@@ -595,17 +614,36 @@ if (!app) {
           detailPanel.style.display = 'flex'
           detailPanel.style.visibility = ''
           detailPanel.style.opacity = ''
-          // Use flex basis to set width - this ensures it takes space from the layout
-          detailPanel.style.flex = '0 0 35%'
-          detailPanel.style.width = ''
-          detailPanel.style.minWidth = '200px'
           
-          // Ensure viewer panel uses flex to shrink and make room
-          const viewerPanel = document.querySelector('.viewer-panel')
-          if (viewerPanel) {
-            viewerPanel.style.flex = '1 1 0%' // Takes remaining space, can shrink
-            viewerPanel.style.width = ''
-            viewerPanel.style.maxWidth = ''
+          // Helper to detect mobile view
+          const isMobileView = () => window.innerWidth <= 1023
+          
+          if (isMobileView()) {
+            // Mobile: set initial height (35% of viewport)
+            detailPanel.style.flex = '0 0 35%'
+            detailPanel.style.width = '100%'
+            detailPanel.style.maxWidth = '100%'
+            detailPanel.style.minWidth = '100%'
+            
+            // Ensure viewer panel uses flex to shrink and make room
+            const viewerPanel = document.querySelector('.viewer-panel')
+            if (viewerPanel) {
+              viewerPanel.style.flex = '0 0 65%'
+              viewerPanel.style.width = '100%'
+            }
+          } else {
+            // Desktop: set initial width (35% of viewport)
+            detailPanel.style.flex = '0 0 35%'
+            detailPanel.style.width = ''
+            detailPanel.style.minWidth = '200px'
+            
+            // Ensure viewer panel uses flex to shrink and make room
+            const viewerPanel = document.querySelector('.viewer-panel')
+            if (viewerPanel) {
+              viewerPanel.style.flex = '1 1 0%' // Takes remaining space, can shrink
+              viewerPanel.style.width = ''
+              viewerPanel.style.maxWidth = ''
+            }
           }
           
           // Show resizer
@@ -643,17 +681,43 @@ if (!app) {
       if (panelResizer && detailPanel && viewerPanel) {
         let isResizing = false
         let startX = 0
+        let startY = 0
         let startWidth = 0
+        let startHeight = 0
+        
+        // Helper function to detect mobile view
+        const isMobileView = () => {
+          return window.innerWidth <= 1023
+        }
+        
+        // Helper to get client position from mouse or touch event
+        const getClientPos = (e) => {
+          if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY }
+          }
+          return { x: e.clientX, y: e.clientY }
+        }
         
         const startResize = (e) => {
           if (!detailPanel || detailPanel.style.display === 'none') {
             return // Don't allow resizing when panel is hidden
           }
           isResizing = true
-          startX = e.clientX
-          startWidth = detailPanel.getBoundingClientRect().width
+          const pos = getClientPos(e)
+          startX = pos.x
+          startY = pos.y
+          
+          if (isMobileView()) {
+            // Mobile: resize height
+            startHeight = detailPanel.getBoundingClientRect().height
+            document.body.style.cursor = 'row-resize'
+          } else {
+            // Desktop: resize width
+            startWidth = detailPanel.getBoundingClientRect().width
+            document.body.style.cursor = 'col-resize'
+          }
+          
           panelResizer.classList.add('active')
-          document.body.style.cursor = 'col-resize'
           document.body.style.userSelect = 'none'
           e.preventDefault()
         }
@@ -661,27 +725,55 @@ if (!app) {
         const doResize = (e) => {
           if (!isResizing) return
           
-          const deltaX = e.clientX - startX
-          const mainContent = document.querySelector('.main-content')
-          const mainContentWidth = mainContent.getBoundingClientRect().width
+          const pos = getClientPos(e)
           
-          // Calculate new width as percentage of main content width
-          // Reverse the direction: dragging right (positive deltaX) should decrease panel width
-          // Dragging left (negative deltaX) should increase panel width
-          const newWidthPx = startWidth - deltaX
-          const newWidthPercent = (newWidthPx / mainContentWidth) * 100
-          
-          // Clamp between min and max
-          const minPercent = (200 / mainContentWidth) * 100 // 200px minimum
-          const maxPercent = 50 // 50% maximum
-          const clampedPercent = Math.max(minPercent, Math.min(maxPercent, newWidthPercent))
-          
-          // Update detail panel width using flex-basis
-          detailPanel.style.flex = `0 0 ${clampedPercent}%`
-          detailPanel.style.width = ''
-          
-          // Update viewer panel to take remaining space
-          viewerPanel.style.flex = '1 1 0%'
+          if (isMobileView()) {
+            // Mobile: vertical resizing (height)
+            const deltaY = pos.y - startY
+            const mainContent = document.querySelector('.main-content')
+            const mainContentHeight = mainContent.getBoundingClientRect().height
+            
+            // Calculate new height as percentage of main content height
+            // Dragging down (positive deltaY) should decrease panel height
+            // Dragging up (negative deltaY) should increase panel height
+            const newHeightPx = startHeight - deltaY
+            const newHeightPercent = (newHeightPx / mainContentHeight) * 100
+            
+            // Clamp between min and max (20% to 80% of viewport height)
+            const minPercent = 20
+            const maxPercent = 80
+            const clampedPercent = Math.max(minPercent, Math.min(maxPercent, newHeightPercent))
+            
+            // Update detail panel height using flex-basis
+            detailPanel.style.flex = `0 0 ${clampedPercent}%`
+            detailPanel.style.height = ''
+            
+            // Update viewer panel to take remaining space
+            viewerPanel.style.flex = `0 0 ${100 - clampedPercent}%`
+          } else {
+            // Desktop: horizontal resizing (width)
+            const deltaX = pos.x - startX
+            const mainContent = document.querySelector('.main-content')
+            const mainContentWidth = mainContent.getBoundingClientRect().width
+            
+            // Calculate new width as percentage of main content width
+            // Reverse the direction: dragging right (positive deltaX) should decrease panel width
+            // Dragging left (negative deltaX) should increase panel width
+            const newWidthPx = startWidth - deltaX
+            const newWidthPercent = (newWidthPx / mainContentWidth) * 100
+            
+            // Clamp between min and max
+            const minPercent = (200 / mainContentWidth) * 100 // 200px minimum
+            const maxPercent = 50 // 50% maximum
+            const clampedPercent = Math.max(minPercent, Math.min(maxPercent, newWidthPercent))
+            
+            // Update detail panel width using flex-basis
+            detailPanel.style.flex = `0 0 ${clampedPercent}%`
+            detailPanel.style.width = ''
+            
+            // Update viewer panel to take remaining space
+            viewerPanel.style.flex = '1 1 0%'
+          }
           
           // Trigger viewer resize after a brief delay
           setTimeout(() => {
@@ -703,9 +795,16 @@ if (!app) {
           document.body.style.userSelect = ''
         }
         
+        // Mouse events (desktop and mobile with mouse)
         panelResizer.addEventListener('mousedown', startResize)
         document.addEventListener('mousemove', doResize)
         document.addEventListener('mouseup', stopResize)
+        
+        // Touch events (mobile)
+        panelResizer.addEventListener('touchstart', startResize, { passive: false })
+        document.addEventListener('touchmove', doResize, { passive: false })
+        document.addEventListener('touchend', stopResize)
+        document.addEventListener('touchcancel', stopResize)
       }
 
     } catch (error) {

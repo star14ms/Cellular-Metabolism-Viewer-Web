@@ -215,7 +215,6 @@ body {
 }
 
 .detail-panel {
-  flex: 0 0 35%;
   min-width: 200px;
   max-width: 50%;
   background: var(--bg-panel);
@@ -1509,11 +1508,40 @@ svg.metabolism-viewer:active {
 }
 
 /* Mobile view: Enable horizontal scrolling for pathway buttons */
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
+  .main-content {
+    flex-direction: column;
+  }
+  
   .viewer-panel {
+    flex: 0 0 100%;
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+  
+  .detail-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+  }
+  
+  .panel-resizer {
+    width: 100%;
+    height: 8px;
+    cursor: row-resize;
+    background-color: var(--border-color-light);
+  }
+  
+  .panel-resizer:hover {
+    background-color: #667eea;
+    height: 10px;
+  }
+  
+  .panel-resizer.active {
+    background-color: #667eea;
+    height: 10px;
   }
   
   .metabolism-viewer {

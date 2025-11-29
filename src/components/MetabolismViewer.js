@@ -2424,8 +2424,8 @@ export class MetabolismViewer {
       const buttonWidth = parseFloat(button.select('rect').attr('width')) || 0;
       const availableWidth = getAvailableWidth();
       
-      // Detect mobile viewport (typically < 768px)
-      const isMobile = window.innerWidth < 768;
+      // Detect mobile viewport (typically < 1024px)
+      const isMobile = window.innerWidth < 1024;
       
       // Check if button would overflow the right edge, wrap to new line if needed
       // On mobile, don't wrap - allow horizontal scrolling instead
