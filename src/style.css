@@ -1406,3 +1406,127 @@ svg.metabolism-viewer:active {
     font-size: 1rem;
   }
 }
+
+/* Scrollable pathway buttons container */
+.pathway-buttons-scroll-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  z-index: 10;
+  pointer-events: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pathway-buttons-scroll-container::-webkit-scrollbar {
+  height: 6px;
+  transition: opacity 0.3s ease;
+}
+
+.pathway-buttons-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+  transition: opacity 0.3s ease;
+}
+
+.pathway-buttons-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pathway-buttons-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Show scrollbar when scrolling */
+.pathway-buttons-scroll-container.scrolling::-webkit-scrollbar-thumb {
+  opacity: 1;
+}
+
+.pathway-buttons-scroll-container.scrolling::-webkit-scrollbar-track {
+  opacity: 0.3;
+}
+
+/* Firefox scrollbar */
+.pathway-buttons-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+.pathway-buttons-scroll-container.scrolling {
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.pathway-buttons-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  pointer-events: auto;
+  min-width: 100%;
+}
+
+.pathway-button-html {
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  border: 3px solid #667eea;
+  border-radius: 6px;
+  box-sizing: border-box;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: transparent;
+  color: var(--text-primary);
+  opacity: 0.33;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+[data-theme="dark"] .pathway-button-html {
+  color: white;
+}
+
+.pathway-button-html:hover {
+  opacity: 1;
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.pathway-button-html.show-all-button {
+  border-color: #667eea;
+}
+
+.pathway-button-html.show-all-button:hover {
+  background: #5568d3;
+  border-color: #5568d3;
+}
+
+/* Mobile view: Enable horizontal scrolling for pathway buttons */
+@media (max-width: 767px) {
+  .viewer-panel {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .metabolism-viewer {
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 100%;
+  }
+  
+  .metabolism-viewer svg {
+    min-width: 100%;
+  }
+  
+  .pathway-buttons-scroll-container {
+    height: 70px;
+  }
+}

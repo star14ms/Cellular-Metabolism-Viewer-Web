@@ -547,7 +547,23 @@ export class MetabolismViewer {
     const updateButtonTextColors = () => {
       const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
       
-      // Update all pathway buttons (main and sub-pathway buttons)
+      // Update HTML pathway buttons
+      const scrollContainer = d3.select(this.container).select('.pathway-buttons-scroll-container');
+      if (!scrollContainer.empty()) {
+        scrollContainer.selectAll('.pathway-button-html').each(function() {
+          const button = d3.select(this);
+          const bg = button.style('background');
+          const isSelected = bg !== 'transparent' && bg !== '';
+          const textColor = isSelected ? 'white' : (isDarkMode ? 'white' : 'black');
+          
+          // Only update if not selected (selected buttons always have white text)
+          if (!isSelected) {
+            button.style('color', textColor);
+          }
+        });
+      }
+      
+      // Update all SVG pathway buttons (main and sub-pathway buttons)
       if (this.pathwayButtonGroup) {
         this.pathwayButtonGroup.selectAll('.pathway-button').each(function() {
           const button = d3.select(this);
@@ -716,11 +732,8 @@ export class MetabolismViewer {
     // Draw pathway buttons (in zoomable group)
     this.drawPathwayButtons();
     
-    // Create common container for theme toggle and help buttons
-    this.createTopRightButtonGroup();
-    
-    // Add references button in lower left (in fixed overlay)
-    this.drawReferencesButton();
+    // Create common container for buttons in lower left (theme toggle, references, help)
+    this.createLowerLeftButtonGroup();
     
     // Add click handlers
     this.setupInteractions();
@@ -776,21 +789,8 @@ export class MetabolismViewer {
             // with the new dimensions without any adjustment
           }
           
-          // Update top right button group position (theme toggle + help button)
-          this.updateTopRightButtonGroupPosition();
-          
-          // Update references button position in lower left
-          if (this.overlay) {
-            const referencesButton = this.overlay.select('.references-button');
-            if (!referencesButton.empty()) {
-              const buttonRadius = 15;
-              const leftMargin = 20;
-              const bottomMargin = 20;
-              const buttonX = leftMargin + buttonRadius; // Center X position (margin + radius)
-              const buttonY = window.innerHeight - bottomMargin - buttonRadius; // Center Y position (from bottom: margin + radius)
-              referencesButton.attr('transform', `translate(${buttonX}, ${buttonY})`);
-            }
-          }
+          // Update lower left button group position (theme toggle, references, help)
+          this.updateLowerLeftButtonGroupPosition();
           
           // Update pathway button positions on resize
           if (this.updatePathwayButtonPositions) {
@@ -1577,73 +1577,37 @@ export class MetabolismViewer {
     this.updateNodeDisplay(scale);
   }
   
-  createTopRightButtonGroup() {
-    // Create a container group for theme toggle and help buttons
+  createLowerLeftButtonGroup() {
+    // Create a container group for buttons in lower left (theme toggle, references, help)
     const buttonGroup = this.overlay.append('g')
-      .attr('class', 'top-right-buttons-group');
+      .attr('class', 'lower-left-buttons-group');
     
     // Store reference for positioning updates
-    this.topRightButtonGroup = buttonGroup;
+    this.lowerLeftButtonGroup = buttonGroup;
     
-    // Draw theme toggle button inside the group
+    // Draw buttons in order: theme toggle, references, help (from left to right)
     this.drawThemeToggleButton(buttonGroup);
-    
-    // Draw help button inside the group (positioned relative to theme toggle)
+    this.drawReferencesButton(buttonGroup);
     this.drawHelpButton(buttonGroup);
     
     // Initial positioning
-    this.updateTopRightButtonGroupPosition();
+    this.updateLowerLeftButtonGroupPosition();
   }
   
-  updateTopRightButtonGroupPosition() {
-    if (!this.topRightButtonGroup || this.topRightButtonGroup.empty()) return;
+  updateLowerLeftButtonGroupPosition() {
+    if (!this.lowerLeftButtonGroup || this.lowerLeftButtonGroup.empty()) return;
     
-    // Calculate available width (viewport width minus detail panel if visible)
-    const detailPanel = document.querySelector('.detail-panel');
-    const isDetailPanelVisible = detailPanel && 
-      detailPanel.style.display !== 'none' && 
-      detailPanel.style.visibility !== 'hidden' &&
-      detailPanel.style.opacity !== '0';
+    // Position group in lower left corner
+    const leftMargin = 20;
+    const bottomMargin = 20;
+    const themeToggleRadius = 25;
+    const groupX = leftMargin + themeToggleRadius;
+    const groupY = window.innerHeight - bottomMargin - themeToggleRadius;
     
-    let availableWidth = window.innerWidth;
-    if (isDetailPanelVisible) {
-      // Get the actual rendered width of the viewer panel
-      // Use a small delay to ensure layout has settled
-      setTimeout(() => {
-        const viewerPanel = document.querySelector('.viewer-panel');
-        if (viewerPanel) {
-          const viewerPanelRect = viewerPanel.getBoundingClientRect();
-          availableWidth = viewerPanelRect.width;
-        } else {
-          // Fallback: detail panel takes 35% of width, so available width is 65%
-          availableWidth = window.innerWidth * 0.65;
-        }
-        
-        // Position group in upper right of available space
-        const rightMargin = 20;
-        const topMargin = 20;
-        const themeToggleRadius = 25;
-        const groupX = availableWidth - rightMargin - themeToggleRadius;
-        const groupY = topMargin + themeToggleRadius;
-        
-        this.topRightButtonGroup.attr('transform', `translate(${groupX}, ${groupY})`);
-        
-        // Also update help button tooltip position
-        this.updateHelpButtonTooltip();
-      }, 10);
-    } else {
-      // Position group in upper right of full viewport
-      const rightMargin = 20;
-      const topMargin = 20;
-      const themeToggleRadius = 25;
-      const groupX = availableWidth - rightMargin - themeToggleRadius;
-      const groupY = topMargin + themeToggleRadius;
-      
-      this.topRightButtonGroup.attr('transform', `translate(${groupX}, ${groupY})`);
-      
-      // Also update help button tooltip position
-      this.updateHelpButtonTooltip();
-    }
+    this.lowerLeftButtonGroup.attr('transform', `translate(${groupX}, ${groupY})`);
+    
+    // Also update help button tooltip position
+    this.updateHelpButtonTooltip();
   }
   
   updateHelpButtonTooltip() {
@@ -1656,8 +1620,8 @@ export class MetabolismViewer {
     if (tooltipGroup.empty()) return;
     
     // Get the button group position to calculate tooltip adjustment
-    const buttonGroupTransform = this.topRightButtonGroup ? 
-      this.topRightButtonGroup.attr('transform') : '';
+    const buttonGroupTransform = this.lowerLeftButtonGroup ? 
+      this.lowerLeftButtonGroup.attr('transform') : '';
     let groupX = 0;
     if (buttonGroupTransform) {
       const match = buttonGroupTransform.match(/translate\(([^,]+),/);
@@ -1673,13 +1637,15 @@ export class MetabolismViewer {
     }
     
     // Calculate absolute position and adjust tooltip if needed
+    // Tooltip should appear above the button (since buttons are in lower left)
     const tooltipWidth = 450;
     const tooltipX = -tooltipWidth / 2;
     const absoluteButtonX = groupX + helpButtonX;
     const maxRight = window.innerWidth - 20;
     const tooltipRightEdge = absoluteButtonX + tooltipX + tooltipWidth;
     const adjustedX = tooltipRightEdge > maxRight ? tooltipX - (tooltipRightEdge - maxRight) : tooltipX;
-    tooltipGroup.attr('transform', `translate(${adjustedX}, 25)`);
+    // Position tooltip above button (negative Y offset)
+    tooltipGroup.attr('transform', `translate(${adjustedX}, -25)`);
   }
   
   drawThemeToggleButton(container) {
@@ -1758,14 +1724,15 @@ export class MetabolismViewer {
   }
   
   drawHelpButton(container) {
-    // Position button relative to theme toggle button within the container
+    // Position button relative to references button within the container
     const themeToggleRadius = 25; // Theme toggle radius
+    const referencesButtonRadius = 15; // References button radius
     const helpButtonRadius = 15; // Help button radius
     const spacing = 15; // Spacing between buttons
     
-    // Position help button to the left of theme toggle
-    // X: negative offset (left of theme toggle) = -(spacing + themeToggleRadius + helpButtonRadius)
-    const buttonX = -(spacing + themeToggleRadius + helpButtonRadius);
+    // Position help button to the right of references button
+    // X: offset from theme toggle origin = spacing + themeToggleRadius + referencesButtonRadius + spacing + referencesButtonRadius + helpButtonRadius
+    const buttonX = spacing + themeToggleRadius + referencesButtonRadius + spacing + referencesButtonRadius + helpButtonRadius;
     // Y: Align vertically with theme toggle (same Y = 0)
     const buttonY = 0;
     
@@ -1797,9 +1764,10 @@ export class MetabolismViewer {
     const tooltipX = -tooltipWidth / 2; // Center on button
     
     // Calculate tooltip position - will be adjusted on resize if needed
+    // Position tooltip above button (since buttons are in lower left)
     const tooltipGroup = helpGroup.append('g')
       .attr('class', 'help-tooltip btn')
-      .attr('transform', `translate(${tooltipX}, 25)`); // Position below button
+      .attr('transform', `translate(${tooltipX}, -25)`); // Position above button
     
     const tooltipRect = tooltipGroup.append('rect')
       .attr('x', 0)
@@ -1858,15 +1826,19 @@ export class MetabolismViewer {
     });
   }
   
-  drawReferencesButton() {
-    // Position button in lower left corner
-    const buttonRadius = 15; // Button radius
-    const leftMargin = 20; // Left margin from edge
-    const bottomMargin = 20; // Bottom margin from edge
-    const buttonX = leftMargin + buttonRadius; // Center X position (margin + radius)
-    const buttonY = window.innerHeight - bottomMargin - buttonRadius; // Center Y position (from bottom: margin + radius)
+  drawReferencesButton(container) {
+    // Position button relative to theme toggle button within the container
+    const themeToggleRadius = 25; // Theme toggle radius
+    const buttonRadius = 15; // References button radius
+    const spacing = 15; // Spacing between buttons
     
-    const refGroup = this.overlay.append('g')
+    // Position references button to the right of theme toggle
+    // X: positive offset (right of theme toggle) = spacing + themeToggleRadius + buttonRadius
+    const buttonX = spacing + themeToggleRadius + buttonRadius;
+    // Y: Align vertically with theme toggle (same Y = 0)
+    const buttonY = 0;
+    
+    const refGroup = container.append('g')
       .attr('class', 'references-button btn')
       .attr('transform', `translate(${buttonX}, ${buttonY})`);
 
@@ -1994,7 +1966,40 @@ export class MetabolismViewer {
   }
 
   drawPathwayButtons() {
-    // Create a group for pathway buttons
+    // Create or get scrollable container for buttons
+    let scrollContainer = d3.select(this.container).select('.pathway-buttons-scroll-container');
+    if (scrollContainer.empty()) {
+      scrollContainer = d3.select(this.container)
+        .insert('div', ':first-child')
+        .attr('class', 'pathway-buttons-scroll-container')
+        .style('position', 'absolute')
+        .style('top', '0')
+        .style('left', '0')
+        .style('right', '0')
+        .style('height', '60px')
+        .style('overflow-x', 'auto')
+        .style('overflow-y', 'hidden')
+        .style('z-index', '10')
+        .style('pointer-events', 'none');
+    }
+    
+    // Create inner container for buttons
+    let buttonContainer = scrollContainer.select('.pathway-buttons-inner');
+    if (buttonContainer.empty()) {
+      buttonContainer = scrollContainer
+        .append('div')
+        .attr('class', 'pathway-buttons-inner')
+        .style('display', 'inline-flex')
+        .style('align-items', 'center')
+        .style('gap', '15px')
+        .style('padding', '20px')
+        .style('pointer-events', 'auto')
+        .style('min-width', '100%');
+    } else {
+      buttonContainer.selectAll('*').remove();
+    }
+    
+    // Create a group for pathway buttons (for SVG buttons that need to be synced)
     let buttonGroup = this.svg.select('.pathway-buttons');
     if (buttonGroup.empty()) {
       buttonGroup = this.svg.append('g').attr('class', 'pathway-buttons');
@@ -2019,63 +2024,156 @@ export class MetabolismViewer {
       return textWidth + horizontalPadding;
     };
     
-    // 1. "Show All" Button
-    const showAllText = 'Show All';
-    const showAllWidth = calculateButtonWidth(showAllText);
+    // Helper to create HTML button (matching SVG button style)
+    const createHTMLButton = (container, text, className, onClick, colors) => {
+      const strokeColor = colors?.hover || colors?.fill || '#667eea';
+      const hoverColor = colors?.hover || '#5568d3';
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      const textColor = isDarkMode ? 'white' : 'black';
+      
+      const button = container
+        .append('button')
+        .attr('class', `pathway-button-html ${className || ''}`)
+        .text(text)
+        .style('padding', '6px 8px')
+        .style('font-size', '10px')
+        .style('font-weight', '600')
+        .style('border', `3px solid ${strokeColor}`)
+        .style('border-radius', '6px')
+        .style('box-sizing', 'border-box')
+        .style('cursor', 'pointer')
+        .style('white-space', 'nowrap')
+        .style('flex-shrink', '0')
+        .style('background', 'transparent')
+        .style('color', textColor)
+        .style('opacity', '0.33')
+        .style('transition', 'all 0.2s ease')
+        .on('click', onClick)
+        .on('mouseenter', function() {
+          d3.select(this)
+            .style('opacity', '1')
+            .style('background', hoverColor)
+            .style('border-color', hoverColor)
+            .style('color', 'white');
+        })
+        .on('mouseleave', function() {
+          const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+          const currentTextColor = currentIsDarkMode ? 'white' : 'black';
+          d3.select(this)
+            .style('opacity', '0.33')
+            .style('background', 'transparent')
+            .style('border-color', strokeColor)
+            .style('color', currentTextColor);
+        });
+      return button;
+    };
     
+    // 1. "Show All" Button (HTML)
+    const showAllText = 'Show All';
+    createHTMLButton(
+      buttonContainer,
+      showAllText,
+      'show-all-button',
+      () => this.zoomToAllReactions(),
+      { fill: '#667eea', hover: PATHWAY_CONFIG.colors.primaryHover }
+    );
+    
+    // Also create SVG button for compatibility (for subpathway views)
     this.createButton(buttonGroup, {
       x: 20,
       y: buttonY,
-      width: showAllWidth,
+      width: calculateButtonWidth(showAllText),
       height: buttonHeight,
       text: showAllText,
       className: 'show-all-button',
       colors: { hover: PATHWAY_CONFIG.colors.primaryHover },
       onClick: () => this.zoomToAllReactions()
     });
+    // Hide SVG buttons when showing main pathways (HTML buttons are shown instead)
+    buttonGroup.style('display', 'none');
     
-    // 2. Pathway Buttons
-    let currentX = 20 + showAllWidth + 15;
-    let currentY = buttonY;
-    const buttonGap = 15;
-    const lineHeight = buttonHeight + 10;
-    const rightMargin = 130;
-    
-    const getAvailableWidth = () => {
-      const svgWidth = this.svg.attr('width') ? parseFloat(this.svg.attr('width')) : this.options.width;
-      const detailPanelWidth = this.container.closest('.main-content')?.querySelector('.detail-panel')?.clientWidth || 0;
-      return svgWidth - detailPanelWidth;
-    };
-    
+    // 2. Pathway Buttons (HTML)
     this.pathways.forEach((pathway) => {
-      const buttonWidth = calculateButtonWidth(pathway.name);
-      const availableWidth = getAvailableWidth();
-      
-      if (currentX + buttonWidth > availableWidth - rightMargin) {
-        currentX = 20;
-        currentY += lineHeight;
-      }
-      
       const pathwayType = pathway.summary?.pathwayType || null;
       const buttonColors = this.getPathwayButtonColors(pathwayType);
       
-      const button = this.createButton(buttonGroup, {
-        x: currentX,
-        y: currentY,
-        width: buttonWidth,
-        height: buttonHeight,
-        text: pathway.name,
-        colors: buttonColors,
-        onClick: () => this.selectPathway(pathway)
-      });
+      const htmlButton = createHTMLButton(
+        buttonContainer,
+        pathway.name,
+        'pathway-button',
+        () => this.selectPathway(pathway),
+        buttonColors
+      );
       
-      pathway.button = button;
+      pathway.button = htmlButton;
       pathway.buttonColors = buttonColors;
-      
-      currentX += buttonWidth + buttonGap;
     });
     
     this.pathwayButtonGroup = buttonGroup;
+    
+    // Set up scroll detection for scrollbar animation
+    this.setupScrollbarAnimation(scrollContainer);
+  }
+  
+  setupScrollbarAnimation(scrollContainer) {
+    const containerNode = scrollContainer.node();
+    if (!containerNode) return;
+    
+    // Check if already set up to prevent duplicate listeners
+    if (containerNode.dataset.scrollbarSetup === 'true') {
+      return;
+    }
+    
+    // Mark as set up
+    containerNode.dataset.scrollbarSetup = 'true';
+    
+    let scrollTimeout;
+    let isScrolling = false;
+    
+    const showScrollbar = () => {
+      if (!isScrolling) {
+        isScrolling = true;
+        scrollContainer.classed('scrolling', true);
+      }
+    };
+    
+    const hideScrollbar = () => {
+      isScrolling = false;
+      scrollContainer.classed('scrolling', false);
+    };
+    
+    // Store timeout reference on the container for cleanup
+    containerNode._scrollTimeout = scrollTimeout;
+    
+    // Listen for scroll events
+    const handleScroll = () => {
+      showScrollbar();
+      
+      // Clear existing timeout
+      if (containerNode._scrollTimeout) {
+        clearTimeout(containerNode._scrollTimeout);
+      }
+      
+      // Hide scrollbar after scrolling stops
+      containerNode._scrollTimeout = setTimeout(() => {
+        hideScrollbar();
+      }, 500); // Hide after 500ms of no scrolling
+    };
+    
+    // Listen for wheel events (for trackpad/mouse wheel scrolling)
+    const handleWheel = () => {
+      showScrollbar();
+      
+      if (containerNode._scrollTimeout) {
+        clearTimeout(containerNode._scrollTimeout);
+      }
+      containerNode._scrollTimeout = setTimeout(() => {
+        hideScrollbar();
+      }, 500);
+    };
+    
+    containerNode.addEventListener('scroll', handleScroll, { passive: true });
+    containerNode.addEventListener('wheel', handleWheel, { passive: true });
   }
   
   /**
@@ -2088,138 +2186,126 @@ export class MetabolismViewer {
       return;
     }
     
-    // Remove existing pathway buttons (except "Show All")
-    const buttonGroup = this.pathwayButtonGroup;
-    if (!buttonGroup) return;
+    // Get or create scrollable container for buttons
+    let scrollContainer = d3.select(this.container).select('.pathway-buttons-scroll-container');
+    if (scrollContainer.empty()) {
+      scrollContainer = d3.select(this.container)
+        .insert('div', ':first-child')
+        .attr('class', 'pathway-buttons-scroll-container')
+        .style('position', 'absolute')
+        .style('top', '0')
+        .style('left', '0')
+        .style('right', '0')
+        .style('height', '60px')
+        .style('overflow-x', 'auto')
+        .style('overflow-y', 'hidden')
+        .style('z-index', '10')
+        .style('pointer-events', 'none');
+    }
     
-    // Remove all pathway buttons except "Show All"
-    buttonGroup.selectAll('.pathway-button').each(function() {
-      if (!d3.select(this).classed('show-all-button')) {
-        d3.select(this).remove();
-      }
-    });
+    // Show scroll container
+    scrollContainer.style('display', 'block');
     
-    // Button styling constants
-    const buttonY = 20;
-    const buttonHeight = 28;
-    const buttonGap = 15;
-    const lineHeight = buttonHeight + 10;
-    const rightMargin = 130;
-    const horizontalPadding = 16;
+    // Get or create inner container for buttons
+    let buttonContainer = scrollContainer.select('.pathway-buttons-inner');
+    if (buttonContainer.empty()) {
+      buttonContainer = scrollContainer
+        .append('div')
+        .attr('class', 'pathway-buttons-inner')
+        .style('display', 'inline-flex')
+        .style('align-items', 'center')
+        .style('gap', '15px')
+        .style('padding', '20px')
+        .style('pointer-events', 'auto')
+        .style('min-width', '100%');
+    } else {
+      buttonContainer.selectAll('*').remove();
+    }
     
-    // Helper to calculate button width
-    const calculateButtonWidth = (text) => {
-      const tempText = this.svg.append('text')
-        .attr('font-size', '10px')
-        .attr('font-weight', '600')
+    // Hide SVG button group
+    if (this.pathwayButtonGroup) {
+      this.pathwayButtonGroup.style('display', 'none');
+    }
+    
+    // Helper to create HTML button (matching SVG button style)
+    const createHTMLButton = (container, text, className, onClick, colors, isSelected = false) => {
+      const strokeColor = colors?.hover || colors?.fill || '#667eea';
+      const hoverColor = colors?.hover || '#5568d3';
+      const selectedColor = colors?.selected || '#667eea';
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      const textColor = isSelected ? 'white' : (isDarkMode ? 'white' : 'black');
+      const bgColor = isSelected ? selectedColor : 'transparent';
+      const borderColor = isSelected ? selectedColor : strokeColor;
+      
+      const button = container
+        .append('button')
+        .attr('class', `pathway-button-html ${className || ''}`)
         .text(text)
-        .style('visibility', 'hidden');
-      const textWidth = tempText.node().getBBox().width;
-      tempText.remove();
-      return textWidth + horizontalPadding;
-    };
-    
-    // Get available width
-    const getAvailableWidth = () => {
-      const svgWidth = this.svg.attr('width') ? parseFloat(this.svg.attr('width')) : this.options.width;
-      const detailPanelWidth = this.container.closest('.main-content')?.querySelector('.detail-panel')?.clientWidth || 0;
-      return svgWidth;
+        .style('padding', '6px 8px')
+        .style('font-size', '10px')
+        .style('font-weight', '600')
+        .style('border', `3px solid ${borderColor}`)
+        .style('border-radius', '6px')
+        .style('box-sizing', 'border-box')
+        .style('cursor', 'pointer')
+        .style('white-space', 'nowrap')
+        .style('flex-shrink', '0')
+        .style('background', bgColor)
+        .style('color', textColor)
+        .style('opacity', isSelected ? '1' : '0.33')
+        .style('transition', 'all 0.2s ease')
+        .on('click', onClick)
+        .on('mouseenter', function() {
+          if (!isSelected) {
+            d3.select(this)
+              .style('opacity', '1')
+              .style('background', hoverColor)
+              .style('border-color', hoverColor)
+              .style('color', 'white');
+          }
+        })
+        .on('mouseleave', function() {
+          if (!isSelected) {
+            const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+            const currentTextColor = currentIsDarkMode ? 'white' : 'black';
+            d3.select(this)
+              .style('opacity', '0.33')
+              .style('background', 'transparent')
+              .style('border-color', strokeColor)
+              .style('color', currentTextColor);
+          }
+        });
+      return button;
     };
     
     // Add "Back" button first
-    let currentX = 20;
-    let currentY = buttonY;
-    const showAllButton = buttonGroup.select('.pathway-button').node();
-    if (showAllButton) {
-      const showAllRect = d3.select(showAllButton).select('rect');
-      const showAllWidth = showAllRect.attr('width') ? parseFloat(showAllRect.attr('width')) : 0;
-      currentX = 20 + showAllWidth + buttonGap;
-    }
-    
-    // Create "Back" button
-    const backButton = buttonGroup.append('g')
-      .attr('class', 'pathway-button btn back-button')
-      .attr('transform', `translate(${currentX}, ${currentY})`);
-    
     const backText = '← Back';
-    const backWidth = calculateButtonWidth(backText);
     const backButtonColors = { fill: '#666666', hover: '#777777', selected: '#555555' };
+    createHTMLButton(
+      buttonContainer,
+      backText,
+      'back-button',
+      (event) => {
+        event.stopPropagation();
+        // Back button behavior depends on depth:
+        // Depth 3 (subPathwaySelected = true) → go to depth 2 (show all sub-pathways)
+        // Depth 2 (subPathwaySelected = false) → go to depth 1 (show all pathways)
+        if (this.subPathwaySelected) {
+          // Depth 3 → Depth 2: Show all sub-pathways (but keep parent pathway selected)
+          this.subPathwaySelected = false;
+          this.currentVirtualPathway = null;
+          this.selectPathway(parentPathway);
+        } else {
+          // Depth 2 → Depth 1: Show all pathways
+          this.showMainPathways();
+        }
+      },
+      backButtonColors
+    );
     
-    backButton.append('rect')
-      .attr('width', backWidth)
-      .attr('height', buttonHeight)
-      .attr('rx', 6)
-      .attr('fill', 'transparent')
-      .attr('stroke', backButtonColors.hover)
-      .attr('stroke-width', 2);
-    
-    // Determine initial text color based on theme
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    const initialBackTextColor = isDarkMode ? 'white' : 'black';
-    
-    backButton.append('text')
-      .attr('x', backWidth / 2)
-      .attr('y', buttonHeight / 2 + 3)
-      .attr('text-anchor', 'middle')
-      .attr('fill', initialBackTextColor)
-      .attr('font-size', '10px')
-      .attr('font-weight', '600')
-      .text(backText);
-    
-    backButton.on('mouseenter', function() {
-      d3.select(this).select('rect')
-        .attr('fill', backButtonColors.hover)
-        .attr('stroke-width', 3);
-      
-      d3.select(this).select('text')
-        .attr('fill', 'white');
-    })
-    .on('mouseleave', function() {
-      d3.select(this).select('rect')
-        .attr('fill', 'transparent')
-        .attr('stroke-width', 2);
-      
-      const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-      d3.select(this).select('text')
-        .transition()
-        .duration(200)
-        .attr('fill', currentIsDarkMode ? 'white' : 'black');
-    })
-    .on('click', (event) => {
-      event.stopPropagation();
-      // Back button behavior depends on depth:
-      // Depth 3 (subPathwaySelected = true) → go to depth 2 (show all sub-pathways)
-      // Depth 2 (subPathwaySelected = false) → go to depth 1 (show all pathways)
-      if (this.subPathwaySelected) {
-        // Depth 3 → Depth 2: Show all sub-pathways (but keep parent pathway selected)
-        this.subPathwaySelected = false;
-        this.currentVirtualPathway = null;
-        this.selectPathway(parentPathway);
-      } else {
-        // Depth 2 → Depth 1: Show all pathways
-        this.showMainPathways();
-      }
-    });
-    
-    currentX += backWidth + buttonGap;
-    
-    // Add sub-pathway buttons
+    // Add sub-pathway buttons (all on one line, scrollable)
     const viewer = this;
     parentPathway.subPathways.forEach((subPathway) => {
-      const buttonWidth = calculateButtonWidth(subPathway.name);
-      const availableWidth = getAvailableWidth();
-      
-      // Check if button would overflow, wrap to new line if needed
-      if (currentX + buttonWidth > availableWidth - rightMargin) {
-        currentX = 20;
-        currentY += lineHeight;
-      }
-      
-      const button = buttonGroup.append('g')
-        .attr('class', 'pathway-button btn sub-pathway-button')
-        .attr('transform', `translate(${currentX}, ${currentY})`)
-        .attr('data-sub-pathway-id', subPathway.id);
-      
       // Get pathway type from parent pathway
       const pathwayType = parentPathway.summary?.pathwayType || null;
       const buttonColors = viewer.getPathwayButtonColors(pathwayType);
@@ -2227,60 +2313,21 @@ export class MetabolismViewer {
       // Determine if this button should be highlighted (selected)
       const isSelected = selectedSubPathwayId === subPathway.id;
       
-      // Button background
-      button.append('rect')
-        .attr('width', buttonWidth)
-        .attr('height', buttonHeight)
-        .attr('rx', 6)
-        .attr('fill', isSelected ? buttonColors.selected : 'transparent')
-        .attr('stroke', buttonColors.hover)
-        .attr('stroke-width', isSelected ? 3 : 2);
-      
-      // Determine initial text color based on theme and selection state
-      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-      const initialTextColor = isSelected ? 'white' : (isDarkMode ? 'white' : 'black');
-      
-      // Button text
-      button.append('text')
-        .attr('x', buttonWidth / 2)
-        .attr('y', buttonHeight / 2 + 3)
-        .attr('text-anchor', 'middle')
-        .attr('fill', initialTextColor)
-        .attr('font-size', '10px')
-        .attr('font-weight', '600')
-        .text(subPathway.name);
-      
-      // Hover effects
-      button.on('mouseenter', function() {
-        if (!isSelected) {
-          d3.select(this).select('rect')
-            .attr('fill', buttonColors.hover)
-            .attr('stroke-width', 3);
-          
-          d3.select(this).select('text')
-            .attr('fill', 'white');
-        }
-      })
-      .on('mouseleave', function() {
-        if (!isSelected) {
-          d3.select(this).select('rect')
-            .attr('fill', 'transparent')
-            .attr('stroke-width', 2);
-          
-          const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-          d3.select(this).select('text')
-            .transition()
-            .duration(200)
-            .attr('fill', currentIsDarkMode ? 'white' : 'black');
-        }
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
-        viewer.selectSubPathway(parentPathway, subPathway);
-      });
-      
-      currentX += buttonWidth + buttonGap;
+      createHTMLButton(
+        buttonContainer,
+        subPathway.name,
+        'sub-pathway-button',
+        (event) => {
+          event.stopPropagation();
+          viewer.selectSubPathway(parentPathway, subPathway);
+        },
+        buttonColors,
+        isSelected
+      );
     });
+    
+    // Set up scroll detection for scrollbar animation
+    this.setupScrollbarAnimation(scrollContainer);
   }
   
   /**
@@ -2326,138 +2373,11 @@ export class MetabolismViewer {
     // Clear pathway detail view
     this.container.dispatchEvent(new CustomEvent('clear-selection'));
     
-    // Remove all buttons except "Show All"
-    const buttonGroup = this.pathwayButtonGroup;
-    if (!buttonGroup) return;
+    // Re-draw main pathway buttons using the HTML scrollable container
+    this.drawPathwayButtons();
     
-    // Remove all buttons except "Show All"
-    buttonGroup.selectAll('.pathway-button').each(function() {
-      if (!d3.select(this).classed('show-all-button')) {
-        d3.select(this).remove();
-      }
-    });
-    
-    // Re-draw main pathway buttons
-    const buttonY = 20;
-    const buttonHeight = 28;
-    const buttonGap = 15;
-    const lineHeight = buttonHeight + 10;
-    const rightMargin = 130;
-    const horizontalPadding = 16;
-    
-    // Helper to calculate button width
-    const calculateButtonWidth = (text) => {
-      const tempText = this.svg.append('text')
-        .attr('font-size', '10px')
-        .attr('font-weight', '600')
-        .text(text)
-        .style('visibility', 'hidden');
-      const textWidth = tempText.node().getBBox().width;
-      tempText.remove();
-      return textWidth + horizontalPadding;
-    };
-    
-    // Get available width
-    const getAvailableWidth = () => {
-      const svgWidth = this.svg.attr('width') ? parseFloat(this.svg.attr('width')) : this.options.width;
-      const detailPanelWidth = this.container.closest('.main-content')?.querySelector('.detail-panel')?.clientWidth || 0;
-      return svgWidth - detailPanelWidth;
-    };
-    
-    // Get "Show All" button width
-    const showAllButton = buttonGroup.select('.pathway-button').node();
-    let currentX = 20;
-    if (showAllButton) {
-      const showAllRect = d3.select(showAllButton).select('rect');
-      const showAllWidth = showAllRect.attr('width') ? parseFloat(showAllRect.attr('width')) : 0;
-      currentX = 20 + showAllWidth + buttonGap;
-    }
-    let currentY = buttonY;
-    
-    // Re-draw all pathway buttons
-    const viewer = this;
-    this.pathways.forEach((pathway) => {
-      const buttonWidth = calculateButtonWidth(pathway.name);
-      const availableWidth = getAvailableWidth();
-      
-      // Check if button would overflow, wrap to new line if needed
-      if (currentX + buttonWidth > availableWidth - rightMargin) {
-        currentX = 20;
-        currentY += lineHeight;
-      }
-      
-      const button = buttonGroup.append('g')
-        .attr('class', 'pathway-button btn')
-        .attr('transform', `translate(${currentX}, ${currentY})`);
-      
-      // Get pathway type and button colors
-      const pathwayType = pathway.summary?.pathwayType || null;
-      const buttonColors = viewer.getPathwayButtonColors(pathwayType);
-      
-      // Determine if this button is selected
-      const isSelected = viewer.selectedPathway === pathway.id;
-      
-      // Button background
-      button.append('rect')
-        .attr('width', buttonWidth)
-        .attr('height', buttonHeight)
-        .attr('rx', 6)
-        .attr('fill', isSelected ? buttonColors.selected : 'transparent')
-        .attr('stroke', buttonColors.hover)
-        .attr('stroke-width', isSelected ? 3 : 2);
-      
-      // Determine initial text color based on theme and selection state
-      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-      const initialTextColor = isSelected ? 'white' : (isDarkMode ? 'white' : 'black');
-      
-      // Button text
-      button.append('text')
-        .attr('x', buttonWidth / 2)
-        .attr('y', buttonHeight / 2 + 3)
-        .attr('text-anchor', 'middle')
-        .attr('fill', initialTextColor)
-        .attr('font-size', '10px')
-        .attr('font-weight', '600')
-        .text(pathway.name);
-      
-      // Store button colors for later use
-      pathway.buttonColors = buttonColors;
-      
-      // Update currentX for next button
-      currentX += buttonWidth + buttonGap;
-      
-      // Hover effects
-      button.on('mouseenter', function() {
-        if (!isSelected) {
-          d3.select(this).select('rect')
-            .attr('fill', buttonColors.hover)
-            .attr('stroke-width', 3);
-          
-          d3.select(this).select('text')
-            .attr('fill', 'white');
-        }
-      })
-      .on('mouseleave', function() {
-        if (viewer.selectedPathway !== pathway.id) {
-          d3.select(this).select('rect')
-            .attr('fill', 'transparent')
-            .attr('stroke-width', 2);
-          
-          const currentIsDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-          d3.select(this).select('text')
-            .transition()
-            .duration(200)
-            .attr('fill', currentIsDarkMode ? 'white' : 'black');
-        }
-      })
-      .on('click', (event) => {
-        event.stopPropagation();
-        viewer.selectPathway(pathway);
-      });
-      
-      // Store button reference
-      pathway.button = button;
-    });
+    // Zoom to show all reactions
+    this.zoomToAllReactions();
   }
   
   /**
@@ -2649,9 +2569,13 @@ export class MetabolismViewer {
       const buttonWidth = parseFloat(button.select('rect').attr('width')) || 0;
       const availableWidth = getAvailableWidth();
       
+      // Detect mobile viewport (typically < 768px)
+      const isMobile = window.innerWidth < 768;
+      
       // Check if button would overflow the right edge, wrap to new line if needed
-      // Only wrap when the button would actually go beyond the available width
-      if (currentX + buttonWidth > availableWidth - rightMargin) {
+      // On mobile, don't wrap - allow horizontal scrolling instead
+      // Only wrap when the button would actually go beyond the available width (and not on mobile)
+      if (!isMobile && currentX + buttonWidth > availableWidth - rightMargin) {
         currentX = 20; // Start new line from left margin
         currentY += lineHeight;
       }
@@ -2680,33 +2604,36 @@ export class MetabolismViewer {
     // Clear previous pathway selection
     if (this.selectedPathway) {
       const prevPathway = this.pathways.find(p => p.id === this.selectedPathway);
-      if (prevPathway && prevPathway.button) {
-        const buttonColors = prevPathway.buttonColors || this.getPathwayButtonColors(prevPathway.summary?.pathwayType);
-        prevPathway.button.select('rect')
-          .attr('fill', 'transparent')
-          .attr('stroke-width', 2);
-        
-        // Update text color based on theme
-        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-        prevPathway.button.select('text')
-          .transition()
-          .duration(200)
-          .attr('fill', isDarkMode ? 'white' : 'black');
+      if (prevPathway) {
+        this.resetPathwayButton(prevPathway);
       }
     }
     
     // Highlight selected pathway button
     if (pathway.button) {
       const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
-      pathway.button.select('rect')
-        .attr('fill', buttonColors.selected)
-        .attr('stroke-width', 3);
-      
-      // Update text color to white when selected
-      pathway.button.select('text')
-        .transition()
-        .duration(200)
-        .attr('fill', 'white');
+      // Check if it's an HTML button
+      const isHTMLButton = pathway.button.node() && pathway.button.node().tagName === 'BUTTON';
+      if (isHTMLButton) {
+        // HTML button - set to selected state
+        const selectedColor = buttonColors.selected || buttonColors.hover || buttonColors.fill || '#667eea';
+        pathway.button
+          .style('background', selectedColor)
+          .style('border-color', selectedColor)
+          .style('opacity', '1')
+          .style('color', 'white');
+      } else {
+        // SVG button - set to selected state
+        pathway.button.select('rect')
+          .attr('fill', buttonColors.selected)
+          .attr('stroke-width', 3);
+        
+        // Update text color to white when selected
+        pathway.button.select('text')
+          .transition()
+          .duration(200)
+          .attr('fill', 'white');
+      }
     }
     
     // Reset all node highlighting using unified function
@@ -2967,18 +2894,8 @@ export class MetabolismViewer {
     // Clear any pathway selection
     if (this.selectedPathway) {
       const prevPathway = this.pathways.find(p => p.id === this.selectedPathway);
-      if (prevPathway && prevPathway.button) {
-        const buttonColors = prevPathway.buttonColors || this.getPathwayButtonColors(prevPathway.summary?.pathwayType);
-        prevPathway.button.select('rect')
-          .attr('fill', 'transparent')
-          .attr('stroke-width', 2);
-        
-        // Update text color based on theme
-        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-        prevPathway.button.select('text')
-          .transition()
-          .duration(200)
-          .attr('fill', isDarkMode ? 'white' : 'black');
+      if (prevPathway) {
+        this.resetPathwayButton(prevPathway);
       }
       this.selectedPathway = null;
     }
@@ -7349,7 +7266,7 @@ export class MetabolismViewer {
   }
   
   updateNodeDisplay(zoomLevel) {
-    const zoomThreshold = 0.8; // Show images when zoomed in beyond this threshold (decreased from 1.5)
+    const zoomThreshold = 0.6; // Show images when zoomed in beyond this threshold (decreased from 1.5)
     const nodeRadius = zoomLevel >= zoomThreshold ? 55 : 30; // Larger radius when showing images
     
     // Update arrow connections to avoid overlap
@@ -7388,7 +7305,7 @@ export class MetabolismViewer {
   }
   
   updateArrowConnections(zoomLevel, nodeRadius) {
-    const zoomThreshold = 0.8; // Decreased from 1.5 to change view mode earlier
+    const zoomThreshold = 0.6; // Decreased from 1.5 to change view mode earlier
     const radius = zoomLevel >= zoomThreshold ? nodeRadius : PATHWAY_CONFIG.nodeSizes.regular.radius;
     
     // Update regular connections based on zoom level
@@ -7663,12 +7580,7 @@ export class MetabolismViewer {
     
     // Reset pathway button highlighting
     this.pathways.forEach(pathway => {
-      if (pathway.button) {
-        const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
-        pathway.button.select('rect')
-          .attr('fill', 'transparent')
-          .attr('stroke-width', 2);
-      }
+      this.resetPathwayButton(pathway);
     });
     
     // Dispatch clear event to hide detail views
@@ -7775,6 +7687,43 @@ export class MetabolismViewer {
       hover: PATHWAY_CONFIG.colors.primaryHover,
       selected: PATHWAY_CONFIG.colors.primaryDark
     };
+  }
+  
+  /**
+   * Reset a pathway button to its normal (unselected) state
+   * Handles both HTML and SVG buttons
+   */
+  resetPathwayButton(pathway) {
+    if (!pathway || !pathway.button) return;
+    
+    const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
+    const isHTMLButton = pathway.button.node() && pathway.button.node().tagName === 'BUTTON';
+    
+    if (isHTMLButton) {
+      // HTML button - reset to normal state (outline style)
+      const strokeColor = buttonColors.hover || buttonColors.fill || '#667eea';
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      const textColor = isDarkMode ? 'white' : 'black';
+      
+      pathway.button
+        .style('background', 'transparent')
+        .style('border-color', strokeColor)
+        .style('border-width', '3px')
+        .style('opacity', '0.33')
+        .style('color', textColor);
+    } else {
+      // SVG button - reset to normal state
+      pathway.button.select('rect')
+        .attr('fill', 'transparent')
+        .attr('stroke-width', 2);
+      
+      // Update text color based on theme
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      pathway.button.select('text')
+        .transition()
+        .duration(200)
+        .attr('fill', isDarkMode ? 'white' : 'black');
+    }
   }
   
   getPathwayForReaction(reaction) {
@@ -8022,12 +7971,7 @@ export class MetabolismViewer {
     
     // Reset pathway button highlighting
     this.pathways.forEach(pathway => {
-      if (pathway.button) {
-        const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
-        pathway.button.select('rect')
-          .attr('fill', 'transparent')
-          .attr('stroke-width', 2);
-      }
+      this.resetPathwayButton(pathway);
     });
     
     // Reset all arrow highlighting first
@@ -9310,12 +9254,7 @@ export class MetabolismViewer {
     
     // Reset pathway button highlighting
     this.pathways.forEach(pathway => {
-      if (pathway.button) {
-        const buttonColors = pathway.buttonColors || this.getPathwayButtonColors(pathway.summary?.pathwayType);
-        pathway.button.select('rect')
-          .attr('fill', 'transparent')
-          .attr('stroke-width', 2);
-      }
+      this.resetPathwayButton(pathway);
     });
     
     // Reset all arrow highlighting
