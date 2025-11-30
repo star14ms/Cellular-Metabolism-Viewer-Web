@@ -16,6 +16,7 @@ import {
 } from '../data/index.js';
 import { mitochondriaData } from '../data/mitochondria/mitochondria_index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
+import { loadNodeCacheFromStorage, saveNodeToStorage, getNodeFromStorage, saveNodesToStorage } from '../utils/nodeCache.js';
 import {
   calculateArrowCoords,
   calculateArrowMidpoint,
@@ -9467,6 +9468,10 @@ export class MetabolismViewer {
   }
   
   async fetchMoleculeImages() {
+    // Load cached node data from localStorage
+    const nodeCache = loadNodeCacheFromStorage();
+    const nodesToSave = [];
+    
     // Fetch PubChem data for all molecules to get image URLs
     const uniqueMolecules = new Map();
     const glycolysisPathway = this.pathways.find(p => p.id === 'glycolysis');
@@ -9514,14 +9519,36 @@ export class MetabolismViewer {
     for (const [id, molecule] of uniqueMolecules) {
       try {
         let imageUrl = null;
+        let pubchemData = null;
+        
+        // Check if we have cached node data with PubChem info
+        const cachedNode = getNodeFromStorage(id);
+        if (cachedNode && cachedNode.pubchemData) {
+          // Use cached PubChem data
+          pubchemData = cachedNode.pubchemData;
+          // Also update in-memory PubChem cache
+          if (this.pubchemDataCache) {
+            this.pubchemDataCache.set(molecule.name, pubchemData);
+          }
+          
+          // Get image URL from cached data
+          if (pubchemData.image2DUrlSmall) {
+            imageUrl = pubchemData.image2DUrlSmall;
+          } else if (molecule.pubchemSid && pubchemData.image2DUrl) {
+            imageUrl = pubchemData.image2DUrl;
+          } else if (molecule.pubchemCid && pubchemData.image2DUrl) {
+            imageUrl = pubchemData.image2DUrl;
+          }
+        }
         
         // Check if molecule already has an imageUrl (e.g., from Wikipedia for complexes)
-        if (molecule.imageUrl) {
+        if (!imageUrl && molecule.imageUrl) {
           imageUrl = molecule.imageUrl;
-        } else {
+        } else if (!imageUrl && !pubchemData) {
+          // Fetch PubChem data if not in cache
           // Use shared utility that handles normalization and alternatives
           // Pass molecule object so it can use pubchemSid if available
-          const pubchemData = await fetchPubChemData(molecule.name, this.pubchemDataCache, molecule);
+          pubchemData = await fetchPubChemData(molecule.name, this.pubchemDataCache, molecule);
           
           // Prioritize SID-based image URLs if available
           if (pubchemData) {
@@ -9534,6 +9561,17 @@ export class MetabolismViewer {
               imageUrl = pubchemData.image2DUrl;
             }
           }
+        }
+        
+        // Save node data with PubChem info to cache
+        if (molecule && (pubchemData || imageUrl)) {
+          const nodeDataToCache = {
+            ...molecule,
+            pubchemData: pubchemData || null,
+            imageUrl: imageUrl || molecule.imageUrl || null,
+            cachedAt: new Date().toISOString()
+          };
+          nodesToSave.push(nodeDataToCache);
         }
         
         if (imageUrl) {
@@ -9577,6 +9615,11 @@ export class MetabolismViewer {
       } catch (error) {
         console.warn(`Failed to fetch image for ${molecule.name}:`, error);
       }
+    }
+    
+    // Save all nodes with PubChem data to cache
+    if (nodesToSave.length > 0) {
+      saveNodesToStorage(nodesToSave);
     }
   }
   

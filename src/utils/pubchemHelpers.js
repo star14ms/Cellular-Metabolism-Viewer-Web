@@ -5,7 +5,7 @@
 
 import { fetchCompoundWithFallback, createSidBasedPubChemData, generateSidImageUrl, PUBCHEM_IMAGE_VERSION, fetchCompoundByCid } from '../services/pubchemService.js';
 import { getAlternativeNames } from './moleculeAlternatives.js';
-import { loadCacheFromStorage, saveToStorage, getFromStorage, removeFromStorage, shouldInvalidateCache } from './pubchemCache.js';
+import { getPubChemDataByName, savePubChemDataToNodeCache, getNodeByNameFromStorage, removeNodeFromStorage, shouldInvalidateNodeCache } from './nodeCache.js';
 import { useLocalImages } from './localImageHelper.js';
 
 /**
@@ -91,17 +91,21 @@ export async function fetchPubChemData(moleculeName, cache, molecule = null) {
     // Check in-memory cache first
     if (cache && cache.has(moleculeName)) {
       const cachedData = cache.get(moleculeName);
-      if (shouldInvalidateCache(cachedData, molecule)) {
+      if (shouldInvalidateNodeCache({ pubchemData: cachedData }, molecule)) {
         console.log(`Cache invalidated for ${moleculeName} (SID or version changed)`);
         cache.delete(moleculeName);
-        removeFromStorage(moleculeName);
+        // Remove from node cache by finding the node
+        const nodeData = getNodeByNameFromStorage(moleculeName);
+        if (nodeData) {
+          removeNodeFromStorage(nodeData.id);
+        }
       }
     } else {
-      // Check localStorage cache
-      const cachedData = getFromStorage(moleculeName);
-      if (cachedData && shouldInvalidateCache(cachedData, molecule)) {
+      // Check node cache
+      const nodeData = getNodeByNameFromStorage(moleculeName);
+      if (nodeData && shouldInvalidateNodeCache(nodeData, molecule)) {
         console.log(`Cache invalidated for ${moleculeName} (SID or version changed)`);
-        removeFromStorage(moleculeName);
+        removeNodeFromStorage(nodeData.id);
         // Also remove from in-memory cache if provided
         if (cache) {
           cache.delete(moleculeName);
@@ -121,15 +125,16 @@ export async function fetchPubChemData(moleculeName, cache, molecule = null) {
     return useLocalImages(cachedData);
   }
   
-  // Check localStorage cache
-  const cachedData = getFromStorage(moleculeName);
-  if (cachedData) {
+  // Check node cache
+  const nodeData = getNodeByNameFromStorage(moleculeName);
+  if (nodeData && nodeData.pubchemData) {
+    const cachedData = nodeData.pubchemData;
     // If imageVersion or SID is specified, regenerate URLs with the correct version
     const needsUpdate = (imageVersion !== null) || (molecule?.pubchemSid && cachedData.sid !== molecule.pubchemSid?.toString());
     if (needsUpdate) {
       const updatedData = regenerateImageUrls(cachedData, imageVersion, molecule);
-      // Save updated data back to cache
-      saveToStorage(moleculeName, updatedData);
+      // Save updated data back to node cache
+      savePubChemDataToNodeCache(moleculeName, updatedData, nodeData.id);
       // Also update in-memory cache if provided
       if (cache) {
         cache.set(moleculeName, updatedData);
@@ -156,7 +161,7 @@ export async function fetchPubChemData(moleculeName, cache, molecule = null) {
         cidData.name = moleculeName;
       }
       
-      saveToStorage(moleculeName, cidData);
+      savePubChemDataToNodeCache(moleculeName, cidData);
       if (cache) cache.set(moleculeName, cidData);
       return useLocalImages(cidData);
     } catch (error) {
@@ -184,8 +189,8 @@ export async function fetchPubChemData(moleculeName, cache, molecule = null) {
   try {
     const pubchemData = await fetchCompoundWithFallback(searchName, alternativeNames, imageVersion);
     
-    // Save to localStorage (save original with remote URLs)
-    saveToStorage(moleculeName, pubchemData);
+    // Save to node cache (save original with remote URLs)
+    savePubChemDataToNodeCache(moleculeName, pubchemData);
     
     // Also update in-memory cache if provided
     if (cache) {
@@ -201,8 +206,8 @@ export async function fetchPubChemData(moleculeName, cache, molecule = null) {
       console.log(`Using SID-based image URLs for ${moleculeName} (SID: ${sid})`);
       const sidData = createSidBasedPubChemData(moleculeName, sid, imageVersion);
       
-      // Save to localStorage
-      saveToStorage(moleculeName, sidData);
+      // Save to node cache
+      savePubChemDataToNodeCache(moleculeName, sidData);
       
       // Also update in-memory cache if provided
       if (cache) {

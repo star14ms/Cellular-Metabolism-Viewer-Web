@@ -818,20 +818,20 @@ if (!app) {
   }, 100)
 }
 
-// Expose PubChem cache utilities to global scope for easy access
-import { clearCache, getCacheStats, loadCacheFromStorage } from './utils/pubchemCache.js'
-window.PubChemCache = {
-  clear: clearCache,
-  stats: getCacheStats,
-  load: loadCacheFromStorage,
+// Expose node cache utilities to global scope for easy access
+import { clearNodeCache, getNodeCacheStats, getAllNodesFromStorage } from './utils/nodeCache.js'
+window.NodeCache = {
+  clear: clearNodeCache,
+  stats: getNodeCacheStats,
+  load: getAllNodesFromStorage,
   help: () => {
     console.log(`
-PubChem Cache Utilities:
-  - PubChemCache.clear()     : Clear all cached PubChem data
-  - PubChemCache.stats()     : Get cache statistics (size, last updated, version)
-  - PubChemCache.load()      : Load and return the cache Map
-  - PubChemCache.help()      : Show this help message
+Node Cache Utilities:
+  - NodeCache.clear()     : Clear all cached node data
+  - NodeCache.stats()     : Get cache statistics (size, last updated, version)
+  - NodeCache.load()      : Load and return the cache Map
+  - NodeCache.help()      : Show this help message
     `)
   }
 }
-console.log('PubChem cache utilities available. Type PubChemCache.help() for more info.')
+console.log('Node cache utilities available. Type NodeCache.help() for more info.')
