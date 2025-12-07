@@ -31,19 +31,16 @@ export const fattyAcidOxidationReactions = [
       location: 'Plasma membrane'
     }
   },
-  // 3. Activation of Short/Medium-Chain Fatty Acids
+  // 3. Carnitine Synthesis from Lysine
   {
-    id: 'rxn_fao_3',
-    name: 'Fatty acyl-CoA synthetase (Mitochondrial)',
-    byreactant: ['ATP', 'CoA'],
-    byproduct: ['AMP', 'PPi'],
+    id: 'rxn_fao_2b',
+    name: 'Carnitine Synthesis from Lysine',
     enzyme: {
-      name: 'Acyl-CoA Synthetase',
-      description: 'Activates short/medium-chain fatty acids inside mitochondria',
-      cofactors: ['ATP', 'CoA']
+      name: 'Carnitine Biosynthesis Enzymes',
+      description: 'Synthesizes carnitine from lysine through multiple enzymatic steps',
     },
     conditions: {
-      location: 'Mitochondrial matrix'
+      location: 'Liver and kidney'
     }
   },
   // 4. CPT1
@@ -51,6 +48,7 @@ export const fattyAcidOxidationReactions = [
     id: 'rxn_fao_cpt1',
     name: 'Carnitine Palmitoyltransferase 1 (CPT1)',
     byproduct: ['CoA'],
+    displayByproduct: ['fatty_acyl_carnitine_fao'],
     enzyme: {
       name: 'CPT1',
       ecNumber: '2.3.1.21',
@@ -66,7 +64,7 @@ export const fattyAcidOxidationReactions = [
   {
     id: 'rxn_fao_cpt2',
     name: 'Carnitine Palmitoyltransferase 2 (CPT2)',
-    byproduct: ['Carnitine'],
+    displayByproduct: ['carnitine_fao'],
     enzyme: {
       name: 'CPT2',
       ecNumber: '2.3.1.21',
@@ -77,7 +75,22 @@ export const fattyAcidOxidationReactions = [
       location: 'Inner mitochondrial membrane'
     }
   },
-  // 6. Acyl-CoA Dehydrogenase
+  // 6. Activation of Short/Medium-Chain Fatty Acids
+  {
+    id: 'rxn_fao_3',
+    name: 'Fatty acyl-CoA synthetase (Mitochondrial)',
+    byreactant: ['ATP', 'CoA'],
+    byproduct: ['AMP', 'PPi'],
+    enzyme: {
+      name: 'Acyl-CoA Synthetase',
+      description: 'Activates short/medium-chain fatty acids inside mitochondria',
+      cofactors: ['ATP', 'CoA']
+    },
+    conditions: {
+      location: 'Mitochondrial matrix'
+    }
+  },
+  // 7. Acyl-CoA Dehydrogenase
   {
     id: 'rxn_fao_6',
     name: 'Acyl-CoA Dehydrogenase',
@@ -92,7 +105,7 @@ export const fattyAcidOxidationReactions = [
       location: 'Mitochondrial matrix'
     }
   },
-  // 7. Enoyl-CoA Hydratase
+  // 8. Enoyl-CoA Hydratase
   {
     id: 'rxn_fao_7',
     name: 'Enoyl-CoA Hydratase',
@@ -106,7 +119,7 @@ export const fattyAcidOxidationReactions = [
       location: 'Mitochondrial matrix'
     }
   },
-  // 8. Hydroxyacyl-CoA Dehydrogenase
+  // 9. Hydroxyacyl-CoA Dehydrogenase
   {
     id: 'rxn_fao_8',
     name: 'β-hydroxyacyl-CoA Dehydrogenase',
@@ -121,7 +134,7 @@ export const fattyAcidOxidationReactions = [
       location: 'Mitochondrial matrix'
     }
   },
-  // 9. Thiolase
+  // 10. Thiolase
   {
     id: 'rxn_fao_9',
     name: 'Thiolase',
@@ -138,7 +151,7 @@ export const fattyAcidOxidationReactions = [
       location: 'Mitochondrial matrix'
     }
   },
-  // 10. Recycling
+  // 11. Recycling
   {
     id: 'rxn_fao_recycle',
     name: 'Chain Shortening Recycling',
@@ -146,7 +159,7 @@ export const fattyAcidOxidationReactions = [
     hideByproductLabels: true,
     description: 'Shortened fatty acyl-CoA re-enters the beta-oxidation cycle'
   },
-  // 11. Propionyl-CoA Carboxylase
+  // 12. Propionyl-CoA Carboxylase
   {
     id: 'rxn_fao_11',
     name: 'Propionyl-CoA Carboxylase',
@@ -162,7 +175,7 @@ export const fattyAcidOxidationReactions = [
       location: 'Mitochondrial matrix'
     }
   },
-  // 12. Methylmalonyl-CoA Mutase
+  // 13. Methylmalonyl-CoA Mutase
   {
     id: 'rxn_fao_12',
     name: 'Methylmalonyl-CoA Mutase',
@@ -176,7 +189,7 @@ export const fattyAcidOxidationReactions = [
       location: 'Mitochondrial matrix'
     }
   },
-  // 13. TCA Entry
+  // 14. TCA Entry
   {
     id: 'rxn_fao_tca',
     name: 'TCA Cycle Entry',

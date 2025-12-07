@@ -111,7 +111,8 @@ export const fattyAcidAndLipidSynthesisArrows = [
     id: 'arrow_fas_12',
     from_id: 'n_plus_2_fatty_acyl_acp',
     to_id: 'palmitate',
-    reaction_id: 'rxn_fas_12'
+    reaction_id: 'rxn_fas_12',
+    dashed: true
   },
 
   // Step 13: palmitate (C16) -> palmitoyl-CoA
@@ -128,7 +129,8 @@ export const fattyAcidAndLipidSynthesisArrows = [
     id: 'arrow_fas_14',
     from_id: 'palmitoyl_coa',
     to_id: 'sphingosine',
-    reaction_id: 'rxn_fas_14'
+    reaction_id: 'rxn_fas_14',
+    dashed: true
   },
 
   // Step 15: sphingosine -> sphingolipids
@@ -136,7 +138,8 @@ export const fattyAcidAndLipidSynthesisArrows = [
     id: 'arrow_fas_15',
     from_id: 'sphingosine',
     to_id: 'sphingolipids',
-    reaction_id: 'rxn_fas_15'
+    reaction_id: 'rxn_fas_15',
+    dashed: true
   },
 
   // Step 16: glycerol-3-phosphate -> phosphatidic acid
@@ -153,7 +156,8 @@ export const fattyAcidAndLipidSynthesisArrows = [
     id: 'arrow_fas_17',
     from_id: 'phosphatidic_acid',
     to_id: 'phospholipids',
-    reaction_id: 'rxn_fas_17'
+    reaction_id: 'rxn_fas_17',
+    dashed: true
   },
 
   // Step 18: phosphatidic acid -> 1,2-diacylglycerol
@@ -180,7 +184,7 @@ export const fattyAcidAndLipidSynthesisArrows = [
     from_id: 'triacylglycerol',
     to_id: 'lipoproteins',
     reaction_id: 'rxn_fas_transport_1',
-    dashStyle: 'dashed' // Representing transport/packaging
+    dashed: true
   },
 
   // Step 21: Lipoproteins -> Free Fatty Acids (intercellular)
@@ -189,7 +193,7 @@ export const fattyAcidAndLipidSynthesisArrows = [
     from_id: 'lipoproteins',
     to_id: 'free_fatty_acids_intercellular',
     reaction_id: 'rxn_fas_transport_2',
-    dashStyle: 'dashed', // Hydrolysis and release
+    dashed: true,
     flipped: true
   },
 
@@ -238,7 +242,8 @@ export const fattyAcidAndLipidSynthesisArrows = [
     id: 'arrow_fas_transport_6',
     from_id: 'diet_fas',
     to_id: 'carnitine',
-    reaction_id: 'rxn_fas_transport_6'
+    reaction_id: 'rxn_fas_transport_6',
+    dashed: true
   },
 
   // Step 26: Ethanol -> Acetaldehyde

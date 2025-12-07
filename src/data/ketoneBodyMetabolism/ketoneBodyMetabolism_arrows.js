@@ -28,13 +28,15 @@ export const ketoneBodyMetabolismArrows = [
     id: 'arrow_kbm_4',
     from_id: 'acetyl_coa_kbm_1',
     to_id: 'tca_kbm_1',
-    reaction_id: 'rxn_kbm_4'
+    reaction_id: 'rxn_kbm_4',
+    dashed: true
   },
   {
     id: 'arrow_kbm_4-1',
     from_id: 'acetyl_coa_kbm_1',
     to_id: 'acetyl_coa_x2_kbm',
-    reaction_id: null
+    reaction_id: null,
+    dashed: true
   },
 
   // 3. Synthesis
@@ -123,7 +125,8 @@ export const ketoneBodyMetabolismArrows = [
     id: 'arrow_kbm_14',
     from_id: 'acetyl_coa_x2_breakdown_kbm',
     to_id: 'tca_kbm_2',
-    reaction_id: 'rxn_kbm_14'
+    reaction_id: 'rxn_kbm_14',
+    dashed: true
   }
 ];
 

@@ -44,7 +44,7 @@ export function getAlternativeNames(moleculeName) {
     'NADPH': ['Nicotinamide adenine dinucleotide phosphate (reduced)'],
     'FADH₂': ['Flavin adenine dinucleotide (reduced)'],
     'H₂O': ['H2O'],
-    'Pi': ['Inorganic phosphate'],
+    'Pi': [1061],
     'CO₂': ['Carbon dioxide'],
     'CO2': ['Carbon dioxide'],
     // Electron Transport Chain compounds

@@ -126,6 +126,21 @@ export const branchedChainAminoAcidBreakdownReactions = [
       notes: 'Produces ketone body (acetoacetate) and acetyl-CoA'
     }
   },
+  {
+    id: 'rxn_bcaa_leu_tca_entry',
+    name: 'Leucine TCA Cycle Entry',
+    enzyme: {
+      name: 'TCA Cycle Entry',
+      ecNumber: 'Multiple',
+      description: 'Acetyl-CoA from leucine catabolism enters the TCA cycle',
+      cofactors: ['Multiple']
+    },
+    conditions: {
+      location: 'Mitochondria',
+      requirement: 'Aerobic conditions',
+      notes: 'Acetyl-CoA from leucine breakdown feeds into the TCA cycle for energy production'
+    }
+  },
   
   // Column 2: Isoleucine pathway
   {
@@ -227,6 +242,21 @@ export const branchedChainAminoAcidBreakdownReactions = [
       notes: 'Critical step connecting to TCA cycle'
     }
   },
+  {
+    id: 'rxn_bcaa_ile_tca_entry',
+    name: 'Isoleucine TCA Cycle Entry',
+    enzyme: {
+      name: 'TCA Cycle Entry',
+      ecNumber: 'Multiple',
+      description: 'Succinyl-CoA from isoleucine catabolism enters the TCA cycle',
+      cofactors: ['Multiple']
+    },
+    conditions: {
+      location: 'Mitochondria',
+      requirement: 'Aerobic conditions',
+      notes: 'Succinyl-CoA from isoleucine breakdown feeds into the TCA cycle for energy production'
+    }
+  },
   
   // Column 3: Valine pathway
   {
@@ -294,6 +324,21 @@ export const branchedChainAminoAcidBreakdownReactions = [
       location: 'Mitochondria',
       requirement: 'Multiple enzymatic steps',
       notes: 'Similar to fatty acid β-oxidation. Valine pathway converges with isoleucine pathway at propionyl-CoA'
+    }
+  },
+  {
+    id: 'rxn_bcaa_odd_fatty_acid',
+    name: 'Odd-chain Fatty Acyl-CoA Oxidation',
+    enzyme: {
+      name: 'Multiple enzymes',
+      ecNumber: 'Multiple',
+      description: 'Multiple steps converting odd-chain fatty acyl-CoA to propionyl-CoA via β-oxidation',
+      cofactors: ['Multiple']
+    },
+    conditions: {
+      location: 'Mitochondria',
+      requirement: 'Multiple enzymatic steps',
+      notes: 'Odd-chain fatty acids from fatty acid oxidation are catabolized to propionyl-CoA, which converges with isoleucine and valine pathways'
     }
   },
   
@@ -469,21 +514,19 @@ export const branchedChainAminoAcidBreakdownReactions = [
       notes: 'Final step producing acetyl-CoA for TCA cycle'
     }
   },
-  
-  // Common reaction: Entry into TCA cycle
   {
-    id: 'rxn_bcaa_tca_entry',
-    name: 'Entry into TCA Cycle',
+    id: 'rxn_bcaa_lys_tca_entry',
+    name: 'Lysine TCA Cycle Entry',
     enzyme: {
       name: 'TCA Cycle Entry',
       ecNumber: 'Multiple',
-      description: 'Acetyl-CoA and succinyl-CoA from branched-chain amino acid breakdown enter the TCA cycle',
+      description: 'Acetyl-CoA from lysine catabolism enters the TCA cycle',
       cofactors: ['Multiple']
     },
     conditions: {
       location: 'Mitochondria',
       requirement: 'Aerobic conditions',
-      notes: 'Final products from branched-chain amino acid catabolism feed into the TCA cycle for energy production'
+      notes: 'Acetyl-CoA from lysine breakdown feeds into the TCA cycle for energy production'
     }
   }
 ];

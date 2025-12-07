@@ -14,6 +14,13 @@ export const fattyAcidOxidationArrows = [
     to_id: 'carnitine_fao',
     reaction_id: 'rxn_fao_2'
   },
+  // Step 2b: Lysine -> Carnitine
+  {
+    id: 'arrow_fao_2b',
+    from_id: 'lysine_fao',
+    to_id: 'carnitine_fao',
+    reaction_id: 'rxn_fao_2b'
+  },
 
   // Step 3: Fatty acids <= C12 -> Fatty Acyl-CoA (mito)
   {
@@ -143,6 +150,7 @@ export const fattyAcidOxidationArrows = [
     id: 'arrow_fao_13',
     from_id: 'succinyl_coa_fao',
     to_id: 'tca_entry_fao', // Using the placeholder node in FAO
-    reaction_id: 'rxn_fao_tca'
+    reaction_id: 'rxn_fao_tca',
+    dashed: true
   }
 ];

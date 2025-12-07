@@ -22,7 +22,8 @@ export const aromaticAminoAcidMetabolismArrows = [
     id: 'arrow_aromatic_3',
     from_id: 'phenylpyruvate',
     to_id: 'phenylacetate',
-    reaction_id: 'rxn_aromatic_3'
+    reaction_id: 'rxn_aromatic_3',
+    dashed: true
   },
   // Step 4: Phenylalanine -> Tyrosine
   {
@@ -44,14 +45,16 @@ export const aromaticAminoAcidMetabolismArrows = [
     id: 'arrow_aromatic_7a',
     from_id: 'tyrosine',
     to_id: 'triiodothyronine',
-    reaction_id: 'rxn_aromatic_7'
+    reaction_id: 'rxn_aromatic_7',
+    dashed: true
   },
   // Step 5: Tyrosine -> T4 (multiple steps)
   {
     id: 'arrow_aromatic_7b',
     from_id: 'tyrosine',
     to_id: 'thyroxine',
-    reaction_id: 'rxn_aromatic_7'
+    reaction_id: 'rxn_aromatic_7',
+    dashed: true
   },
   // Step 6: Tyrosine -> Dopaquinone
   {
@@ -65,7 +68,8 @@ export const aromaticAminoAcidMetabolismArrows = [
     id: 'arrow_aromatic_9',
     from_id: 'dopaquinone',
     to_id: 'melanin',
-    reaction_id: 'rxn_aromatic_9'
+    reaction_id: 'rxn_aromatic_9',
+    dashed: true
   },
   // Tyrosine -> L-DOPA (linear, going right)
   {
@@ -101,21 +105,24 @@ export const aromaticAminoAcidMetabolismArrows = [
     id: 'arrow_aromatic_15',
     from_id: 'dopamine',
     to_id: 'homovanillic_acid',
-    reaction_id: 'rxn_aromatic_15'
+    reaction_id: 'rxn_aromatic_15',
+    dashed: true
   },
   // Norepinephrine -> Vanillylmandelic Acid (VMA) (breakdown, going down)
   {
     id: 'arrow_aromatic_16',
     from_id: 'norepinephrine',
     to_id: 'vanillylmandelic_acid',
-    reaction_id: 'rxn_aromatic_16'
+    reaction_id: 'rxn_aromatic_16',
+    dashed: true
   },
   // Epinephrine -> Vanillylmandelic Acid (VMA) (breakdown, going down)
   {
     id: 'arrow_aromatic_17',
     from_id: 'epinephrine',
     to_id: 'vma_from_epinephrine',
-    reaction_id: 'rxn_aromatic_17'
+    reaction_id: 'rxn_aromatic_17',
+    dashed: true
   },
   // p-Hydroxyphenylpyruvate -> Homogentisate (downward)
   {
@@ -185,14 +192,16 @@ export const aromaticAminoAcidMetabolismArrows = [
     id: 'arrow_aromatic_26',
     from_id: 'acetoacetate',
     to_id: 'tca_cycle',
-    reaction_id: 'rxn_aromatic_26'
+    reaction_id: 'rxn_aromatic_26',
+    dashed: true
   },
   // Fumarate -> TCA Cycle (downward)
   {
     id: 'arrow_aromatic_27',
     from_id: 'fumarate_aromatic',
     to_id: 'tca_cycle',
-    reaction_id: 'rxn_aromatic_27'
+    reaction_id: 'rxn_aromatic_27',
+    dashed: true
   },
   // Tryptophan -> 5-Hydroxytryptophan
   {
@@ -235,7 +244,8 @@ export const aromaticAminoAcidMetabolismArrows = [
     id: 'arrow_aromatic_34',
     from_id: 'tryptophan',
     to_id: 'niacin',
-    reaction_id: 'rxn_aromatic_34'
+    reaction_id: 'rxn_aromatic_34',
+    dashed: true
   },
   // BH2 -> BH4 Regeneration (Set 1)
   {
@@ -270,7 +280,8 @@ export const aromaticAminoAcidMetabolismArrows = [
     id: 'arrow_aromatic_36',
     from_id: 'dihydroneopterin_triphosphate',
     to_id: 'bh4_set1',
-    reaction_id: 'rxn_aromatic_36'
+    reaction_id: 'rxn_aromatic_36',
+    dashed: true
   }
 ];
 

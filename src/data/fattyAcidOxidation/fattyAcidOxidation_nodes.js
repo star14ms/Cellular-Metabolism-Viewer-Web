@@ -13,6 +13,14 @@ export const fattyAcidOxidationNodes = [
     position: { x: base_x, y: base_y }
   },
   {
+    id: 'lysine_fao',
+    type: 'molecule',
+    name: 'Lysine',
+    pathwayType: 'amino_acids',
+    description: 'Amino acid that serves as a precursor for carnitine synthesis.',
+    position: { x: base_x + unit_space * -1.5, y: base_y + unit_space * 1 }
+  },
+  {
     id: 'acyl_coa_synthetase_fao',
     type: 'complex',
     name: 'Acyl-CoA Synthetase',

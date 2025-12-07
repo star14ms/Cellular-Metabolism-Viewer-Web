@@ -107,26 +107,30 @@ export const purineSynthesisArrows = [
     from_id: 'atp',
     to_id: 's_adenosyl_methionine',
     reaction_id: 'rxn_purine_synthesis_27',
-    flipped: true
+    flipped: true,
+    dashed: true
   },
   {
     id: 'arrow_purine_synthesis_28',
     from_id: 'atp',
     to_id: 'coenzyme_a',
     reaction_id: 'rxn_purine_synthesis_27',
-    flipped: true
+    flipped: true,
+    dashed: true
   },
   {
     id: 'arrow_purine_synthesis_29',
     from_id: 'atp',
     to_id: 'nadh_purine',
-    reaction_id: 'rxn_purine_synthesis_27'
+    reaction_id: 'rxn_purine_synthesis_27',
+    dashed: true
   },
   {
     id: 'arrow_purine_synthesis_30',
     from_id: 'atp',
     to_id: 'fadh2_purine',
-    reaction_id: 'rxn_purine_synthesis_27'
+    reaction_id: 'rxn_purine_synthesis_27',
+    dashed: true
   },
   
   // Base salvage pathway arrows
@@ -201,7 +205,8 @@ export const purineSynthesisArrows = [
     id: 'arrow_purine_synthesis_31',
     from_id: 'gtp',
     to_id: 'biopterin',
-    reaction_id: 'rxn_purine_synthesis_31'
+    reaction_id: 'rxn_purine_synthesis_31',
+    dashed: true
   },
   
   // Reverse arrows: AMP and GMP to IMP

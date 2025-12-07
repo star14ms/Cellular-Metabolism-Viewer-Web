@@ -207,6 +207,14 @@ export const branchedChainAminoAcidBreakdownNodes = [
     smiles: 'CC(C)CC(=O)SCCNC(=O)CCNC(=O)[C@@H](N)Cc1c[nH]cn1',
     position: { x: base_x + column_spacing * 0.5, y: base_y + unit_space * 3 }
   },
+  {
+    id: 'odd_chain_fatty_acyl_coa_bcaa',
+    type: 'molecule',
+    name: 'Odd-chain Fatty Acyl-CoA',
+    description: 'Odd-chain fatty acyl-CoA from fatty acid oxidation, catabolized to propionyl-CoA',
+    pubchemCid: 439855,
+    position: { x: base_x + column_spacing * 0.5, y: base_y + unit_space * 4 }
+  },
   
   // Column 4: Lysine pathway (x: base_x + unit_space * 1.5)
   {

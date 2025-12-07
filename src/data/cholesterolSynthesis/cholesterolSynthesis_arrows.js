@@ -40,7 +40,8 @@ export const cholesterolSynthesisArrows = [
     id: 'arrow_cholesterol_4',
     from_id: 'mevalonate_chol',
     to_id: 'ipp_chol',
-    reaction_id: 'rxn_cholesterol_4'
+    reaction_id: 'rxn_cholesterol_4',
+    dashed: true
   },
   
   // Step 5: 3 IPP → FPP
@@ -49,7 +50,8 @@ export const cholesterolSynthesisArrows = [
     id: 'arrow_cholesterol_5',
     from_id: 'ipp_chol',
     to_id: 'fpp_chol',
-    reaction_id: 'rxn_cholesterol_5'
+    reaction_id: 'rxn_cholesterol_5',
+    dashed: true
   },
   
   // Step 6: FPP → Protein Modification (BRANCHING - occurs before step 7)
@@ -74,7 +76,8 @@ export const cholesterolSynthesisArrows = [
     id: 'arrow_cholesterol_8',
     from_id: 'squalene_chol',
     to_id: 'lanosterol_chol',
-    reaction_id: 'rxn_cholesterol_8'
+    reaction_id: 'rxn_cholesterol_8',
+    dashed: true
   },
   
   // Step 9: Lanosterol → 7-dehydrocholesterol
@@ -82,7 +85,8 @@ export const cholesterolSynthesisArrows = [
     id: 'arrow_cholesterol_9',
     from_id: 'lanosterol_chol',
     to_id: '7_dehydrocholesterol_chol',
-    reaction_id: 'rxn_cholesterol_9'
+    reaction_id: 'rxn_cholesterol_9',
+    dashed: true
   },
   
   // Step 10: 7-dehydrocholesterol → Cholesterol
@@ -99,7 +103,8 @@ export const cholesterolSynthesisArrows = [
     id: 'arrow_cholesterol_11',
     from_id: '7_dehydrocholesterol_chol',
     to_id: 'vitamin_d_chol',
-    reaction_id: 'rxn_cholesterol_11'
+    reaction_id: 'rxn_cholesterol_11',
+    dashed: true
   },
   
   // Step 12: Cholesterol → Bile Salts
@@ -107,7 +112,8 @@ export const cholesterolSynthesisArrows = [
     id: 'arrow_cholesterol_12',
     from_id: 'cholesterol_chol',
     to_id: 'bile_salts_chol',
-    reaction_id: 'rxn_cholesterol_12'
+    reaction_id: 'rxn_cholesterol_12',
+    dashed: true
   },
   
   // Step 13: Cholesterol → Cell Membranes
@@ -115,7 +121,8 @@ export const cholesterolSynthesisArrows = [
     id: 'arrow_cholesterol_13',
     from_id: 'cholesterol_chol',
     to_id: 'cell_membranes_chol',
-    reaction_id: 'rxn_cholesterol_13'
+    reaction_id: 'rxn_cholesterol_13',
+    dashed: true
   },
   
   // Step 14: Cholesterol → Lipoproteins
@@ -123,7 +130,8 @@ export const cholesterolSynthesisArrows = [
     id: 'arrow_cholesterol_14',
     from_id: 'cholesterol_chol',
     to_id: 'lipoproteins_chol',
-    reaction_id: 'rxn_cholesterol_14'
+    reaction_id: 'rxn_cholesterol_14',
+    dashed: true
   }
 ];
 

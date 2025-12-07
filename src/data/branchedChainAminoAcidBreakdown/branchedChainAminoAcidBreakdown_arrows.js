@@ -103,7 +103,8 @@ export const branchedChainAminoAcidBreakdownArrows = [
     id: 'arrow_bcaa_leu_tca',
     from_id: 'acetyl_coa_leu',
     to_id: 'tca_cycle_bcaa',
-    reaction_id: 'rxn_bcaa_tca_entry'
+    reaction_id: 'rxn_bcaa_leu_tca_entry',
+    dashed: true
   },
   
   // Isoleucine pathway (pathway 2)
@@ -129,7 +130,8 @@ export const branchedChainAminoAcidBreakdownArrows = [
     id: 'arrow_bcaa_ile_tca',
     from_id: 'succinyl_coa_bcaa',
     to_id: 'tca_cycle_bcaa',
-    reaction_id: 'rxn_bcaa_tca_entry'
+    reaction_id: 'rxn_bcaa_ile_tca_entry',
+    dashed: true
   },
   
   // Valine pathway (pathway 3) - converges with isoleucine pathway at propionyl-CoA
@@ -137,7 +139,16 @@ export const branchedChainAminoAcidBreakdownArrows = [
     id: 'arrow_bcaa_val_1',
     from_id: 'isobutyryl_coa',
     to_id: 'propionyl_coa_ile',
-    reaction_id: 'rxn_bcaa_val_1'
+    reaction_id: 'rxn_bcaa_val_1',
+    dashed: true
+  },
+  // Step 17b: Odd-chain fatty acyl-CoA oxidation
+  {
+    id: 'arrow_bcaa_odd_fatty_acid',
+    from_id: 'odd_chain_fatty_acyl_coa_bcaa',
+    to_id: 'propionyl_coa_ile',
+    reaction_id: 'rxn_bcaa_odd_fatty_acid',
+    dashed: true
   },
   
   // Lysine pathway (pathway 4)
@@ -205,7 +216,8 @@ export const branchedChainAminoAcidBreakdownArrows = [
     id: 'arrow_bcaa_lys_tca',
     from_id: 'acetyl_coa_lys',
     to_id: 'tca_cycle_bcaa',
-    reaction_id: 'rxn_bcaa_tca_entry'
+    reaction_id: 'rxn_bcaa_lys_tca_entry',
+    dashed: true
   }
 ];
 

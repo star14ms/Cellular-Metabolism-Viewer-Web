@@ -34,7 +34,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_3a',
     from_id: 'n10_formyl_thf',
     to_id: 'purine_synthesis_single_carbon',
-    reaction_id: 'rxn_single_carbon_3a'
+    reaction_id: 'rxn_single_carbon_3a',
+    dashed: true
   },
 
   // Step 4: N10-formyl-THF → N5,N10-methenyl-THF
@@ -50,7 +51,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_4a',
     from_id: 'histidine_catabolism_single_carbon',
     to_id: 'n5_n10_methenyl_thf',
-    reaction_id: 'rxn_single_carbon_4a'
+    reaction_id: 'rxn_single_carbon_4a',
+    dashed: true
   },
 
   // Step 5: N5,N10-methenyl-THF → N5,N10-methylene-THF
@@ -66,7 +68,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_5a',
     from_id: 'n5_n10_methylene_thf',
     to_id: 'pyrimidine_synthesis_single_carbon',
-    reaction_id: 'rxn_single_carbon_5a'
+    reaction_id: 'rxn_single_carbon_5a',
+    dashed: true
   },
 
   // Lower Row: Serine/Glycine Pathway
@@ -103,7 +106,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_8a',
     from_id: 'serine',
     to_id: 'phosphatidylserine_single_carbon',
-    reaction_id: 'rxn_single_carbon_8a'
+    reaction_id: 'rxn_single_carbon_8a',
+    dashed: true
   },
 
   // Step 8b: Serine → Ceramide
@@ -111,7 +115,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_8b',
     from_id: 'serine',
     to_id: 'ceramide_single_carbon',
-    reaction_id: 'rxn_single_carbon_8a'
+    reaction_id: 'rxn_single_carbon_8a',
+    dashed: true
   },
 
   // Step 8c: Serine → Sphingosine
@@ -119,7 +124,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_8c',
     from_id: 'serine',
     to_id: 'sphingosine_single_carbon',
-    reaction_id: 'rxn_single_carbon_8a'
+    reaction_id: 'rxn_single_carbon_8a',
+    dashed: true
   },
 
   // Step 9: Serine → Glycine
@@ -147,7 +153,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_9a',
     from_id: 'glycine',
     to_id: 'glutathione_glycine',
-    reaction_id: 'rxn_single_carbon_9a'
+    reaction_id: 'rxn_single_carbon_9a',
+    dashed: true
   },
 
   // Step 9b: Glycine → Nucleotides
@@ -155,7 +162,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_9b',
     from_id: 'glycine',
     to_id: 'nucleotides_glycine',
-    reaction_id: 'rxn_single_carbon_9a'
+    reaction_id: 'rxn_single_carbon_9a',
+    dashed: true
   },
 
   // Step 9c: Glycine → Porphyrins
@@ -163,7 +171,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_9c',
     from_id: 'glycine',
     to_id: 'porphyrins_glycine',
-    reaction_id: 'rxn_single_carbon_9a'
+    reaction_id: 'rxn_single_carbon_9a',
+    dashed: true
   },
 
   // Step 11: Glycine → Guanidinoacetate
@@ -257,7 +266,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_20b',
     from_id: 'adenosine_single_carbon',
     to_id: 'nucleotide_salvage',
-    reaction_id: 'rxn_single_carbon_20a'
+    reaction_id: 'rxn_single_carbon_20a',
+    dashed: true
   },
 
   // Step 20: Homocysteine → Methionine (cycle arrow 4, completes the cycle)
@@ -295,7 +305,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_23a',
     from_id: 'cysteine',
     to_id: 'glutathione_glycine',
-    reaction_id: 'rxn_single_carbon_23a'
+    reaction_id: 'rxn_single_carbon_23a',
+    dashed: true
   },
 
   // Step 22b: Cysteine → Coenzyme A (from cysteine, same reaction)
@@ -303,7 +314,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_23b',
     from_id: 'cysteine',
     to_id: 'coenzyme_a_single_carbon',
-    reaction_id: 'rxn_single_carbon_23a'
+    reaction_id: 'rxn_single_carbon_23a',
+    dashed: true
   },
 
   // Step 23: Cysteine → Cysteine Sulfinate
@@ -349,6 +361,7 @@ export const singleCarbonMetabolismArrows = [
     to_id: 'succinyl_coa_single_carbon', // Unique node ID to avoid conflicts
     reaction_id: 'rxn_single_carbon_29',
     flipped: true,
+    dashed: true
   },
 
   // Step 29: Succinyl-CoA → TCA Cycle
@@ -356,7 +369,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_33',
     from_id: 'succinyl_coa_single_carbon',
     to_id: 'tca_cycle_single_carbon', // Unique node ID to avoid conflicts
-    reaction_id: 'rxn_single_carbon_33'
+    reaction_id: 'rxn_single_carbon_33',
+    dashed: true
   },
 
   // Branch 2: Cysteine Sulfinate → β-Sulfinylpyruvate → Pyruvate (right)
@@ -382,7 +396,8 @@ export const singleCarbonMetabolismArrows = [
     id: 'arrow_single_carbon_32',
     from_id: 'taurine',
     to_id: 'bile_salts',
-    reaction_id: 'rxn_single_carbon_32'
+    reaction_id: 'rxn_single_carbon_32',
+    dashed: true
   }
 ];
 

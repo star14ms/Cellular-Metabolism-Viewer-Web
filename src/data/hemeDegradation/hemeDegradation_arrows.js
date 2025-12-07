@@ -33,21 +33,21 @@ export const hemeDegradationArrows = [
     from_id: 'conjugated_bilirubin_heme_degradation',
     to_id: 'feces_excretion_degradation',
     reaction_id: 'rxn_heme_deg_4',
-    style: 'dashed'
+    dashed: true
   },
   {
     id: 'arrow_heme_deg_4b',
     from_id: 'conjugated_bilirubin_heme_degradation',
     to_id: 'urine_excretion_degradation',
     reaction_id: 'rxn_heme_deg_4',
-    style: 'dashed'
+    dashed: true
   },
   {
     id: 'arrow_heme_deg_4c',
     from_id: 'conjugated_bilirubin_heme_degradation',
     to_id: 'bile_excretion_degradation',
     reaction_id: 'rxn_heme_deg_4',
-    style: 'dashed'
+    dashed: true
   }
 ];
 

@@ -36,7 +36,8 @@ export const glycogenAndGalactoseMetabolismArrows = [
     id: 'arrow_glycogen_galactose_4',
     from_id: 'primed_glycogenin',
     to_id: 'glycogen_n',
-    reaction_id: 'rxn_glycogen_galactose_4'
+    reaction_id: 'rxn_glycogen_galactose_4',
+    dashed: true
   },
   // Step 5: Glycogen (n) -> Glycogen (n+1)
   {
@@ -90,21 +91,24 @@ export const glycogenAndGalactoseMetabolismArrows = [
     id: 'arrow_glycogen_galactose_11_main',
     from_id: 'udp_glucuronate',
     to_id: 'conjugated_bilirubin',
-    reaction_id: 'rxn_glycogen_galactose_11'
+    reaction_id: 'rxn_glycogen_galactose_11',
+    dashed: true
   },
   // Step 11 branch: from midpoint of main arrow -> Other glucuronidation reactions
   {
     id: 'arrow_glycogen_galactose_11_branch',
     from_id: 'arrow_glycogen_galactose_11_main',
     to_id: 'other_glucuronidation_reactions',
-    reaction_id: 'rxn_glycogen_galactose_11'
+    reaction_id: 'rxn_glycogen_galactose_11',
+    dashed: true
   },
   // Step 12: UDP-glucose -> GAGs/Glycoproteins/Glycolipids
   {
     id: 'arrow_glycogen_galactose_12',
     from_id: 'udp_glucose',
     to_id: 'gags_glycoproteins_glycolipids',
-    reaction_id: 'rxn_glycogen_galactose_12'
+    reaction_id: 'rxn_glycogen_galactose_12',
+    dashed: true
   },
   // Step 13: Galactitol -> Galactose
   {

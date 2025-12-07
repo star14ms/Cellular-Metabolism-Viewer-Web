@@ -68,9 +68,13 @@ Arrows represent connections between nodes:
   id: 'arrow_pyruvate_1',       // Unique identifier
   from_id: 'pyruvate',          // Node ID or Arrow ID (for midpoint)
   to_id: 'hydroxyethyl-tpp',    // Node ID or Arrow ID (for midpoint)
-  reaction_id: 'rxn_pyruvate_1' // Reaction ID
+  reaction_id: 'rxn_pyruvate_1', // Reaction ID
+  dashed: true                  // Optional: If true, the main arrow will be drawn with a dashed line style
 }
 ```
+
+**Optional Properties:**
+- `dashed`: boolean - If true, the main arrow will be drawn with a dashed line style (5px dash, 5px gap)
 
 ## Special Features
 

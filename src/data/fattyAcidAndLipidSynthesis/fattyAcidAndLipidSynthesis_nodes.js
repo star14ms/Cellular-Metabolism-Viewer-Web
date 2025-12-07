@@ -230,7 +230,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     name: 'Free fatty acids (intercellular space)',
     pubchemCid: 985, // Palmitic Acid as representative
     description: 'Free fatty acids in the intercellular space',
-    position: { x: base_x + unit_space * -11, y: base_y + unit_space * 3.5 }
+    position: { x: base_x + unit_space * -10.5, y: base_y + unit_space * 3.5 }
   },
   {
     id: 'free_fatty_acids_plasma',
@@ -287,7 +287,7 @@ export const fattyAcidAndLipidSynthesisNodes = [
     formula: 'C₇H₁₅NO₃',
     smiles: 'C[N+](C)(C)CC(CC(=O)[O-])O',
     description: 'Carnitine, essential for transport of long-chain fatty acids into mitochondria',
-    position: { x: base_x + unit_space * -11, y: base_y + unit_space * 6 }
+    position: { x: base_x + unit_space * -10.5, y: base_y + unit_space * 6 }
   },
   {
     id: 'carnitine_transporter',

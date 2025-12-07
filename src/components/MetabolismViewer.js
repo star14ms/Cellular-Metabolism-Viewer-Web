@@ -2988,7 +2988,7 @@ export class MetabolismViewer {
     // Helper function to create an arrow that connects to the midpoint of another arrow
     // This is a generalized feature: any arrow drawn into the middle of another arrow
     // will, when clicked, select the reaction that the target arrow represents
-    const createArrowToMidpoint = (startX, startY, targetArrowId, connectionId, className, targetReaction) => {
+    const createArrowToMidpoint = (startX, startY, targetArrowId, connectionId, className, targetReaction, dashed = false) => {
       const midpoint = getArrowMidpoint(targetArrowId);
       if (!midpoint) {
         console.warn(`Arrow ${targetArrowId} not found for midpoint connection`);
@@ -3012,7 +3012,7 @@ export class MetabolismViewer {
           // When clicked, select the target reaction (the reaction the target arrow represents)
           this.selectReaction(targetReaction);
         },
-        { isReversible: this.isReactionReversible(targetReaction) }
+        { isReversible: this.isReactionReversible(targetReaction), dashed }
       );
       
       // Make the hit area wider at the endpoint for easier clicking
@@ -3206,6 +3206,11 @@ export class MetabolismViewer {
         .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
         .attr('marker-end', 'url(#arrowhead)');
       
+      // Apply dashed style if requested
+      if (arrowData && arrowData.dashed === true) {
+        visibleArrow.attr('stroke-dasharray', '5,5');
+      }
+      
       const isReversible = targetReaction && this.isReactionReversible(targetReaction);
       if (isReversible) {
         visibleArrow.attr('marker-start', 'url(#arrowhead)');
@@ -3232,6 +3237,8 @@ export class MetabolismViewer {
         })
         .on('click', (event) => {
           event.stopPropagation();
+          // TEMPORARY: Log arrow ID for adding dashed arrows
+          console.log('Arrow clicked - arrow_id:', connectionId);
           if (targetReaction) {
             this.selectReaction(targetReaction);
           }
@@ -3265,7 +3272,7 @@ export class MetabolismViewer {
     
     // Generalized function to create an arrow with visible line and hit area
     const createArrow = (coords, connectionId, className, onClick, options = {}) => {
-      const { isReversible = false } = options;
+      const { isReversible = false, dashed = false } = options;
       // Create visible arrow line
       const visibleArrow = this.g.append('line')
         .attr('class', `connection ${className || ''}`)
@@ -3278,6 +3285,11 @@ export class MetabolismViewer {
         .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
         .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity)
         .attr('marker-end', 'url(#arrowhead)');
+      
+      // Apply dashed style if requested
+      if (dashed) {
+        visibleArrow.attr('stroke-dasharray', '5,5');
+      }
       
       if (isReversible) {
         visibleArrow.attr('marker-start', 'url(#arrowhead)');
@@ -3308,6 +3320,8 @@ export class MetabolismViewer {
         })
         .on('click', (event) => {
           event.stopPropagation();
+          // TEMPORARY: Log arrow ID for adding dashed arrows
+          console.log('Arrow clicked - arrow_id:', connectionId);
           if (onClick) {
             onClick(event);
           }
@@ -3322,7 +3336,7 @@ export class MetabolismViewer {
     // Unified function to create arrow(s) and store in arrowDataMap
     // Supports both single arrow and array of arrows for batch processing
     // Auto-calculates coordinates if not provided
-    const createArrowWithData = (fromNode, toNodeOrArray, coordsOrConfig, connectionId, className, targetReaction, fromNodeId = null, toNodeId = null) => {
+    const createArrowWithData = (fromNode, toNodeOrArray, coordsOrConfig, connectionId, className, targetReaction, fromNodeId = null, toNodeId = null, arrowDataFromFile = null) => {
       // Handle array of arrows (batch mode)
       if (Array.isArray(toNodeOrArray)) {
         toNodeOrArray.forEach((arrowConfig, index) => {
@@ -3337,7 +3351,8 @@ export class MetabolismViewer {
             arrowConfig.className || className || 'connection-special',
             arrowConfig.targetReaction || targetReaction,
             arrowConfig.reactantId || fromNodeId,
-            arrowConfig.productId || toNodeId
+            arrowConfig.productId || toNodeId,
+            arrowConfig.arrowDataFromFile || arrowDataFromFile
           );
         });
         return;
@@ -3386,6 +3401,9 @@ export class MetabolismViewer {
         targetReaction.arrowIds.push(connectionId);
       }
       
+      // Get dashed property from arrowDataFromFile if available (passed through from arrow data file)
+      const dashed = arrowDataFromFile && arrowDataFromFile.dashed === true;
+      
       // Create visual arrow
       return createArrow(
         coords,
@@ -3394,7 +3412,7 @@ export class MetabolismViewer {
         () => {
           this.selectReaction(targetReaction);
         },
-        { isReversible }
+        { isReversible, dashed }
       );
     };
     
@@ -3700,7 +3718,10 @@ export class MetabolismViewer {
               coords,
               arrowData.id,
               '',
-              finalReaction
+              finalReaction,
+              null,
+              null,
+              arrowData
             );
           }
         } else {
@@ -3711,14 +3732,18 @@ export class MetabolismViewer {
             coords,
             arrowData.id,
             '',
-            finalReaction
+            finalReaction,
+            null,
+            null,
+            arrowData
           );
         }
       } else {
         // Draw arrow even if no reaction found (for visual completeness)
+        const dashed = arrowData && arrowData.dashed === true;
         createArrow(coords, arrowData.id, '', () => {
           // No action on click if no reaction
-        });
+        }, { dashed });
       }
     });
     
@@ -3791,6 +3816,9 @@ export class MetabolismViewer {
         // Use the target arrow's reaction if available, otherwise use this arrow's reaction
         const finalTargetReaction = targetArrowInfo.targetReaction || targetReaction;
         
+        // Get dashed property from arrowData
+        const dashed = arrowData && arrowData.dashed === true;
+        
         const arrowResult = createArrow(
           coords,
           arrowData.id,
@@ -3800,7 +3828,7 @@ export class MetabolismViewer {
               this.selectReaction(finalTargetReaction);
             }
           },
-          { isReversible: this.isReactionReversible(finalTargetReaction) }
+          { isReversible: this.isReactionReversible(finalTargetReaction), dashed }
         );
         
         if (arrowResult && arrowResult.hitArea) {
@@ -3849,6 +3877,9 @@ export class MetabolismViewer {
         // Use the source arrow's reaction if available, otherwise use this arrow's reaction
         const finalTargetReaction = sourceArrowInfo.targetReaction || targetReaction;
         
+        // Get dashed property from arrowData
+        const dashed = arrowData && arrowData.dashed === true;
+        
         const arrowResult = createArrow(
           coords,
           arrowData.id,
@@ -3858,7 +3889,7 @@ export class MetabolismViewer {
               this.selectReaction(finalTargetReaction);
             }
           },
-          { isReversible: this.isReactionReversible(finalTargetReaction) }
+          { isReversible: this.isReactionReversible(finalTargetReaction), dashed }
         );
         
         if (arrowResult && arrowResult.hitArea) {
@@ -4004,6 +4035,8 @@ export class MetabolismViewer {
       })
       .on('click', (event) => {
         event.stopPropagation();
+        // TEMPORARY: Log arrow ID for adding dashed arrows
+        console.log('Arrow clicked - arrow_id:', connectionId);
         if (onClick) {
           onClick(event);
         }

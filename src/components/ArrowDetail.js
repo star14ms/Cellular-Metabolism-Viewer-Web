@@ -922,7 +922,7 @@ export class ArrowDetail {
     }
     
     // Fetch data for byproduct (handle different formats)
-    // Remove coefficients before searching PubChem
+    // Skip PubChem search if byproduct is a node_id (exists in nodeMap)
     // Convert byproduct to array format for consistent handling
     let byproductArray = [];
     if (reaction.byproduct) {
@@ -935,13 +935,133 @@ export class ArrowDetail {
     
     if (byproductArray.length > 0) {
       if (byproductArray.length === 1) {
-        const searchName = removeCoefficients(byproductArray[0]);
-        await fetchAndDisplayPubChem(searchName, 'byproduct-info', this.pubchemCache);
+        const byproductValue = byproductArray[0];
+        // Check if it's a node_id - if so, skip PubChem search
+        if (typeof byproductValue === 'string' && this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(byproductValue)) {
+          // It's a node_id, skip PubChem search
+        } else {
+          const searchName = removeCoefficients(byproductValue);
+          await fetchAndDisplayPubChem(searchName, 'byproduct-info', this.pubchemCache);
+        }
       } else {
         // Fetch data for each molecule in the array
         for (let idx = 0; idx < byproductArray.length; idx++) {
-          const searchName = removeCoefficients(byproductArray[idx]);
+          const byproductValue = byproductArray[idx];
+          // Check if it's a node_id - if so, skip PubChem search for this item
+          if (typeof byproductValue === 'string' && this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(byproductValue)) {
+            // It's a node_id, skip PubChem search for this item
+            continue;
+          }
+          const searchName = removeCoefficients(byproductValue);
           await fetchAndDisplayPubChem(searchName, `byproduct-info-${idx}`, this.pubchemCache);
+        }
+      }
+    }
+    
+    // Fetch data for byreactant (handle different formats)
+    // Skip PubChem search if byreactant is a node_id (exists in nodeMap)
+    let byreactantArray = [];
+    if (reaction.byreactant) {
+      if (Array.isArray(reaction.byreactant)) {
+        byreactantArray = reaction.byreactant;
+      } else if (typeof reaction.byreactant === 'string') {
+        byreactantArray = [reaction.byreactant];
+      }
+    }
+    
+    if (byreactantArray.length > 0) {
+      if (byreactantArray.length === 1) {
+        const byreactantValue = byreactantArray[0];
+        // Check if it's a node_id - if so, skip PubChem search
+        if (typeof byreactantValue === 'string' && this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(byreactantValue)) {
+          // It's a node_id, skip PubChem search
+        } else {
+          const searchName = removeCoefficients(byreactantValue);
+          await fetchAndDisplayPubChem(searchName, 'byreactant-info', this.pubchemCache);
+        }
+      } else {
+        // Fetch data for each molecule in the array
+        for (let idx = 0; idx < byreactantArray.length; idx++) {
+          const byreactantValue = byreactantArray[idx];
+          // Check if it's a node_id - if so, skip PubChem search for this item
+          if (typeof byreactantValue === 'string' && this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(byreactantValue)) {
+            // It's a node_id, skip PubChem search for this item
+            continue;
+          }
+          const searchName = removeCoefficients(byreactantValue);
+          await fetchAndDisplayPubChem(searchName, `byreactant-info-${idx}`, this.pubchemCache);
+        }
+      }
+    }
+    
+    // Fetch data for displayByproduct (handle different formats)
+    // Skip PubChem search if displayByproduct is a node_id (exists in nodeMap)
+    let displayByproductArray = [];
+    if (reaction.displayByproduct) {
+      if (Array.isArray(reaction.displayByproduct)) {
+        displayByproductArray = reaction.displayByproduct;
+      } else if (typeof reaction.displayByproduct === 'string') {
+        displayByproductArray = [reaction.displayByproduct];
+      }
+    }
+    
+    if (displayByproductArray.length > 0) {
+      if (displayByproductArray.length === 1) {
+        const displayByproductValue = displayByproductArray[0];
+        // Check if it's a node_id - if so, skip PubChem search
+        if (typeof displayByproductValue === 'string' && this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(displayByproductValue)) {
+          // It's a node_id, skip PubChem search
+        } else {
+          const searchName = removeCoefficients(displayByproductValue);
+          await fetchAndDisplayPubChem(searchName, 'displayByproduct-info', this.pubchemCache);
+        }
+      } else {
+        // Fetch data for each molecule in the array
+        for (let idx = 0; idx < displayByproductArray.length; idx++) {
+          const displayByproductValue = displayByproductArray[idx];
+          // Check if it's a node_id - if so, skip PubChem search for this item
+          if (typeof displayByproductValue === 'string' && this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(displayByproductValue)) {
+            // It's a node_id, skip PubChem search for this item
+            continue;
+          }
+          const searchName = removeCoefficients(displayByproductValue);
+          await fetchAndDisplayPubChem(searchName, `displayByproduct-info-${idx}`, this.pubchemCache);
+        }
+      }
+    }
+    
+    // Fetch data for displayByreactant (handle different formats)
+    // Skip PubChem search if displayByreactant is a node_id (exists in nodeMap)
+    let displayByreactantArray = [];
+    if (reaction.displayByreactant) {
+      if (Array.isArray(reaction.displayByreactant)) {
+        displayByreactantArray = reaction.displayByreactant;
+      } else if (typeof reaction.displayByreactant === 'string') {
+        displayByreactantArray = [reaction.displayByreactant];
+      }
+    }
+    
+    if (displayByreactantArray.length > 0) {
+      if (displayByreactantArray.length === 1) {
+        const displayByreactantValue = displayByreactantArray[0];
+        // Check if it's a node_id - if so, skip PubChem search
+        if (typeof displayByreactantValue === 'string' && this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(displayByreactantValue)) {
+          // It's a node_id, skip PubChem search
+        } else {
+          const searchName = removeCoefficients(displayByreactantValue);
+          await fetchAndDisplayPubChem(searchName, 'displayByreactant-info', this.pubchemCache);
+        }
+      } else {
+        // Fetch data for each molecule in the array
+        for (let idx = 0; idx < displayByreactantArray.length; idx++) {
+          const displayByreactantValue = displayByreactantArray[idx];
+          // Check if it's a node_id - if so, skip PubChem search for this item
+          if (typeof displayByreactantValue === 'string' && this.viewer && this.viewer.nodeMap && this.viewer.nodeMap.has(displayByreactantValue)) {
+            // It's a node_id, skip PubChem search for this item
+            continue;
+          }
+          const searchName = removeCoefficients(displayByreactantValue);
+          await fetchAndDisplayPubChem(searchName, `displayByreactant-info-${idx}`, this.pubchemCache);
         }
       }
     }
