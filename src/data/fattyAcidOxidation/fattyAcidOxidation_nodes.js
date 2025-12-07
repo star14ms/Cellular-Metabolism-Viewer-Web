@@ -74,7 +74,7 @@ export const fattyAcidOxidationNodes = [
     id: 'fatty_acyl_coa_mito_fao',
     type: 'molecule',
     name: 'Fatty Acyl-CoA',
-    pubchemCid: 24798719,
+    pubchemCid: 439855,
     description: 'Activated fatty acid inside the mitochondrial matrix, ready for beta-oxidation.',
     position: { x: base_x, y: base_y + unit_space * 3 }
   },
@@ -109,7 +109,7 @@ export const fattyAcidOxidationNodes = [
   {
     id: 'fatty_acyl_coa_shortened_fao',
     type: 'molecule',
-    name: '(n-2) Fatty acyl-CoA',
+    name: '(n-2) Fatty Acyl-CoA',
     pubchemCid: 439708,
     description: 'Shortened fatty acyl-CoA chain that re-enters the beta-oxidation cycle.',
     position: { x: base_x - unit_space * 1, y: base_y + unit_space * 7 }

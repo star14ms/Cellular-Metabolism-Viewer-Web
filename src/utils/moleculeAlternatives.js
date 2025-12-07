@@ -80,7 +80,7 @@ export function getAlternativeNames(moleculeName) {
     'Glycinamide ribonucleotide (GAR)': ['GAR', 'Glycinamide ribotide'],
     'Aminoimidazole ribonucleotide (AIR)': ['AIR', '5-Aminoimidazole ribonucleotide'],
     'Carboxyaminoimidazole ribonucleotide (CAIR)': ['CAIR', '5-Carboxyaminoimidazole ribonucleotide'],
-    'PPi': ['pyrophosphate'],
+    'PPᵢ': [644102],
     // Common ions and small molecules
     'NH₄⁺': ['Ammonium ion', 'Ammonium', 'Ammonium cation'],
     'NH4+': ['Ammonium ion', 'Ammonium', 'Ammonium cation'],

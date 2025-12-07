@@ -30,8 +30,8 @@ export const aromaticAminoAcidMetabolismData = {
       id: 'phenylalanine-metabolism',
       name: 'Phenylalanine Metabolism',
       description: 'Phenylalanine catabolism and conversion to tyrosine. Includes transamination to phenylpyruvate, reduction to phenyllactate, oxidation to phenylacetate, and hydroxylation to tyrosine.',
-      reactionIndices: [0, 2, 1, 5, 17], // Steps 1, 2, 3, 4, 6, 7 (rxn_aromatic_1, rxn_aromatic_2, rxn_aromatic_3, rxn_aromatic_4, rxn_aromatic_6, rxn_aromatic_8)
-      nodeIds: ['phenylalanine', 'phenylpyruvate', 'phenyllactate', 'phenylacetate', 'tyrosine', 'p_hydroxyphenylpyruvate']
+      reactionIndices: [0, 1, 2, 3, 4, 5, 6], // Steps 1, 2, 3, 4, 6, 7 (rxn_aromatic_1, rxn_aromatic_2, rxn_aromatic_3, rxn_aromatic_4, rxn_aromatic_6, rxn_aromatic_8)
+      nodeIds: ['phenylalanine', 'phenylpyruvate', 'phenyllactate', 'phenylacetate', 'tyrosine']
     },
     {
       id: 'thyroid-hormones-melanin',

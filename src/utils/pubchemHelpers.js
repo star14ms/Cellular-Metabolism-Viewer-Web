@@ -12,7 +12,7 @@ import { useLocalImages } from './localImageHelper.js';
  * Normalize molecule name for PubChem search
  * Handles CO₂/CO2 conversion and other special cases
  * Also removes parenthetical abbreviations like "(PEP)" from names
- * Removes "(deoxy)" prefix for PubChem searches
+ * Removes parenthesized prefixes (e.g., "(deoxy)", "(n-2)") from the beginning
  */
 export function normalizeMoleculeName(moleculeName) {
   if (moleculeName === 'CO₂' || moleculeName === 'CO2') {
@@ -26,9 +26,9 @@ export function normalizeMoleculeName(moleculeName) {
   // Pattern: matches numbers or fractions followed by a space at the start
   normalized = normalized.replace(/^(\d+\/\d+|\d+)\s+/, '').trim();
   
-  // Remove "(deoxy)" prefix from the beginning (case-insensitive, with optional spaces)
-  // Pattern: matches "(deoxy)" at the start, with optional spaces before and after
-  normalized = normalized.replace(/^\s*\(deoxy\)\s*/i, '').trim();
+  // Remove any parenthesized prefix from the beginning (e.g., "(deoxy)", "(n-2)", etc.)
+  // Pattern: matches any content in parentheses at the start, with optional spaces before and after
+  normalized = normalized.replace(/^\s*\([^)]+\)\s*/i, '').trim();
   
   // Remove parenthetical abbreviations like "(PEP)", "(ATP)", "(HMG-CoA)", etc. from the end
   // This helps match names like "Phosphoenolpyruvate (PEP)" to "Phosphoenolpyruvate"

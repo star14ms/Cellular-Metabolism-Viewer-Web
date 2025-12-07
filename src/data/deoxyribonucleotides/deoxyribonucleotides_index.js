@@ -81,7 +81,7 @@ export const deoxyribonucleotidesData = {
       name: 'dTTP Synthesis',
       description: 'Synthesis of deoxythymidine triphosphate (dTTP). Shares the first three steps with dCTP synthesis (CTP → CDP → dCDP), then continues through dCMP, dUMP, dTMP, dTDP to dTTP. Includes UTP → dUTP pathway and dCTP → dUTP conversion as alternative routes to dUMP. Includes folate cycle reactions for methyl group donation.',
       reactionIndices: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // CTP → CDP → dCDP → dCMP → dUMP → dTMP → dTDP → dTTP (includes shared first 3 steps, UTP→UDP→dUDP→dUTP pathway, dCTP→dUTP conversion, alternative dUTP→dUMP route, and folate cycle)
-      nodeIds: ['ctp_deoxy', 'cdp_deoxy', 'dcdp', 'utp_deoxy', 'udp_deoxy', 'dudp', 'dutp', 'dcmp_deoxy', 'dump_deoxy', 'dtmp_deoxy', 'dtdp_deoxy', 'dttp_deoxy', 'n5n10_methylene_thf', 'dihydrofolate', 'thf_deoxy'] // Includes UTP pathway nodes and dutp for alternative routes
+      nodeIds: ['ctp_deoxy', 'cdp_deoxy', 'dcdp', 'utp_deoxy', 'udp_deoxy', 'dudp', 'dutp', 'dcmp_deoxy', 'dump_deoxy', 'dtmp_deoxy', 'dtdp_deoxy', 'dttp_deoxy', 'n5n10_methylene_thf', 'dihydrofolate', 'thf_deoxy', 'glycine_deoxy', 'serine_deoxy'] // Includes UTP pathway nodes and dutp for alternative routes
     }
   ]
 };

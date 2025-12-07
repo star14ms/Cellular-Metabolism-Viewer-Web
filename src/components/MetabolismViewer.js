@@ -15,7 +15,7 @@ import {
   pathwayDefinitions 
 } from '../data/index.js';
 import { mitochondriaData } from '../data/mitochondria/mitochondria_index.js';
-import { fetchPubChemData } from '../utils/pubchemHelpers.js';
+import { fetchPubChemData, normalizeMoleculeName } from '../utils/pubchemHelpers.js';
 import { loadNodeCacheFromStorage, saveNodeToStorage, getNodeFromStorage, saveNodesToStorage } from '../utils/nodeCache.js';
 import { useLocalImages } from '../utils/localImageHelper.js';
 import {
@@ -3318,14 +3318,12 @@ export class MetabolismViewer {
             .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
             .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity);
         })
-        .on('click', (event) => {
-          event.stopPropagation();
-          // TEMPORARY: Log arrow ID for adding dashed arrows
-          console.log('Arrow clicked - arrow_id:', connectionId);
-          if (onClick) {
-            onClick(event);
-          }
-        });
+          .on('click', (event) => {
+            event.stopPropagation();
+            if (onClick) {
+              onClick(event);
+            }
+          });
       
       return { visibleArrow, hitArea };
     };
@@ -4033,14 +4031,12 @@ export class MetabolismViewer {
           .attr('stroke-width', PATHWAY_CONFIG.arrowSettings.strokeWidth)
           .attr('stroke-opacity', PATHWAY_CONFIG.arrowSettings.strokeOpacity);
       })
-      .on('click', (event) => {
-        event.stopPropagation();
-        // TEMPORARY: Log arrow ID for adding dashed arrows
-        console.log('Arrow clicked - arrow_id:', connectionId);
-        if (onClick) {
-          onClick(event);
-        }
-      });
+          .on('click', (event) => {
+            event.stopPropagation();
+            if (onClick) {
+              onClick(event);
+            }
+          });
     
     return { visibleArrow, hitArea };
   }
@@ -8422,6 +8418,9 @@ export class MetabolismViewer {
    * For CAC reactions, nodes display the previous reaction's product, not the substrate
    */
   selectMoleculeByName(moleculeName, moleculeId, options = {}) {
+    // Remove coefficients from molecule name before searching (e.g., "2 Acetyl-CoA" -> "Acetyl-CoA")
+    const normalizedMoleculeName = removeCoefficients(moleculeName);
+    
     // If sourceReaction is provided, prioritize that reaction
     const sourceReaction = options.sourceReaction;
     const isByreactant = options.isByreactant;
@@ -8438,7 +8437,8 @@ export class MetabolismViewer {
     
     for (const reaction of this.reactions) {
       if (reaction.isProductNode && reaction.substrate &&
-          (reaction.substrate.name === moleculeName || 
+          (reaction.substrate.name === normalizedMoleculeName || 
+           reaction.substrate.name === moleculeName ||
            (moleculeId && reaction.substrate.id === moleculeId))) {
         targetReaction = reaction;
         targetMolecule = reaction.substrate;
@@ -8486,7 +8486,8 @@ export class MetabolismViewer {
         
         // Check if this is the molecule we're looking for
         if (displayedMolecule && 
-            (displayedMolecule.name === moleculeName || 
+            (displayedMolecule.name === normalizedMoleculeName || 
+             displayedMolecule.name === moleculeName || 
              (moleculeId && displayedMolecule.id === moleculeId))) {
           targetReaction = reaction;
           targetMolecule = displayedMolecule;
@@ -8495,7 +8496,8 @@ export class MetabolismViewer {
         
         // Also check if molecule is a product of this reaction and find where it's displayed next
         if (reaction.product && 
-            (reaction.product.name === moleculeName || 
+            (reaction.product.name === normalizedMoleculeName ||
+             reaction.product.name === moleculeName || 
              (moleculeId && reaction.product.id === moleculeId))) {
           // Product is displayed on the next reaction node that uses it as substrate
           const productId = reaction.product.id || moleculeId;
@@ -8517,7 +8519,7 @@ export class MetabolismViewer {
               nextDisplayedMolecule = r.substrate;
             }
             
-            return nextDisplayedMolecule && (nextDisplayedMolecule.id === productId || nextDisplayedMolecule.name === moleculeName);
+            return nextDisplayedMolecule && (nextDisplayedMolecule.id === productId || nextDisplayedMolecule.name === normalizedMoleculeName || nextDisplayedMolecule.name === moleculeName);
           });
           
           if (nextReaction) {
@@ -8575,7 +8577,7 @@ export class MetabolismViewer {
                 nextDisplayedMolecule = r.substrate;
               }
               
-              return nextDisplayedMolecule && (nextDisplayedMolecule.id === productId || nextDisplayedMolecule.name === moleculeName);
+              return nextDisplayedMolecule && (nextDisplayedMolecule.id === productId || nextDisplayedMolecule.name === normalizedMoleculeName || nextDisplayedMolecule.name === moleculeName);
             });
             
             if (nextReaction) {
@@ -8617,7 +8619,7 @@ export class MetabolismViewer {
     if (!targetReaction || !targetMolecule) {
       // List of common by-molecules that don't have dedicated nodes
       const commonByMolecules = PATHWAY_CONFIG.commonByMolecules;
-      const isCommonByMolecule = commonByMolecules.includes(moleculeName);
+      const isCommonByMolecule = commonByMolecules.includes(normalizedMoleculeName) || commonByMolecules.includes(moleculeName);
       
       // If this is a common by-molecule, always find all reactions where it appears 
       // and highlight them instead of zooming to a node (regardless of sourceReaction)
@@ -8632,7 +8634,8 @@ export class MetabolismViewer {
         for (const reaction of this.reactions) {
           // Check coSubstrate
           if (reaction.coSubstrate && 
-              (reaction.coSubstrate.name === moleculeName || 
+              (reaction.coSubstrate.name === normalizedMoleculeName ||
+               reaction.coSubstrate.name === moleculeName || 
                (moleculeId && reaction.coSubstrate.id === moleculeId))) {
             reactionsWithMolecule.push(reaction);
             if (!moleculeInfo) {
@@ -8658,18 +8661,19 @@ export class MetabolismViewer {
             let byproductFormula = '';
             let byproductId = null;
             
-            if (typeof reaction.byproduct === 'string' && reaction.byproduct === moleculeName) {
+            if (typeof reaction.byproduct === 'string' && (reaction.byproduct === normalizedMoleculeName || reaction.byproduct === moleculeName)) {
               matches = true;
-            } else if (Array.isArray(reaction.byproduct) && reaction.byproduct.includes(moleculeName)) {
+            } else if (Array.isArray(reaction.byproduct) && (reaction.byproduct.includes(normalizedMoleculeName) || reaction.byproduct.includes(moleculeName))) {
               matches = true;
             } else if (reaction.byproduct.molecules) {
               const molecules = Array.isArray(reaction.byproduct.molecules) 
                 ? reaction.byproduct.molecules 
                 : [reaction.byproduct.molecules];
-              if (molecules.includes(moleculeName)) {
+              if (molecules.includes(normalizedMoleculeName) || molecules.includes(moleculeName)) {
                 matches = true;
               }
-            } else if (reaction.byproduct.name === moleculeName || 
+            } else if (reaction.byproduct.name === normalizedMoleculeName ||
+                       reaction.byproduct.name === moleculeName || 
                       (moleculeId && reaction.byproduct.id === moleculeId)) {
               matches = true;
               byproductFormula = reaction.byproduct.formula || '';
@@ -8680,7 +8684,7 @@ export class MetabolismViewer {
               reactionsWithMolecule.push(reaction);
               if (!moleculeInfo) {
                 moleculeInfo = {
-                  name: moleculeName,
+                  name: normalizedMoleculeName,
                   formula: byproductFormula,
                   id: byproductId || moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
                   description: '' // Let PubChem provide the description
@@ -8702,18 +8706,19 @@ export class MetabolismViewer {
             let byreactantFormula = '';
             let byreactantId = null;
             
-            if (typeof reaction.byreactant === 'string' && reaction.byreactant === moleculeName) {
+            if (typeof reaction.byreactant === 'string' && (reaction.byreactant === normalizedMoleculeName || reaction.byreactant === moleculeName)) {
               matches = true;
-            } else if (Array.isArray(reaction.byreactant) && reaction.byreactant.includes(moleculeName)) {
+            } else if (Array.isArray(reaction.byreactant) && (reaction.byreactant.includes(normalizedMoleculeName) || reaction.byreactant.includes(moleculeName))) {
               matches = true;
             } else if (reaction.byreactant.molecules) {
               const molecules = Array.isArray(reaction.byreactant.molecules) 
                 ? reaction.byreactant.molecules 
                 : [reaction.byreactant.molecules];
-              if (molecules.includes(moleculeName)) {
+              if (molecules.includes(normalizedMoleculeName) || molecules.includes(moleculeName)) {
                 matches = true;
               }
-            } else if (reaction.byreactant.name === moleculeName) {
+            } else if (reaction.byreactant.name === normalizedMoleculeName ||
+                       reaction.byreactant.name === moleculeName) {
               matches = true;
               byreactantFormula = reaction.byreactant.formula || '';
               byreactantId = reaction.byreactant.id;
@@ -8722,14 +8727,14 @@ export class MetabolismViewer {
             if (matches) {
               reactionsWithMolecule.push(reaction);
               // Try to get formula from coSubstrate if byreactant matches coSubstrate
-              if (!byreactantFormula && reaction.coSubstrate && reaction.coSubstrate.name === moleculeName) {
+              if (!byreactantFormula && reaction.coSubstrate && (reaction.coSubstrate.name === normalizedMoleculeName || reaction.coSubstrate.name === moleculeName)) {
                 byreactantFormula = reaction.coSubstrate.formula || '';
                 byreactantId = reaction.coSubstrate.id;
               }
               
               if (!moleculeInfo) {
                 moleculeInfo = {
-                  name: moleculeName,
+                  name: normalizedMoleculeName,
                   formula: byreactantFormula,
                   id: byreactantId || moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
                   description: '' // Let PubChem provide the description
@@ -8760,18 +8765,19 @@ export class MetabolismViewer {
             // Check byproduct in arrow data
             if (rawArrow.byproduct) {
               let matches = false;
-              if (typeof rawArrow.byproduct === 'string' && rawArrow.byproduct === moleculeName) {
+              if (typeof rawArrow.byproduct === 'string' && (rawArrow.byproduct === normalizedMoleculeName || rawArrow.byproduct === moleculeName)) {
                 matches = true;
-              } else if (Array.isArray(rawArrow.byproduct) && rawArrow.byproduct.includes(moleculeName)) {
+              } else if (Array.isArray(rawArrow.byproduct) && (rawArrow.byproduct.includes(normalizedMoleculeName) || rawArrow.byproduct.includes(moleculeName))) {
                 matches = true;
               } else if (rawArrow.byproduct.molecules) {
                 const molecules = Array.isArray(rawArrow.byproduct.molecules) 
                   ? rawArrow.byproduct.molecules 
                   : [rawArrow.byproduct.molecules];
-                if (molecules.includes(moleculeName)) {
+                if (molecules.includes(normalizedMoleculeName) || molecules.includes(moleculeName)) {
                   matches = true;
                 }
-              } else if (rawArrow.byproduct.name === moleculeName) {
+              } else if (rawArrow.byproduct.name === normalizedMoleculeName ||
+                         rawArrow.byproduct.name === moleculeName) {
                 matches = true;
               }
               
@@ -8779,7 +8785,7 @@ export class MetabolismViewer {
                 reactionsWithMolecule.push(reaction);
                 if (!moleculeInfo) {
                   moleculeInfo = {
-                    name: moleculeName,
+                    name: normalizedMoleculeName,
                     formula: rawArrow.byproduct.formula || '',
                     id: rawArrow.byproduct.id || moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
                     description: ''
@@ -8791,18 +8797,19 @@ export class MetabolismViewer {
             // Check byreactant in arrow data
             if (rawArrow.byreactant) {
               let matches = false;
-              if (typeof rawArrow.byreactant === 'string' && rawArrow.byreactant === moleculeName) {
+              if (typeof rawArrow.byreactant === 'string' && (rawArrow.byreactant === normalizedMoleculeName || rawArrow.byreactant === moleculeName)) {
                 matches = true;
-              } else if (Array.isArray(rawArrow.byreactant) && rawArrow.byreactant.includes(moleculeName)) {
+              } else if (Array.isArray(rawArrow.byreactant) && (rawArrow.byreactant.includes(normalizedMoleculeName) || rawArrow.byreactant.includes(moleculeName))) {
                 matches = true;
               } else if (rawArrow.byreactant.molecules) {
                 const molecules = Array.isArray(rawArrow.byreactant.molecules) 
                   ? rawArrow.byreactant.molecules 
                   : [rawArrow.byreactant.molecules];
-                if (molecules.includes(moleculeName)) {
+                if (molecules.includes(normalizedMoleculeName) || molecules.includes(moleculeName)) {
                   matches = true;
                 }
-              } else if (rawArrow.byreactant.name === moleculeName) {
+              } else if (rawArrow.byreactant.name === normalizedMoleculeName ||
+                         rawArrow.byreactant.name === moleculeName) {
                 matches = true;
               }
               
@@ -8810,7 +8817,7 @@ export class MetabolismViewer {
                 reactionsWithMolecule.push(reaction);
                 if (!moleculeInfo) {
                   moleculeInfo = {
-                    name: moleculeName,
+                    name: normalizedMoleculeName,
                     formula: rawArrow.byreactant.formula || '',
                     id: rawArrow.byreactant.id || moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+'),
                     description: ''
@@ -8825,7 +8832,7 @@ export class MetabolismViewer {
         // This ensures common by-molecules can still show a detail page even if not found in reactions
         if (!moleculeInfo && isCommonByMolecule) {
           moleculeInfo = {
-            name: moleculeName,
+            name: normalizedMoleculeName,
             formula: '', // Will be filled by PubChem
             id: moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+').replace(/¹⁰/g, '10'),
             description: '' // Will be filled by PubChem
@@ -8837,7 +8844,7 @@ export class MetabolismViewer {
         // This handles cases where molecules like H₂O₂ or ribose-1-P are clicked but not found in reactions
         if (!moleculeInfo && sourceReaction) {
           moleculeInfo = {
-            name: moleculeName,
+            name: normalizedMoleculeName,
             formula: '', // Will be filled by PubChem
             id: moleculeId || moleculeName.toLowerCase().replace(/\s+/g, '-').replace(/⁺/g, '+').replace(/¹⁰/g, '10'),
             description: '' // Will be filled by PubChem
@@ -8945,7 +8952,8 @@ export class MetabolismViewer {
       for (const reaction of reactionsToCheck) {
         // Check coSubstrate
         if (reaction.coSubstrate && 
-            (reaction.coSubstrate.name === moleculeName || 
+            (reaction.coSubstrate.name === normalizedMoleculeName ||
+             reaction.coSubstrate.name === moleculeName || 
              (moleculeId && reaction.coSubstrate.id === moleculeId))) {
           // Create a molecule object from coSubstrate data
           targetMolecule = {
@@ -8965,19 +8973,24 @@ export class MetabolismViewer {
           
           // Handle string format
           if (typeof reaction.byreactant === 'string' && reaction.byreactant.trim() !== '') {
-            if (reaction.byreactant === moleculeName) {
+            const normalizedByreactant = removeCoefficients(reaction.byreactant);
+            if (reaction.byreactant === moleculeName || normalizedByreactant === normalizedMoleculeName) {
               byreactantMatches = true;
               byreactantName = reaction.byreactant;
             }
           }
           // Handle array format
           else if (Array.isArray(reaction.byreactant)) {
-            const matchingMolecule = reaction.byreactant.find(m => 
-              m === moleculeName || (typeof m === 'string' && m.trim() === moleculeName)
-            );
+            const matchingMolecule = reaction.byreactant.find(m => {
+              const normalizedM = typeof m === 'string' ? removeCoefficients(m) : null;
+              return m === moleculeName || 
+                     normalizedM === normalizedMoleculeName ||
+                     (typeof m === 'string' && m.trim() === moleculeName) ||
+                     (normalizedM && normalizedM === normalizedMoleculeName);
+            });
             if (matchingMolecule) {
               byreactantMatches = true;
-              byreactantName = typeof matchingMolecule === 'string' ? matchingMolecule : moleculeName;
+              byreactantName = typeof matchingMolecule === 'string' ? matchingMolecule : normalizedMoleculeName;
             }
           }
           // Handle object with molecules array format
@@ -8985,12 +8998,16 @@ export class MetabolismViewer {
             const molecules = Array.isArray(reaction.byreactant.molecules) 
               ? reaction.byreactant.molecules 
               : [reaction.byreactant.molecules];
-            const matchingMolecule = molecules.find(m => 
-              m === moleculeName || (typeof m === 'string' && m.trim() === moleculeName)
-            );
+            const matchingMolecule = molecules.find(m => {
+              const normalizedM = typeof m === 'string' ? removeCoefficients(m) : null;
+              return m === moleculeName || 
+                     normalizedM === normalizedMoleculeName ||
+                     (typeof m === 'string' && m.trim() === moleculeName) ||
+                     (normalizedM && normalizedM === normalizedMoleculeName);
+            });
             if (matchingMolecule) {
               byreactantMatches = true;
-              byreactantName = typeof matchingMolecule === 'string' ? matchingMolecule : moleculeName;
+              byreactantName = typeof matchingMolecule === 'string' ? matchingMolecule : normalizedMoleculeName;
             }
           }
           
@@ -8998,7 +9015,9 @@ export class MetabolismViewer {
             // Try to find molecule info from coSubstrate if available
             let byreactantFormula = '';
             let byreactantId = null;
-            if (reaction.coSubstrate && reaction.coSubstrate.name === byreactantName) {
+            const normalizedByreactantName = removeCoefficients(byreactantName);
+            if (reaction.coSubstrate && (reaction.coSubstrate.name === byreactantName || 
+                                         removeCoefficients(reaction.coSubstrate.name) === normalizedByreactantName)) {
               byreactantFormula = reaction.coSubstrate.formula || '';
               byreactantId = reaction.coSubstrate.id;
             }
@@ -9014,27 +9033,53 @@ export class MetabolismViewer {
             break;
           }
         }
-        
-        // Check byproduct - handle both name and molecules array formats
+        // Check byproduct - handle string, array, object with molecules array, and object with name formats
         if (reaction.byproduct) {
           let byproductMatches = false;
           let byproductName = null;
           let byproductFormula = '';
           let byproductId = null;
           
+          // Handle string format
+          if (typeof reaction.byproduct === 'string' && reaction.byproduct.trim() !== '') {
+            const normalizedByproduct = removeCoefficients(reaction.byproduct);
+            if (reaction.byproduct === moleculeName || normalizedByproduct === normalizedMoleculeName) {
+              byproductMatches = true;
+              byproductName = reaction.byproduct;
+            }
+          }
+          // Handle array format (direct array like ['PPi', 'AMP'])
+          else if (Array.isArray(reaction.byproduct)) {
+            const matchingMolecule = reaction.byproduct.find(m => {
+              const normalizedM = typeof m === 'string' ? removeCoefficients(m) : null;
+              return m === moleculeName || 
+                     normalizedM === normalizedMoleculeName ||
+                     (typeof m === 'string' && m.trim() === moleculeName) ||
+                     (normalizedM && normalizedM === normalizedMoleculeName);
+            });
+            if (matchingMolecule) {
+              byproductMatches = true;
+              byproductName = typeof matchingMolecule === 'string' ? matchingMolecule : normalizedMoleculeName;
+            }
+          }
           // Check if byproduct has molecules array
-          if (reaction.byproduct.molecules) {
+          else if (reaction.byproduct.molecules) {
             const molecules = Array.isArray(reaction.byproduct.molecules) 
               ? reaction.byproduct.molecules 
               : [reaction.byproduct.molecules];
-            const matchingMolecule = molecules.find(m => 
-              m === moleculeName || (typeof m === 'string' && m.trim() === moleculeName)
-            );
+            const matchingMolecule = molecules.find(m => {
+              const normalizedM = typeof m === 'string' ? removeCoefficients(m) : null;
+              return m === moleculeName || 
+                     normalizedM === normalizedMoleculeName ||
+                     (typeof m === 'string' && m.trim() === moleculeName) ||
+                     (normalizedM && normalizedM === normalizedMoleculeName);
+            });
             if (matchingMolecule) {
               byproductMatches = true;
-              byproductName = typeof matchingMolecule === 'string' ? matchingMolecule : moleculeName;
+              byproductName = typeof matchingMolecule === 'string' ? matchingMolecule : normalizedMoleculeName;
             }
-          } else if (reaction.byproduct.name === moleculeName || 
+          } else if (reaction.byproduct.name === normalizedMoleculeName ||
+                     reaction.byproduct.name === moleculeName || 
                      (moleculeId && reaction.byproduct.id === moleculeId)) {
             byproductMatches = true;
             byproductName = reaction.byproduct.name;
@@ -9054,32 +9099,13 @@ export class MetabolismViewer {
             break;
           }
         }
-        
-        // Check cofactors for Pi (inorganic phosphate)
-        // Pi is mentioned in cofactors but not always as coSubstrate
-        if (moleculeName === 'Pi' && reaction.enzyme && reaction.enzyme.cofactors) {
-          const hasPi = reaction.enzyme.cofactors.some(cf => 
-            cf && (cf.includes('Pi') || cf.includes('inorganic phosphate') || cf === 'Pi')
-          );
-          if (hasPi) {
-            // Create a molecule object for Pi
-            targetMolecule = {
-              name: 'Pi',
-              formula: 'H₃PO₄',
-              id: 'pi',
-              description: '' // Let PubChem provide the description
-            };
-            targetReaction = reaction;
-            break;
-          }
-        }
       }
     }
     
     if (targetReaction && targetMolecule) {
       // Check again if this is a common by-molecule - if so, never zoom
       const commonByMolecules = PATHWAY_CONFIG.commonByMolecules;
-      const isCommonByMolecule = commonByMolecules.includes(moleculeName);
+      const isCommonByMolecule = commonByMolecules.includes(normalizedMoleculeName) || commonByMolecules.includes(moleculeName);
       if (isCommonByMolecule) {
         options.skipZoom = true;
       }
@@ -9093,7 +9119,7 @@ export class MetabolismViewer {
         }, 100); // Small delay to allow detail panel to render and resize container
       }
     } else {
-      console.warn(`Molecule "${moleculeName}" not found in reactions, coSubstrates, or byproducts`);
+      console.warn(`Molecule "${normalizedMoleculeName}" (from "${moleculeName}") not found in reactions, coSubstrates, or byproducts`);
     }
   }
   
@@ -9192,9 +9218,8 @@ export class MetabolismViewer {
   }
   
   /**
-   * Apply molecule highlight - highlights all nodes with the same molecule name
-   * Works for all pathways (ETC and others) and all node types
-   * For "(deoxy)" prefixed nodes, also highlights both dNMP and NMP versions
+   * Apply molecule highlight - highlights all nodes with the same normalized molecule name
+   * Uses normalizeMoleculeName to match nodes, handling "(deoxy)" prefixes, coefficients, and parentheses
    * @param {Object} molecule - The molecule object with name to match
    * @param {Object} reactionNode - The reaction node that was clicked
    */
@@ -9216,54 +9241,8 @@ export class MetabolismViewer {
       return;
     }
     
-    // Get the molecule name to match
-    const moleculeName = molecule.name;
-    
-    // Generate names to match - handle "(deoxy)" prefix nodes
-    const namesToMatch = [moleculeName]; // Always include the original name
-    
-    // If the name starts with "(deoxy)", also search for ribo and deoxy versions
-    if (/^\s*\(deoxy\)/i.test(moleculeName)) {
-      // Remove "(deoxy)" prefix and any trailing parentheses (like "(GMP)")
-      let baseName = moleculeName.replace(/^\s*\(deoxy\)\s*/i, '').trim();
-      // Remove trailing parentheses like "(GMP)", "(AMP)", etc.
-      baseName = baseName.replace(/\s*\([^)]+\)\s*$/, '').trim();
-      
-      // Add the base name (ribo version) - e.g., "Guanosine monophosphate"
-      if (baseName && baseName !== moleculeName) {
-        namesToMatch.push(baseName);
-      }
-      
-      // Try to reconstruct with trailing parentheses if original had them
-      const trailingMatch = moleculeName.match(/\s*\(([^)]+)\)\s*$/);
-      if (trailingMatch) {
-        const abbreviation = trailingMatch[1];
-        // Add base name with abbreviation - e.g., "Guanosine monophosphate (GMP)"
-        namesToMatch.push(`${baseName} (${abbreviation})`);
-        
-        // Add "Deoxy" prefix version - e.g., "Deoxyguanosine monophosphate (dGMP)"
-        // Extract the base word (first word after removing "(deoxy)")
-        const firstWordMatch = baseName.match(/^([A-Z][a-z]*)/);
-        if (firstWordMatch) {
-          const firstWord = firstWordMatch[1];
-          const restOfName = baseName.substring(firstWord.length);
-          const deoxyVersion = `Deoxy${firstWord}${restOfName}`;
-          namesToMatch.push(`${deoxyVersion} (${abbreviation})`);
-          // Also try with "d" prefix for abbreviation - e.g., "Deoxyguanosine monophosphate (dGMP)"
-          if (abbreviation && abbreviation.length > 0) {
-            namesToMatch.push(`${deoxyVersion} (d${abbreviation})`);
-          }
-        }
-      } else {
-        // No trailing parentheses, just add "Deoxy" prefix version
-        const firstWordMatch = baseName.match(/^([A-Z][a-z]*)/);
-        if (firstWordMatch) {
-          const firstWord = firstWordMatch[1];
-          const restOfName = baseName.substring(firstWord.length);
-          namesToMatch.push(`Deoxy${firstWord}${restOfName}`);
-        }
-      }
-    }
+    // Normalize the clicked molecule name
+    const normalizedMoleculeName = normalizeMoleculeName(molecule.name);
     
     // Find all nodes matching - prioritize ID matching for exact matches
     const matchingNodes = this.reactionGroups.filter(d => {
@@ -9282,7 +9261,6 @@ export class MetabolismViewer {
         }
       }
       
-      // Only if no ID match, fall back to exact name matching
       // Get the molecule name from the node
       let nodeMoleculeName = null;
       if (d.node && d.node.name) {
@@ -9298,15 +9276,9 @@ export class MetabolismViewer {
       
       if (!nodeMoleculeName) return false;
       
-      // Check if node name exactly matches any of the names to match (exact match only, no substring)
-      // Also check if normalized names (removing leading coefficients) match
-      // This handles cases like "Acetyl-CoA" matching "2 Acetyl-CoA"
-      return namesToMatch.some(name => {
-        if (nodeMoleculeName === name) return true;
-        
-        const normalize = n => n ? n.replace(/^\d+\s+/, '') : n;
-        return normalize(nodeMoleculeName) === normalize(name);
-      });
+      // Normalize the node's molecule name and compare with normalized clicked molecule name
+      const normalizedNodeName = normalizeMoleculeName(nodeMoleculeName);
+      return normalizedNodeName === normalizedMoleculeName;
     });
     
     // Highlight all matching nodes
