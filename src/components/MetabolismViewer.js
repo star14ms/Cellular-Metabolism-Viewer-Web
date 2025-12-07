@@ -17,6 +17,7 @@ import {
 import { mitochondriaData } from '../data/mitochondria/mitochondria_index.js';
 import { fetchPubChemData } from '../utils/pubchemHelpers.js';
 import { loadNodeCacheFromStorage, saveNodeToStorage, getNodeFromStorage, saveNodesToStorage } from '../utils/nodeCache.js';
+import { useLocalImages } from '../utils/localImageHelper.js';
 import {
   calculateArrowCoords,
   calculateArrowMidpoint,
@@ -3495,7 +3496,7 @@ export class MetabolismViewer {
       }
       
       if (!targetReaction) {
-        console.warn(`Arrow ${arrowData.id}: No reaction found for reaction_id ${arrowData.reaction_id}`);
+        // console.warn(`Arrow ${arrowData.id}: No reaction found for reaction_id ${arrowData.reaction_id}`);
         // Still draw the arrow even if no reaction found
       }
       
@@ -9524,14 +9525,14 @@ export class MetabolismViewer {
         // Check if we have cached node data with PubChem info
         const cachedNode = getNodeFromStorage(id);
         if (cachedNode && cachedNode.pubchemData) {
-          // Use cached PubChem data
-          pubchemData = cachedNode.pubchemData;
+          // Use cached PubChem data and apply local images if available
+          pubchemData = await useLocalImages(cachedNode.pubchemData);
           // Also update in-memory PubChem cache
           if (this.pubchemDataCache) {
             this.pubchemDataCache.set(molecule.name, pubchemData);
           }
           
-          // Get image URL from cached data
+          // Get image URL from cached data (now with local images applied)
           if (pubchemData.image2DUrlSmall) {
             imageUrl = pubchemData.image2DUrlSmall;
           } else if (molecule.pubchemSid && pubchemData.image2DUrl) {

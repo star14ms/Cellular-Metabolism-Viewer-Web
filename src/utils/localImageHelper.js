@@ -49,12 +49,27 @@ async function loadImageMapping() {
  * @returns {string|null} Local image path or null if not found
  */
 export async function getLocalImagePath(pubchemData, imageType = '2d') {
-  if (!pubchemData || !pubchemData.cid) {
+  if (!pubchemData) {
+    return null;
+  }
+
+  // Need either CID or SID to look up images
+  if (!pubchemData.cid && !pubchemData.sid) {
     return null;
   }
 
   const mapping = await loadImageMapping();
-  const identifier = pubchemData.cid.toString();
+  
+  // Format identifier to match download script format: CID903, SID1234, or CID903_SID1234
+  let identifier;
+  if (pubchemData.sid && pubchemData.cid) {
+    identifier = `CID${pubchemData.cid}_SID${pubchemData.sid}`;
+  } else if (pubchemData.sid) {
+    identifier = `SID${pubchemData.sid}`;
+  } else {
+    identifier = `CID${pubchemData.cid}`;
+  }
+  
   const size = imageType.includes('small') ? 's' : 'l';
   const type = imageType.includes('3d') ? '3d' : '2d';
   
@@ -93,12 +108,26 @@ export async function useLocalImages(pubchemData) {
  * @returns {Object} Updated PubChem data with local image paths (if mapping is loaded)
  */
 export function useLocalImagesSync(pubchemData) {
-  if (!pubchemData || !pubchemData.cid || imageMapping === null) {
+  if (!pubchemData || imageMapping === null) {
+    return pubchemData;
+  }
+  
+  // Need either CID or SID to look up images
+  if (!pubchemData.cid && !pubchemData.sid) {
     return pubchemData;
   }
   
   const updated = { ...pubchemData };
-  const identifier = updated.cid.toString();
+  
+  // Format identifier to match download script format: CID903, SID1234, or CID903_SID1234
+  let identifier;
+  if (updated.sid && updated.cid) {
+    identifier = `CID${updated.cid}_SID${updated.sid}`;
+  } else if (updated.sid) {
+    identifier = `SID${updated.sid}`;
+  } else {
+    identifier = `CID${updated.cid}`;
+  }
   
   // Try to get local paths from cached mapping
   const local2D = imageMapping[`${identifier}_2d_l`];

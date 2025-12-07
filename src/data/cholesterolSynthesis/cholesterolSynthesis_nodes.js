@@ -121,6 +121,7 @@ export const cholesterolSynthesisNodes = [
     formula: 'C₂₇H₄₄O',
     smiles: 'CC(C)CCCC(C)C1CCC2C1(CCC3C2CC=C4C3(CCC(C4)O)C)C',
     pubchemSid: 5280795,
+    pubchemImageVersion: 1,
     description: 'Vitamin D synthesized from 7-dehydrocholesterol in the skin upon UV exposure',
     position: { x: base_x - unit_space * 1.5, y: base_y + unit_space * 8 }
   },

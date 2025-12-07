@@ -62,7 +62,7 @@ export const ketoneBodyMetabolismArrows = [
   // Side arrow: From middle of main arrow -> Acetyl-CoA
   {
     id: 'arrow_kbm_8_side',
-    from_id: 'arrow_kbm_8_main', // Starts from main arrow
+    from_id: 'hmg_coa_kbm', // Starts from main arrow
     to_id: 'acetyl_coa_kbm_1',
     reaction_id: 'rxn_kbm_8', // Same reaction ID as requested
     type: 'branch' // Optional marker

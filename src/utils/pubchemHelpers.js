@@ -383,7 +383,8 @@ export async function fetchAndDisplayPubChem(moleculeName, containerId, cache, m
     const imageVersion = molecule?.pubchemImageVersion ?? null;
     if (sid) {
       const sidData = createSidBasedPubChemData(moleculeName, sid, imageVersion);
-      displayPubChemData(container, sidData, loadingElement);
+      const sidDataWithLocalImages = await useLocalImages(sidData);
+      displayPubChemData(container, sidDataWithLocalImages, loadingElement);
       return;
     }
     
