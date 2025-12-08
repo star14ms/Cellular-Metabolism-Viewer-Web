@@ -4,7 +4,7 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://human-metabolism-pathway.vercel.app/sitemap.xml
+Sitemap: https://human-metabolism-pathway.com/sitemap.xml
 
 # Disallow crawling of build artifacts and cache files
 Disallow: /node_modules/

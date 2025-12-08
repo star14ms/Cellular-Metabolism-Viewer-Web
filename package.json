@@ -2,6 +2,7 @@
   "name": "metabolism-viewer",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://human-metabolism-pathway.com",
   "type": "module",
   "scripts": {
     "dev": "npx vite",
