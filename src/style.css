@@ -975,6 +975,22 @@ svg.metabolism-viewer:active {
   display: block;
 }
 
+/* Background rectangle for molecule images */
+.molecule-image-bg {
+  fill: var(--bg-image, #ffffff);
+}
+
+[data-theme="dark"] .molecule-image-bg {
+  fill: var(--bg-image, #000000) !important;
+}
+
+/* Ensure background is black in dark mode on mobile */
+@media (max-width: 1023px) {
+  [data-theme="dark"] .molecule-image-bg {
+    fill: #000000 !important;
+  }
+}
+
 .molecule-structure-image {
   filter: none;
 }
@@ -1531,8 +1547,9 @@ svg.metabolism-viewer:active {
   overflow-x: auto;
   overflow-y: hidden;
   z-index: 10;
-  pointer-events: none;
+  pointer-events: auto;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
 
 .pathway-buttons-scroll-container::-webkit-scrollbar {
@@ -1671,5 +1688,20 @@ svg.metabolism-viewer:active {
   
   .pathway-buttons-scroll-container {
     height: 70px;
+    /* Ensure scrolling works on mobile */
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    /* Make scrollbar more visible on mobile */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+  }
+  
+  .pathway-buttons-scroll-container::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .pathway-buttons-scroll-container::-webkit-scrollbar-thumb {
+    opacity: 0.6;
+    background: var(--border-color);
   }
 }

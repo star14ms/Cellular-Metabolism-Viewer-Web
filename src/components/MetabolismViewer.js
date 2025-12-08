@@ -379,9 +379,11 @@ export class MetabolismViewer {
     // Helper to get image background color based on theme
     this.getImageBgColor = () => {
       const computedStyle = this.getComputedStyle();
-      return computedStyle.getPropertyValue('--bg-image').trim() || 
-             computedStyle.getPropertyValue('--bg-panel').trim() || 
-             'white';
+      const bgImage = computedStyle.getPropertyValue('--bg-image').trim();
+      const bgPanel = computedStyle.getPropertyValue('--bg-panel').trim();
+      // Check if we're in dark mode to provide appropriate fallback
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      return bgImage || bgPanel || (isDarkMode ? '#000000' : '#ffffff');
     };
     
     // Helper to get highlighted image background color based on theme
@@ -486,31 +488,26 @@ export class MetabolismViewer {
           })
           .attr('fill', '#000000');
         
-        // Ensure molecule-image-group backgrounds are black, except for nodes with disableDarkModeFilter
+        // Ensure molecule-image-group backgrounds use theme color, except for nodes with disableDarkModeFilter
+        const imageBgColor = this.getImageBgColor();
         this.svg.selectAll('g.molecule-image-group')
           .each(function() {
             const group = d3.select(this);
             const disableDarkFilter = group.attr('data-disable-dark-filter') === 'true';
-            if (disableDarkFilter) {
-              // Keep white background for nodes with disableDarkModeFilter
-              group.style('background-color', '#ffffff');
-              // Also update the background rectangle
-              group.select('.molecule-image-bg')
-                .attr('fill', '#ffffff');
-            } else {
-              group.style('background-color', '#000000');
-              // Update the background rectangle
-              group.select('.molecule-image-bg')
-                .attr('fill', '#000000');
-            }
+            const bgColor = disableDarkFilter ? '#ffffff' : imageBgColor;
+            group.style('background-color', bgColor);
+            // Also update the background rectangle
+            group.select('.molecule-image-bg')
+              .attr('fill', bgColor);
           });
       } else if (this.svg && !isDarkMode) {
-        // Reset to white in light mode
+        // Reset to theme color in light mode
+        const imageBgColor = this.getImageBgColor();
         this.svg.selectAll('g.molecule-image-group')
-          .style('background-color', '#ffffff');
+          .style('background-color', imageBgColor);
         // Update background rectangles
         this.svg.selectAll('g.molecule-image-group .molecule-image-bg')
-          .attr('fill', '#ffffff');
+          .attr('fill', imageBgColor);
       }
       
       // Update protein complexes and mobile carriers with their pathway-specific colors
@@ -1952,7 +1949,8 @@ export class MetabolismViewer {
         .style('overflow-x', 'auto')
         .style('overflow-y', 'hidden')
         .style('z-index', '10')
-        .style('pointer-events', 'none');
+        .style('pointer-events', 'auto')
+        .style('touch-action', 'pan-x');
     }
     
     // Create inner container for buttons
@@ -2172,7 +2170,8 @@ export class MetabolismViewer {
         .style('overflow-x', 'auto')
         .style('overflow-y', 'hidden')
         .style('z-index', '10')
-        .style('pointer-events', 'none');
+        .style('pointer-events', 'auto')
+        .style('touch-action', 'pan-x');
     }
     
     // Show scroll container
