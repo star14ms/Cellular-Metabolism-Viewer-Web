@@ -14,16 +14,28 @@ The image directories are already created:
 
 ### Step 1: Export Your Cache
 
+The application uses the new `metabolism_nodes_cache` system (not the old `pubchem_data_cache`).
+
 1. Open your metabolism viewer in the browser
 2. Open the browser console (F12)
 3. Copy and paste the contents of `exportCache-browser.js` into the console
 4. This will download a file called `pubchem-cache-export.json`
 
+The export script automatically converts the node cache format (which stores `{id, name, pubchemData}`) to the export format (which stores `[moleculeName, pubchemData]` pairs).
+
 Alternatively, you can manually export:
 ```javascript
 // In browser console:
-localStorage.getItem('pubchem_data_cache')
+localStorage.getItem('metabolism_nodes_cache')
 // Copy the output and save to a JSON file
+```
+
+Or use the NodeCache utility:
+```javascript
+// In browser console:
+NodeCache.load()  // Returns the cache Map
+// Or export using:
+JSON.stringify({ version: '1.0.0', data: Array.from(NodeCache.load().entries()) })
 ```
 
 ### Step 2: Download Images
@@ -129,7 +141,7 @@ If you update `pubchemSid` or `pubchemImageVersion` in a node file and want to u
 2. Copy and paste the contents of `scripts/updateCache-browser.js`
 3. Use the functions:
    ```javascript
-   // Remove a molecule from cache
+   // Remove a molecule from cache (uses new metabolism_nodes_cache)
    removeMoleculeFromCache("Molecule Name");
    
    // Update a molecule cache with new SID/version
@@ -138,6 +150,18 @@ If you update `pubchemSid` or `pubchemImageVersion` in a node file and want to u
    // List all cached molecules
    listCachedMolecules();
    ```
+
+**Or use the built-in NodeCache utility:**
+```javascript
+// Remove by name
+NodeCache.removeByName("Molecule Name");
+
+// Clear all cache
+NodeCache.clear();
+
+// Get cache stats
+NodeCache.stats();
+```
 
 **Option 2: Automatic Detection**
 

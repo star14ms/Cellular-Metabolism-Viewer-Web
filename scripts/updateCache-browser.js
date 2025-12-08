@@ -1,20 +1,21 @@
 // Update PubChem cache based on node files
 // Copy and paste this entire script into your browser console
+// Uses the new metabolism_nodes_cache system
 
 (async function() {
   try {
-    console.log('Cache Update Utility');
-    console.log('===================');
+    console.log('Cache Update Utility (Node Cache)');
+    console.log('==================================');
     console.log('');
     console.log('To update a molecule cache:');
     console.log('1. Call updateMoleculeCache(moleculeName, pubchemSid, pubchemImageVersion)');
     console.log('2. Or use removeMoleculeFromCache(moleculeName) to remove it');
     console.log('');
     
-    // Function to remove a molecule from cache
+    // Function to remove a molecule from cache by name
     window.removeMoleculeFromCache = function(moleculeName) {
       try {
-        const cacheKey = 'pubchem_data_cache';
+        const cacheKey = 'metabolism_nodes_cache';
         const cached = localStorage.getItem(cacheKey);
         if (!cached) {
           console.log('No cache found');
@@ -24,17 +25,30 @@
         const parsed = JSON.parse(cached);
         const cacheMap = new Map(parsed.data || []);
         
-        if (cacheMap.has(moleculeName)) {
-          cacheMap.delete(moleculeName);
-          
+        // Find nodes by molecule name
+        let removed = false;
+        const nodesToRemove = [];
+        for (const [nodeId, nodeData] of cacheMap.entries()) {
+          if (nodeData.name === moleculeName || 
+              nodeData.name?.toLowerCase() === moleculeName?.toLowerCase()) {
+            nodesToRemove.push(nodeId);
+          }
+        }
+        
+        nodesToRemove.forEach(nodeId => {
+          cacheMap.delete(nodeId);
+          removed = true;
+        });
+        
+        if (removed) {
           const updated = {
-            version: parsed.version,
+            version: parsed.version || '1.0.0',
             data: Array.from(cacheMap.entries()),
             lastUpdated: new Date().toISOString()
           };
           
           localStorage.setItem(cacheKey, JSON.stringify(updated));
-          console.log(`✓ Removed ${moleculeName} from cache`);
+          console.log(`✓ Removed ${nodesToRemove.length} node(s) for ${moleculeName} from cache`);
           return true;
         } else {
           console.log(`✗ ${moleculeName} not found in cache`);
@@ -57,8 +71,8 @@
         const image2DUrl = `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?sid=${pubchemSid}&deposited=t&version=${version}&t=l`;
         const image2DUrlSmall = `https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?sid=${pubchemSid}&deposited=t&version=${version}&t=s`;
         
-        // Create new cache entry
-        const newData = {
+        // Create new PubChem data
+        const pubchemData = {
           cid: null,
           sid: pubchemSid.toString(),
           name: moleculeName,
@@ -78,13 +92,22 @@
           imageVersion: version
         };
         
+        // Create new node data entry
+        const nodeId = moleculeName; // Use molecule name as node ID
+        const nodeData = {
+          id: nodeId,
+          name: moleculeName,
+          pubchemData: pubchemData,
+          cachedAt: new Date().toISOString()
+        };
+        
         // Save to cache
-        const cacheKey = 'pubchem_data_cache';
+        const cacheKey = 'metabolism_nodes_cache';
         const cached = localStorage.getItem(cacheKey);
         const parsed = cached ? JSON.parse(cached) : { version: '1.0.0', data: [] };
         const cacheMap = new Map(parsed.data || []);
         
-        cacheMap.set(moleculeName, newData);
+        cacheMap.set(nodeId, nodeData);
         
         const updated = {
           version: parsed.version || '1.0.0',
@@ -105,7 +128,7 @@
     // Function to list all cached molecules
     window.listCachedMolecules = function() {
       try {
-        const cacheKey = 'pubchem_data_cache';
+        const cacheKey = 'metabolism_nodes_cache';
         const cached = localStorage.getItem(cacheKey);
         if (!cached) {
           console.log('No cache found');
@@ -115,12 +138,23 @@
         const parsed = JSON.parse(cached);
         const cacheMap = new Map(parsed.data || []);
         
-        console.log(`Found ${cacheMap.size} cached molecules:`);
-        const molecules = Array.from(cacheMap.keys()).sort();
+        // Get unique molecule names
+        const moleculeMap = new Map();
+        for (const [nodeId, nodeData] of cacheMap.entries()) {
+          if (nodeData.pubchemData && nodeData.name) {
+            const name = nodeData.name;
+            if (!moleculeMap.has(name)) {
+              moleculeMap.set(name, nodeData.pubchemData);
+            }
+          }
+        }
+        
+        console.log(`Found ${moleculeMap.size} unique cached molecules:`);
+        const molecules = Array.from(moleculeMap.keys()).sort();
         molecules.forEach((name, i) => {
-          const data = cacheMap.get(name);
-          const sid = data.sid ? `SID: ${data.sid}` : `CID: ${data.cid}`;
-          const version = data.imageVersion ? `v${data.imageVersion}` : 'default';
+          const pubchemData = moleculeMap.get(name);
+          const sid = pubchemData.sid ? `SID: ${pubchemData.sid}` : `CID: ${pubchemData.cid}`;
+          const version = pubchemData.imageVersion ? `v${pubchemData.imageVersion}` : 'default';
           console.log(`  ${i + 1}. ${name} (${sid}, ${version})`);
         });
         

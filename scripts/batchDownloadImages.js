@@ -25,7 +25,7 @@ if (args.length === 0) {
   console.log('  --force  - Force re-download even if images exist');
   console.log('\nTo export cache from browser:');
   console.log('1. Open browser console');
-  console.log('2. Run: localStorage.getItem("pubchem_data_cache")');
+  console.log('2. Run: localStorage.getItem("metabolism_nodes_cache")');
   console.log('3. Copy the JSON and save to a file');
   process.exit(1);
 }
@@ -52,8 +52,20 @@ try {
     // If it's an array of [name, data] pairs
     molecules = cacheData;
   } else if (cacheData.data && Array.isArray(cacheData.data)) {
-    // If it's the localStorage format with version
-    molecules = cacheData.data;
+    // Handle new node cache format: [[nodeId, nodeData], ...]
+    // Extract pubchemData from nodeData
+    molecules = cacheData.data.map(([nodeId, nodeData]) => {
+      if (nodeData && nodeData.pubchemData) {
+        // New format: nodeData has pubchemData property
+        return [nodeData.name || nodeId, nodeData.pubchemData];
+      } else if (nodeData && nodeData.cid) {
+        // Old format: nodeData is pubchemData directly
+        return [nodeData.name || nodeId, nodeData];
+      } else {
+        // Fallback: use nodeData as-is
+        return [nodeData.name || nodeId, nodeData];
+      }
+    });
   } else if (typeof cacheData === 'object') {
     // If it's a plain object with molecule names as keys
     molecules = Object.entries(cacheData);

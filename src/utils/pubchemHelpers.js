@@ -8,6 +8,50 @@ import { getAlternativeNames } from './moleculeAlternatives.js';
 import { getPubChemDataByName, savePubChemDataToNodeCache, getNodeByNameFromStorage, removeNodeFromStorage, shouldInvalidateNodeCache } from './nodeCache.js';
 import { useLocalImages } from './localImageHelper.js';
 
+// Cache for exported PubChem data (loaded from pubchem-cache-export.json)
+let exportedCache = null;
+let exportedCacheLoadPromise = null;
+
+/**
+ * Load exported PubChem cache from pubchem-cache-export.json
+ * @returns {Promise<Map<string, Object>>} Map of molecule names to PubChem data
+ */
+async function loadExportedCache() {
+  if (exportedCache !== null) return exportedCache;
+  
+  // If already loading, return the same promise
+  if (exportedCacheLoadPromise) return exportedCacheLoadPromise;
+  
+  exportedCacheLoadPromise = (async () => {
+    try {
+      const response = await fetch('/pubchem-cache-export.json');
+      if (response.ok) {
+        const data = await response.json();
+        // Convert array of [key, value] pairs to Map
+        if (data.data && Array.isArray(data.data)) {
+          exportedCache = new Map(data.data);
+          console.log(`Loaded ${exportedCache.size} molecules from pubchem-cache-export.json`);
+          return exportedCache;
+        } else {
+          console.warn('pubchem-cache-export.json has invalid format');
+          exportedCache = new Map();
+          return exportedCache;
+        }
+      } else {
+        console.warn('pubchem-cache-export.json not found, will fetch from API');
+        exportedCache = new Map();
+        return exportedCache;
+      }
+    } catch (error) {
+      console.warn('Could not load pubchem-cache-export.json, will fetch from API:', error);
+      exportedCache = new Map();
+      return exportedCache;
+    }
+  })();
+  
+  return exportedCacheLoadPromise;
+}
+
 /**
  * Normalize molecule name for PubChem search
  * Handles CO₂/CO2 conversion and other special cases
@@ -146,6 +190,52 @@ export async function fetchPubChemData(moleculeName, cache, molecule = null) {
       cache.set(moleculeName, cachedData);
     }
     return useLocalImages(cachedData);
+  }
+  
+  // Check exported cache (pubchem-cache-export.json) before fetching from API
+  const exportedCacheData = await loadExportedCache();
+  if (exportedCacheData && exportedCacheData.size > 0) {
+    // Try exact name first
+    let exportedData = exportedCacheData.get(moleculeName);
+    
+    // If not found, try normalized name
+    if (!exportedData) {
+      const normalizedName = normalizeMoleculeName(moleculeName);
+      exportedData = exportedCacheData.get(normalizedName);
+    }
+    
+    // If still not found, try alternative names
+    if (!exportedData) {
+      const alternativeNames = getAlternativeNames(moleculeName);
+      for (const altName of alternativeNames) {
+        if (exportedCacheData.has(altName)) {
+          exportedData = exportedCacheData.get(altName);
+          break;
+        }
+      }
+    }
+    
+    if (exportedData) {
+      // If imageVersion or SID is specified, regenerate URLs with the correct version
+      const needsUpdate = (imageVersion !== null) || (molecule?.pubchemSid && exportedData.sid !== molecule.pubchemSid?.toString());
+      if (needsUpdate) {
+        const updatedData = regenerateImageUrls(exportedData, imageVersion, molecule);
+        // Save to node cache for future use
+        savePubChemDataToNodeCache(moleculeName, updatedData);
+        // Also update in-memory cache if provided
+        if (cache) {
+          cache.set(moleculeName, updatedData);
+        }
+        return useLocalImages(updatedData);
+      }
+      // Save to node cache for future use
+      savePubChemDataToNodeCache(moleculeName, exportedData);
+      // Also update in-memory cache if provided
+      if (cache) {
+        cache.set(moleculeName, exportedData);
+      }
+      return useLocalImages(exportedData);
+    }
   }
   
   // Normalize name for search
