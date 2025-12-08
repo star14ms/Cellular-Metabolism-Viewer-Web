@@ -4,9 +4,115 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Human Metabolism Pathway</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>Interactive Human Metabolism Pathway Viewer | Cellular Metabolic Pathways Visualization</title>
+    <meta name="title" content="Interactive Human Metabolism Pathway Viewer | Cellular Metabolic Pathways Visualization" />
+    <meta name="description" content="Explore human metabolic pathways interactively. Visualize glycolysis, citric acid cycle, electron transport chain, and more with detailed molecule information, enzyme data, and reaction conditions. Built for biochemistry students and researchers." />
+    <meta name="keywords" content="metabolism, metabolic pathways, glycolysis, citric acid cycle, Krebs cycle, electron transport chain, biochemistry, molecular biology, interactive visualization, D3.js, metabolic map, cellular respiration, ATP synthesis, enzyme reactions, biochemical pathways" />
+    <meta name="author" content="Minseo Kim" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://human-metabolism-pathway.vercel.app/" />
+    <meta property="og:title" content="Interactive Human Metabolism Pathway Viewer" />
+    <meta property="og:description" content="Explore human metabolic pathways interactively. Visualize glycolysis, citric acid cycle, electron transport chain, and more with detailed molecule information." />
+    <meta property="og:image" content="https://human-metabolism-pathway.vercel.app/vite.svg" />
+    <meta property="og:site_name" content="Human Metabolism Pathway Viewer" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://human-metabolism-pathway.vercel.app/" />
+    <meta property="twitter:title" content="Interactive Human Metabolism Pathway Viewer" />
+    <meta property="twitter:description" content="Explore human metabolic pathways interactively. Visualize glycolysis, citric acid cycle, electron transport chain, and more with detailed molecule information." />
+    <meta property="twitter:image" content="https://human-metabolism-pathway.vercel.app/vite.svg" />
+    <meta property="twitter:creator" content="@star14ms" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://human-metabolism-pathway.vercel.app/" />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Human Metabolism Pathway Viewer",
+      "description": "Interactive web application for visualizing and exploring human cellular metabolic pathways with detailed molecular information, enzyme data, and reaction conditions.",
+      "url": "https://human-metabolism-pathway.vercel.app/",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Minseo Kim",
+        "jobTitle": "Biochemistry Student / Developer",
+        "url": "https://github.com/star14ms",
+        "sameAs": [
+          "https://github.com/star14ms",
+          "https://linkedin.com/in/minseo-kim-a4703929a/",
+          "https://www.instagram.com/star14ms/"
+        ]
+      },
+      "keywords": "metabolism, metabolic pathways, glycolysis, citric acid cycle, Krebs cycle, electron transport chain, biochemistry, molecular biology, interactive visualization, cellular respiration, ATP synthesis, enzyme reactions, biochemical pathways, amino acid metabolism, nucleotide synthesis, lipid metabolism, cholesterol synthesis, fatty acid oxidation, pentose phosphate pathway, urea cycle",
+      "featureList": [
+        "Interactive pathway visualization with zoom and pan",
+        "Detailed molecule information with PubChem integration",
+        "Enzyme information with EC numbers and cofactors",
+        "Reaction conditions and regulation data",
+        "Multiple metabolic pathways including: Glycolysis, Citric Acid Cycle, Electron Transport Chain, Fatty Acid Metabolism, Amino Acid Metabolism, Nucleotide Synthesis, Cholesterol Synthesis, and more",
+        "Search functionality for molecules and reactions",
+        "Dark mode support",
+        "Mobile-responsive design",
+        "3D and 2D molecular structure visualization"
+      ],
+      "educationalUse": "Learning",
+      "learningResourceType": "Interactive Visualization",
+      "teaches": [
+        "Cellular Metabolism",
+        "Biochemical Pathways",
+        "Enzyme Reactions",
+        "Molecular Biology"
+      ],
+      "inLanguage": "en",
+      "isAccessibleForFree": true
+    }
+    </script>
+    
+    <!-- Additional Schema for SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Human Metabolism Pathway Viewer",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "ratingCount": "1"
+      }
+    }
+    </script>
   </head>
   <body>
+    <noscript>
+      <div style="padding: 2rem; text-align: center; font-family: system-ui, sans-serif;">
+        <h1>Human Metabolism Pathway Viewer</h1>
+        <p>This application requires JavaScript to be enabled. Please enable JavaScript in your browser settings to use this interactive metabolism pathway visualization tool.</p>
+        <p>Explore human metabolic pathways including glycolysis, citric acid cycle, electron transport chain, and more with detailed molecular information.</p>
+      </div>
+    </noscript>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
   </body>

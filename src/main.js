@@ -46,26 +46,26 @@ if (!app) {
   console.error('App container not found')
 } else {
   app.innerHTML = `
-    <div class="app-container">
+    <div class="app-container" role="main">
         <div class="main-content">
-          <div class="viewer-panel">
-            <div id="metabolism-viewer" class="metabolism-viewer"></div>
-          </div>
+          <section class="viewer-panel" aria-label="Metabolic pathway visualization">
+            <div id="metabolism-viewer" class="metabolism-viewer" role="img" aria-label="Interactive human metabolic pathways map"></div>
+          </section>
           
-          <div class="panel-resizer" id="panel-resizer"></div>
+          <div class="panel-resizer" id="panel-resizer" aria-hidden="true"></div>
           
-          <div class="detail-panel">
-          <div class="detail-tabs">
-            <button class="detail-tab active" data-tab="molecule">Molecule (Node)</button>
-            <button class="detail-tab" data-tab="reaction">Reaction (Arrow)</button>
-            <button class="detail-tab" data-tab="pathway">Pathway Group</button>
-          </div>
+          <aside class="detail-panel" aria-label="Molecule and reaction details">
+          <nav class="detail-tabs" role="tablist" aria-label="Detail view tabs">
+            <button id="molecule-tab" class="detail-tab active" data-tab="molecule" role="tab" aria-selected="true" aria-controls="molecule-view">Molecule (Node)</button>
+            <button id="reaction-tab" class="detail-tab" data-tab="reaction" role="tab" aria-selected="false" aria-controls="reaction-detail">Reaction (Arrow)</button>
+            <button id="pathway-tab" class="detail-tab" data-tab="pathway" role="tab" aria-selected="false" aria-controls="pathway-detail">Pathway Group</button>
+          </nav>
           <div class="detail-content">
-            <div id="molecule-view" class="detail-view active"></div>
-            <div id="reaction-detail" class="detail-view"></div>
-            <div id="pathway-detail" class="detail-view"></div>
+            <div id="molecule-view" class="detail-view active" role="tabpanel" aria-labelledby="molecule-tab" aria-hidden="false"></div>
+            <div id="reaction-detail" class="detail-view" role="tabpanel" aria-labelledby="reaction-tab" aria-hidden="true"></div>
+            <div id="pathway-detail" class="detail-view" role="tabpanel" aria-labelledby="pathway-tab" aria-hidden="true"></div>
           </div>
-        </div>
+        </aside>
       </div>
       
       <!-- References Modal -->
@@ -278,13 +278,21 @@ if (!app) {
           const tabName = tab.dataset.tab
           
           // Update active tab
-          tabs.forEach(t => t.classList.remove('active'))
+          tabs.forEach(t => {
+            t.classList.remove('active')
+            t.setAttribute('aria-selected', 'false')
+          })
           tab.classList.add('active')
+          tab.setAttribute('aria-selected', 'true')
           
           // Update active view
-          views.forEach(v => v.classList.remove('active'))
+          views.forEach(v => {
+            v.classList.remove('active')
+            v.setAttribute('aria-hidden', 'true')
+          })
           if (tabName === 'molecule') {
             moleculeContainer.classList.add('active')
+            moleculeContainer.setAttribute('aria-hidden', 'false')
             // If molecule view has content, trigger the same effect as clicking the molecule
             if (nodeDetail.currentMolecule) {
               const molecule = nodeDetail.currentMolecule
@@ -299,6 +307,7 @@ if (!app) {
             }
           } else if (tabName === 'reaction') {
             reactionContainer.classList.add('active')
+            reactionContainer.setAttribute('aria-hidden', 'false')
             // If reaction view has content, trigger the same effect as clicking the reaction arrow
             if (arrowDetail.currentReaction) {
               viewer.selectReaction(arrowDetail.currentReaction, { skipTabSwitch: true })
@@ -306,6 +315,7 @@ if (!app) {
             }
           } else if (tabName === 'pathway') {
             pathwayContainer.classList.add('active')
+            pathwayContainer.setAttribute('aria-hidden', 'false')
             // If pathway view has content, trigger the same effect as clicking a pathway button
             if (pathwayView.currentPathway) {
               // The pathway object may be nested in a pathway property, or be the pathway itself

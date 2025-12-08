@@ -6960,13 +6960,18 @@ export class MetabolismViewer {
       const imageFilter = (isDarkMode && !disableDarkModeFilter) ? 'invert(1) hue-rotate(180deg)' : 'none';
       const imageClass = disableDarkModeFilter ? 'molecule-structure-image no-filter' : 'molecule-structure-image';
       
+      // Get molecule name for accessibility
+      const moleculeName = d.node?.name || d.product?.name || d.substrate?.name || 'Molecule';
       imageGroup.append('image')
         .attr('class', imageClass)
         .attr('x', -50)
         .attr('y', -50)
         .attr('width', 100)
         .attr('height', 100)
-        .attr('preserveAspectRatio', 'xMidYMid meet');
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .attr('alt', `2D structure of ${moleculeName}`)
+        .attr('aria-label', `2D molecular structure of ${moleculeName}`)
+        .attr('role', 'img');
     });
     
     // Fetch PubChem image URLs for all molecules
@@ -9817,8 +9822,11 @@ export class MetabolismViewer {
             
             // Update the image on the map node if this molecule matches
             if (displayMolecule && displayMolecule.id === id) {
+              const moleculeName = displayMolecule.name || 'Molecule';
               d3.select(this).select('.molecule-structure-image')
-                .attr('href', imageUrl);
+                .attr('href', imageUrl)
+                .attr('alt', `2D structure of ${moleculeName}`)
+                .attr('aria-label', `2D molecular structure of ${moleculeName}`);
             }
           });
         }
