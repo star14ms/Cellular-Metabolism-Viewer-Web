@@ -212,7 +212,7 @@ export const branchedChainAminoAcidBreakdownNodes = [
     type: 'molecule',
     name: '(Odd-chain) Fatty Acyl-CoA',
     description: 'Odd-chain fatty acyl-CoA from fatty acid oxidation, catabolized to propionyl-CoA',
-    pubchemCid: 439855,
+    pubchemCid: 88710819,
     position: { x: base_x + column_spacing * 0.5, y: base_y + unit_space * 4 }
   },
   

@@ -8,7 +8,7 @@ export const fattyAcidOxidationNodes = [
     id: 'fatty_acyl_coa_cytosol_fao',
     type: 'molecule',
     name: 'Fatty Acyl-CoA',
-    pubchemCid: 439855,
+    pubchemCid: 88710819,
     description: 'Fatty acid activated with Coenzyme A in the cytosol, ready for transport into mitochondria.',
     position: { x: base_x, y: base_y }
   },

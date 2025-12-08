@@ -244,6 +244,9 @@ if (!app) {
         width: width,
         height: height
       })
+      
+      // Expose viewer instance globally for cache management
+      window.metabolismViewer = viewer
 
       // Initialize detail views
       const moleculeContainer = document.getElementById('molecule-view')
@@ -893,18 +896,31 @@ if (!app) {
 }
 
 // Expose node cache utilities to global scope for easy access
-import { clearNodeCache, getNodeCacheStats, getAllNodesFromStorage } from './utils/nodeCache.js'
+import { clearNodeCache, getNodeCacheStats, getAllNodesFromStorage, removeNodeFromStorage, removeNodesByNameFromStorage } from './utils/nodeCache.js'
 window.NodeCache = {
   clear: clearNodeCache,
   stats: getNodeCacheStats,
   load: getAllNodesFromStorage,
+  remove: removeNodeFromStorage,
+  removeByName: removeNodesByNameFromStorage,
+  clearViewerCache: () => {
+    if (window.metabolismViewer) {
+      window.metabolismViewer.clearPubChemCache();
+      console.log('Cleared MetabolismViewer in-memory cache');
+    } else {
+      console.warn('MetabolismViewer not available. Refresh the page first.');
+    }
+  },
   help: () => {
     console.log(`
 Node Cache Utilities:
-  - NodeCache.clear()     : Clear all cached node data
-  - NodeCache.stats()     : Get cache statistics (size, last updated, version)
-  - NodeCache.load()      : Load and return the cache Map
-  - NodeCache.help()      : Show this help message
+  - NodeCache.clear()        : Clear all cached node data from localStorage
+  - NodeCache.stats()        : Get cache statistics (size, last updated, version)
+  - NodeCache.load()         : Load and return the cache Map
+  - NodeCache.remove(id)     : Remove a node by ID from cache
+  - NodeCache.removeByName(name) : Remove all nodes matching a name from cache (also clears in-memory cache)
+  - NodeCache.clearViewerCache() : Clear MetabolismViewer in-memory cache
+  - NodeCache.help()         : Show this help message
     `)
   }
 }

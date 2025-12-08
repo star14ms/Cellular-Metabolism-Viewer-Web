@@ -189,7 +189,7 @@ export function shouldInvalidateNodeCache(cachedNodeData, molecule) {
   // Invalidate if CID changed
   const cachedCid = cachedPubchemData.cid?.toString();
   const nodeCid = molecule.pubchemCid?.toString();
-  if (nodeCid && cachedCid !== nodeCid) {
+  if (nodeCid && cachedCid && cachedCid !== nodeCid) {
     return true;
   }
 
@@ -200,6 +200,11 @@ export function shouldInvalidateNodeCache(cachedNodeData, molecule) {
   
   // Invalidate if cached has SID but node doesn't (or vice versa)
   if ((cachedSid && !nodeSid) || (!cachedSid && nodeSid)) {
+    return true;
+  }
+  
+  // Invalidate if cached has CID but node doesn't (or vice versa)
+  if ((cachedCid && !nodeCid) || (!cachedCid && nodeCid)) {
     return true;
   }
   
@@ -253,6 +258,11 @@ export function clearNodeCache() {
     inMemoryNodeCache = new Map();
     nodeCacheLoaded = true;
     console.log('Node cache cleared from localStorage');
+    
+    // Also clear in-memory cache in MetabolismViewer if available
+    if (typeof window !== 'undefined' && window.metabolismViewer) {
+      window.metabolismViewer.clearPubChemCache();
+    }
   } catch (error) {
     console.warn('Error clearing node cache from localStorage:', error);
   }
@@ -283,6 +293,56 @@ export function removeNodeFromStorage(nodeId) {
   } catch (error) {
     console.warn(`Error removing ${nodeId} from cache:`, error);
     return false;
+  }
+}
+
+/**
+ * Remove nodes from cache by molecule name
+ * Also clears in-memory cache in MetabolismViewer if available
+ * @param {string} moleculeName - Name of the molecule to remove
+ * @returns {number} Number of nodes removed
+ */
+export function removeNodesByNameFromStorage(moleculeName) {
+  try {
+    const cache = loadNodeCacheFromStorage();
+    let removedCount = 0;
+    const nodesToRemove = [];
+    
+    // Find all nodes matching the name
+    for (const [nodeId, nodeData] of cache.entries()) {
+      if (nodeData.name === moleculeName || 
+          nodeData.name?.toLowerCase() === moleculeName?.toLowerCase()) {
+        nodesToRemove.push(nodeId);
+      }
+    }
+    
+    // Remove all matching nodes
+    nodesToRemove.forEach(nodeId => {
+      cache.delete(nodeId);
+      removedCount++;
+      console.log(`Removed ${nodeId} (${moleculeName}) from node cache`);
+    });
+    
+    if (removedCount > 0) {
+      // Convert Map to array of [key, value] pairs for JSON serialization
+      const dataToStore = {
+        version: NODE_CACHE_VERSION,
+        data: Array.from(cache.entries()),
+        lastUpdated: new Date().toISOString()
+      };
+      
+      localStorage.setItem(NODE_CACHE_KEY, JSON.stringify(dataToStore));
+      
+      // Also clear in-memory cache in MetabolismViewer if available
+      if (typeof window !== 'undefined' && window.metabolismViewer) {
+        window.metabolismViewer.clearPubChemCacheForMolecule(moleculeName);
+      }
+    }
+    
+    return removedCount;
+  } catch (error) {
+    console.warn(`Error removing nodes by name ${moleculeName} from cache:`, error);
+    return 0;
   }
 }
 

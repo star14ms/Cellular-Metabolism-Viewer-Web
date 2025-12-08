@@ -17,7 +17,7 @@ import {
 import { mitochondriaData } from '../data/mitochondria/mitochondria_index.js';
 import { fetchPubChemData, normalizeMoleculeName } from '../utils/pubchemHelpers.js';
 import { loadNodeCacheFromStorage, saveNodeToStorage, getNodeFromStorage, saveNodesToStorage } from '../utils/nodeCache.js';
-import { useLocalImages } from '../utils/localImageHelper.js';
+import { useLocalImages, getLocalImagePath } from '../utils/localImageHelper.js';
 import {
   calculateArrowCoords,
   calculateArrowMidpoint,
@@ -9666,20 +9666,58 @@ export class MetabolismViewer {
         if (!imageUrl && molecule.imageUrl) {
           imageUrl = molecule.imageUrl;
         } else if (!imageUrl && !pubchemData) {
-          // Fetch PubChem data if not in cache
-          // Use shared utility that handles normalization and alternatives
-          // Pass molecule object so it can use pubchemSid if available
-          pubchemData = await fetchPubChemData(molecule.name, this.pubchemDataCache, molecule);
+          // Before fetching from PubChem API, check if local images exist
+          // This avoids unnecessary network requests when images are already in public/
+          let localImageFound = false;
+          if (molecule.pubchemCid || molecule.pubchemSid) {
+            // Create a minimal pubchemData object with just CID/SID for local image lookup
+            const minimalPubchemData = {
+              cid: molecule.pubchemCid,
+              sid: molecule.pubchemSid
+            };
+            
+            // Try to get local image paths
+            const local2DSmall = await getLocalImagePath(minimalPubchemData, '2d-small');
+            const local2D = await getLocalImagePath(minimalPubchemData, '2d');
+            
+            if (local2DSmall || local2D) {
+              // Local images exist! Create minimal pubchemData with local image URLs
+              pubchemData = {
+                name: molecule.name,
+                cid: molecule.pubchemCid,
+                sid: molecule.pubchemSid,
+                image2DUrl: local2D || null,
+                image2DUrlSmall: local2DSmall || null
+              };
+              
+              // Use the local image URL
+              imageUrl = local2DSmall || local2D;
+              localImageFound = true;
+              
+              // Update in-memory cache
+              if (this.pubchemDataCache) {
+                this.pubchemDataCache.set(molecule.name, pubchemData);
+              }
+            }
+          }
           
-          // Prioritize SID-based image URLs if available
-          if (pubchemData) {
-            if (pubchemData.image2DUrlSmall) {
-              imageUrl = pubchemData.image2DUrlSmall;
-            } else if (molecule.pubchemSid && pubchemData.image2DUrl) {
-              // Fallback to large image if small not available
-              imageUrl = pubchemData.image2DUrl;
-            } else if (molecule.pubchemCid && pubchemData.image2DUrl) {
-              imageUrl = pubchemData.image2DUrl;
+          // Only fetch from PubChem API if local images don't exist
+          if (!localImageFound) {
+            // Fetch PubChem data if not in cache and no local images
+            // Use shared utility that handles normalization and alternatives
+            // Pass molecule object so it can use pubchemSid if available
+            pubchemData = await fetchPubChemData(molecule.name, this.pubchemDataCache, molecule);
+            
+            // Prioritize SID-based image URLs if available
+            if (pubchemData) {
+              if (pubchemData.image2DUrlSmall) {
+                imageUrl = pubchemData.image2DUrlSmall;
+              } else if (molecule.pubchemSid && pubchemData.image2DUrl) {
+                // Fallback to large image if small not available
+                imageUrl = pubchemData.image2DUrl;
+              } else if (molecule.pubchemCid && pubchemData.image2DUrl) {
+                imageUrl = pubchemData.image2DUrl;
+              }
             }
           }
         }
@@ -9741,6 +9779,28 @@ export class MetabolismViewer {
     // Save all nodes with PubChem data to cache
     if (nodesToSave.length > 0) {
       saveNodesToStorage(nodesToSave);
+    }
+  }
+  
+  /**
+   * Clear the in-memory PubChem data cache
+   * Useful when node data changes (e.g., CID/SID updates)
+   */
+  clearPubChemCache() {
+    if (this.pubchemDataCache) {
+      this.pubchemDataCache.clear();
+      console.log('Cleared in-memory PubChem data cache');
+    }
+  }
+  
+  /**
+   * Clear PubChem cache for a specific molecule by name
+   * @param {string} moleculeName - Name of the molecule to clear from cache
+   */
+  clearPubChemCacheForMolecule(moleculeName) {
+    if (this.pubchemDataCache && this.pubchemDataCache.has(moleculeName)) {
+      this.pubchemDataCache.delete(moleculeName);
+      console.log(`Cleared in-memory cache for ${moleculeName}`);
     }
   }
   
