@@ -622,11 +622,47 @@ export class MetabolismViewer {
       }
     };
     
+    // Update references and profile buttons when theme changes
+    const updateActionButtons = () => {
+      // Get computed CSS values for current theme
+      const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim();
+      const textPrimary = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+      
+      // Update references button
+      if (this.referencesButton && !this.referencesButton.empty()) {
+        const refCircle = this.referencesButton.select('circle');
+        const refIcon = this.referencesButton.select('.references-icon-text');
+        
+        refCircle
+          .transition().duration(200)
+          .attr('stroke', borderColor);
+        
+        refIcon
+          .transition().duration(200)
+          .attr('fill', textPrimary);
+      }
+      
+      // Update profile button
+      if (this.profileButton && !this.profileButton.empty()) {
+        const profileCircle = this.profileButton.select('circle');
+        const profileIcon = this.profileButton.select('.profile-icon-text');
+        
+        profileCircle
+          .transition().duration(200)
+          .attr('stroke', borderColor);
+        
+        profileIcon
+          .transition().duration(200)
+          .attr('fill', textPrimary);
+      }
+    };
+    
     // Listen for theme changes
     const observer = new MutationObserver(() => {
       updateSVGBackground();
       updateButtonTextColors();
       updateThemeToggleButton();
+      updateActionButtons();
     });
     observer.observe(document.documentElement, {
       attributes: true,
@@ -1587,9 +1623,10 @@ export class MetabolismViewer {
     // Store reference for positioning updates
     this.lowerLeftButtonGroup = buttonGroup;
     
-    // Draw buttons in order: theme toggle, references (from left to right)
+    // Draw buttons in order: theme toggle, references, profile (from left to right)
     this.drawThemeToggleButton(buttonGroup);
     this.drawReferencesButton(buttonGroup);
+    this.drawProfileButton(buttonGroup);
     
     // Initial positioning
     this.updateLowerLeftButtonGroupPosition();
@@ -1699,20 +1736,30 @@ export class MetabolismViewer {
       .attr('class', 'references-button btn')
       .attr('transform', `translate(${buttonX}, ${buttonY})`);
 
-    // Button circle
+    // Get current theme colors
+    const getThemeColors = () => {
+      const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim();
+      const textPrimary = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+      return { borderColor, textPrimary };
+    };
+    
+    const colors = getThemeColors();
+
+    // Button circle - transparent fill with theme-aware border
     const circle = refGroup.append('circle')
       .attr('r', 15)
-      .attr('fill', PATHWAY_CONFIG.colors.primary)
-      .attr('stroke', PATHWAY_CONFIG.colors.primaryHover)
+      .attr('fill', 'transparent')
+      .attr('stroke', colors.borderColor)
       .attr('stroke-width', 2);
     
-    // References icon (book/document icon)
-    refGroup.append('text')
+    // References icon (book/document icon) - theme-aware color
+    const iconText = refGroup.append('text')
       .attr('x', 0)
       .attr('y', 5)
       .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
+      .attr('fill', colors.textPrimary)
       .attr('font-size', '16px')
+      .attr('class', 'references-icon-text')
       .text('📚');
     
     // Click handler to show references modal
@@ -1723,19 +1770,87 @@ export class MetabolismViewer {
       }
     });
     
-    // Hover effects
+    // Hover effects - only change stroke width
     refGroup.on('mouseenter', function() {
       d3.select(this).select('circle')
         .transition().duration(200)
-        .attr('fill', PATHWAY_CONFIG.colors.primaryHover)
         .attr('stroke-width', 3);
     })
     .on('mouseleave', function() {
       d3.select(this).select('circle')
         .transition().duration(200)
-        .attr('fill', PATHWAY_CONFIG.colors.primary)
         .attr('stroke-width', 2);
     });
+    
+    // Store reference for theme updates
+    this.referencesButton = refGroup;
+  }
+  
+  drawProfileButton(container) {
+    // Position button relative to references button within the container
+    const themeToggleRadius = 25; // Theme toggle radius
+    const referencesButtonRadius = 15; // References button radius
+    const buttonRadius = 15; // Profile button radius
+    const spacing = 15; // Spacing between buttons
+    
+    // Position profile button to the right of references button
+    // X: spacing + themeToggleRadius + referencesButtonRadius + spacing + referencesButtonRadius + buttonRadius
+    const buttonX = spacing + themeToggleRadius + referencesButtonRadius + spacing + referencesButtonRadius + buttonRadius;
+    // Y: Align vertically with other buttons (same Y = 0)
+    const buttonY = 0;
+    
+    const profileGroup = container.append('g')
+      .attr('class', 'profile-button btn')
+      .attr('transform', `translate(${buttonX}, ${buttonY})`);
+
+    // Get current theme colors
+    const getThemeColors = () => {
+      const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim();
+      const textPrimary = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+      return { borderColor, textPrimary };
+    };
+    
+    const colors = getThemeColors();
+
+    // Button circle - transparent fill with theme-aware border
+    const circle = profileGroup.append('circle')
+      .attr('r', 15)
+      .attr('fill', 'transparent')
+      .attr('stroke', colors.borderColor)
+      .attr('stroke-width', 2);
+    
+    // Profile icon (user/person icon) - theme-aware color
+    const iconText = profileGroup.append('text')
+      .attr('x', 0)
+      .attr('y', 5)
+      .attr('text-anchor', 'middle')
+      .attr('fill', colors.textPrimary)
+      .attr('font-size', '16px')
+      .attr('class', 'profile-icon-text')
+      .text('👤');
+    
+    // Click handler to show profile modal
+    profileGroup.on('click', () => {
+      const modal = document.getElementById('profile-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+    });
+    
+    // Hover effects - only change stroke width
+    profileGroup.on('mouseenter', function() {
+      d3.select(this).select('circle')
+        .transition().duration(200)
+        .attr('stroke-width', 3);
+    })
+    .on('mouseleave', function() {
+      d3.select(this).select('circle')
+        .transition().duration(200)
+        .attr('stroke-width', 2);
+    });
+    
+    // Store reference for theme updates
+    this.profileButton = profileGroup;
   }
   
   /**

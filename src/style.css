@@ -1245,7 +1245,7 @@ svg.metabolism-viewer:active {
   box-shadow: 0 8px 32px var(--shadow-dark);
   max-width: 600px;
   width: 90%;
-  max-height: 80vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   animation: slideUp 0.3s ease;
@@ -1303,6 +1303,29 @@ svg.metabolism-viewer:active {
   transform: scale(1.1);
 }
 
+.profile-modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.profile-modal-close:hover {
+  background: var(--border-color-light);
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
 .references-modal-body {
   padding: 1.5rem;
   overflow-y: auto;
@@ -1351,6 +1374,98 @@ svg.metabolism-viewer:active {
   color: var(--text-secondary);
   font-size: 0.95rem;
   line-height: 1.6;
+}
+
+/* Profile modal content styles */
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-header {
+  text-align: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.profile-header h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.profile-title {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+.profile-bio {
+  padding: 1rem 0;
+}
+
+.profile-bio p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.profile-links {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.profile-links h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.profile-links-list {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.profile-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  background: var(--bg-panel-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.profile-link-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.profile-link-icon:hover {
+  background: var(--bg-panel);
+  border-color: #667eea;
+  color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.profile-link-icon:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px var(--shadow);
 }
 
 /* Scrollbar for references modal */
