@@ -463,7 +463,16 @@ export class MetabolismViewer {
       if (this.reactionGroups) {
         const imageBgColor = this.getImageBgColor();
         this.reactionGroups.selectAll('.molecule-image-bg')
-          .attr('fill', imageBgColor)
+          .each(function() {
+            const rect = d3.select(this);
+            const group = d3.select(this.parentNode);
+            const disableDarkFilter = group.attr('data-disable-dark-filter') === 'true';
+            if (disableDarkFilter) {
+              rect.attr('fill', '#ffffff').style('fill', '#ffffff');
+            } else {
+              rect.attr('fill', imageBgColor).style('fill', imageBgColor);
+            }
+          })
           .attr('stroke', isDarkMode ? '#000000' : '#dee2e6');
         
         // Filter is now handled by CSS based on data-theme attribute
@@ -498,7 +507,8 @@ export class MetabolismViewer {
             group.style('background-color', bgColor);
             // Also update the background rectangle
             group.select('.molecule-image-bg')
-              .attr('fill', bgColor);
+              .attr('fill', bgColor)
+              .style('fill', bgColor);
           });
       } else if (this.svg && !isDarkMode) {
         // Reset to theme color in light mode
@@ -507,7 +517,16 @@ export class MetabolismViewer {
           .style('background-color', imageBgColor);
         // Update background rectangles
         this.svg.selectAll('g.molecule-image-group .molecule-image-bg')
-          .attr('fill', imageBgColor);
+          .each(function() {
+            const rect = d3.select(this);
+            const group = d3.select(this.parentNode);
+            const disableDarkFilter = group.attr('data-disable-dark-filter') === 'true';
+            if (disableDarkFilter) {
+              rect.attr('fill', '#ffffff').style('fill', '#ffffff');
+            } else {
+              rect.attr('fill', imageBgColor).style('fill', imageBgColor);
+            }
+          });
       }
       
       // Update protein complexes and mobile carriers with their pathway-specific colors
@@ -6917,16 +6936,25 @@ export class MetabolismViewer {
         imageGroup.attr('data-disable-dark-filter', 'true');
       }
       
-      imageGroup.append('rect')
+      // Create background rect - let CSS handle the fill color for dark mode
+      const bgRect = imageGroup.append('rect')
         .attr('class', 'molecule-image-bg')
         .attr('x', -55)
         .attr('y', -55)
         .attr('width', 110)
         .attr('height', 110)
-        .attr('fill', bgColor)
         .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
         .attr('stroke-width', 2)
         .attr('rx', 4);
+      
+      // Set fill, but CSS will override in dark mode
+      if (disableDarkModeFilter) {
+        bgRect.attr('fill', '#ffffff');
+      } else {
+        bgRect.attr('fill', bgColor);
+        // Also set style to ensure CSS can override
+        bgRect.style('fill', bgColor);
+      }
       
       // Apply initial filter based on current theme and disableDarkModeFilter
       const imageFilter = (isDarkMode && !disableDarkModeFilter) ? 'invert(1) hue-rotate(180deg)' : 'none';
@@ -8133,10 +8161,20 @@ export class MetabolismViewer {
     
     // Reset image backgrounds
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const imageBgColor = this.getImageBgColor();
     this.reactionGroups.selectAll('.molecule-image-bg')
+      .each(function() {
+        const rect = d3.select(this);
+        const group = d3.select(this.parentNode);
+        const disableDarkFilter = group.attr('data-disable-dark-filter') === 'true';
+        if (disableDarkFilter) {
+          rect.attr('fill', '#ffffff').style('fill', '#ffffff');
+        } else {
+          rect.attr('fill', imageBgColor).style('fill', imageBgColor);
+        }
+      })
       .attr('stroke', isDarkMode ? '#000000' : '#dee2e6')
-      .attr('stroke-width', 2)
-      .attr('fill', this.getImageBgColor());
+      .attr('stroke-width', 2);
   }
   
   /**
@@ -8186,9 +8224,23 @@ export class MetabolismViewer {
       .attr('fill', color.fill);
     
     nodeGroup.select('.molecule-image-bg')
+      .each(function() {
+        const rect = d3.select(this);
+        const group = d3.select(this.parentNode);
+        const disableDarkFilter = group.attr('data-disable-dark-filter') === 'true';
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        // Use highlight color, but respect dark mode
+        if (disableDarkFilter) {
+          rect.attr('fill', color.bgFill).style('fill', color.bgFill);
+        } else if (isDarkMode && color.bgFill !== '#f0fdfa') {
+          // If highlighting in dark mode, use highlight color but ensure it's visible
+          rect.attr('fill', color.bgFill).style('fill', color.bgFill);
+        } else {
+          rect.attr('fill', color.bgFill).style('fill', color.bgFill);
+        }
+      })
       .attr('stroke', color.bgStroke)
-      .attr('stroke-width', 4)
-      .attr('fill', color.bgFill);
+      .attr('stroke-width', 4);
   }
   
   /**

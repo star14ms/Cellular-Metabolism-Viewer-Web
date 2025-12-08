@@ -981,12 +981,16 @@ svg.metabolism-viewer:active {
 }
 
 [data-theme="dark"] .molecule-image-bg {
-  fill: var(--bg-image, #000000) !important;
+  fill: #000000 !important;
 }
 
 /* Ensure background is black in dark mode on mobile */
 @media (max-width: 1023px) {
   [data-theme="dark"] .molecule-image-bg {
+    fill: #000000 !important;
+  }
+  
+  [data-theme="dark"] rect.molecule-image-bg {
     fill: #000000 !important;
   }
 }
@@ -1085,6 +1089,8 @@ svg.metabolism-viewer:active {
   width: 300px;
   opacity: 0.4;
   transition: opacity 0.3s ease;
+  display: block;
+  visibility: visible;
 }
 
 .molecule-reaction-search:hover,
@@ -1521,6 +1527,17 @@ svg.metabolism-viewer:active {
     width: 250px;
     bottom: 15px;
     right: 15px;
+    opacity: 0.7; /* More visible on mobile */
+    z-index: 1000; /* Ensure it's above other elements */
+  }
+  
+  /* Make search more visible on mobile */
+  .molecule-reaction-search:not(.active) {
+    opacity: 0.7;
+  }
+  
+  .molecule-reaction-search.active {
+    opacity: 1;
   }
   
   .references-modal-content {
@@ -1703,5 +1720,26 @@ svg.metabolism-viewer:active {
   .pathway-buttons-scroll-container::-webkit-scrollbar-thumb {
     opacity: 0.6;
     background: var(--border-color);
+  }
+  
+  /* Ensure search is visible on mobile - always show it */
+  .molecule-reaction-search {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 0.85 !important;
+    z-index: 1000 !important;
+    pointer-events: auto !important;
+  }
+  
+  .molecule-reaction-search:hover,
+  .molecule-reaction-search.active {
+    opacity: 1 !important;
+  }
+  
+  /* Make search input more visible on mobile */
+  .molecule-reaction-search .search-input {
+    background: var(--bg-panel) !important;
+    border: 2px solid var(--border-color) !important;
+    box-shadow: 0 2px 8px var(--shadow) !important;
   }
 }
